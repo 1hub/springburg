@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Collections.Generic;
 using InflatablePalace.Cryptography.Algorithms;
+using Org.BouncyCastle.Utilities.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
@@ -180,7 +181,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <param name="oldFormat">PGP 2.6.x compatibility required.</param>
         public PgpEncryptedDataGenerator(
             SymmetricKeyAlgorithmTag encAlgorithm,
-            bool withIntegrityPacket = true,
+            bool withIntegrityPacket = false,
             bool oldFormat = false)
         {
             this.defAlgorithm = encAlgorithm;
@@ -392,12 +393,23 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 RandomNumberGenerator.Fill(inLineIv.AsSpan(0, blockSize));
                 Array.Copy(inLineIv, inLineIv.Length - 4, inLineIv, inLineIv.Length - 2, 2);
 
-                Stream myOut = cOut = new CryptoStream(pOut, c.CreateEncryptor(), CryptoStreamMode.Write);
+                ICryptoTransform encryptor;
+                if (withIntegrityPacket)
+                {
+                    encryptor = c.CreateEncryptor();
+                }
+                else
+                {
+                    c.Mode = CipherMode.ECB;
+                    encryptor = new OpenPGPCFBTransformWrapper(c.CreateEncryptor(), c.IV, true);
+                }
+
+                Stream myOut = cOut = new CryptoStream(pOut, new ZeroPaddedCryptoTransformWrapper(encryptor), CryptoStreamMode.Write);
 
                 if (withIntegrityPacket)
                 {
                     digest = SHA1.Create();
-                    myOut = digestOut = new CryptoStream(myOut, digest, CryptoStreamMode.Write);
+                    myOut = digestOut = new CryptoStream(new FilterStream(myOut), digest, CryptoStreamMode.Write);
                 }
 
                 myOut.Write(inLineIv, 0, inLineIv.Length);
@@ -463,8 +475,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             if (cOut != null)
             {
-                cOut.FlushFinalBlock();
-
                 // TODO Should this all be under the try/catch block?
                 if (digestOut != null)
                 {
@@ -476,10 +486,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
                     bOut.Flush();
                     digestOut.FlushFinalBlock();
+                    //digest.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
 
                     byte[] dig = digest.Hash;
                     cOut.Write(dig, 0, dig.Length);
                 }
+
+                cOut.FlushFinalBlock();
+                pOut.Finish();
 
                 cOut = null;
                 pOut = null;

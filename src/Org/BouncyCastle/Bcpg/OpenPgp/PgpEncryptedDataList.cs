@@ -5,9 +5,9 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-	/// <remarks>A holder for a list of PGP encryption method packets.</remarks>
+    /// <remarks>A holder for a list of PGP encryption method packets.</remarks>
     public class PgpEncryptedDataList
-		: PgpObject
+        : PgpObject
     {
         private readonly IList<PgpEncryptedData> list = new List<PgpEncryptedData>();
         private readonly InputStreamPacket data;
@@ -33,8 +33,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             {
                 if (packets[i] is SymmetricKeyEncSessionPacket)
                 {
-                    throw new NotImplementedException();
-                    //list.Add(new PgpPbeEncryptedData((SymmetricKeyEncSessionPacket) packets[i], data));
+                    list.Add(new PgpPbeEncryptedData((SymmetricKeyEncSessionPacket)packets[i], data));
                 }
                 else
                 {
@@ -43,34 +42,34 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-		public PgpEncryptedData this[int index]
-		{
-			get { return (PgpEncryptedData) list[index]; }
-		}
+        public PgpEncryptedData this[int index]
+        {
+            get { return (PgpEncryptedData)list[index]; }
+        }
 
-		[Obsolete("Use 'object[index]' syntax instead")]
-		public object Get(int index)
+        [Obsolete("Use 'object[index]' syntax instead")]
+        public object Get(int index)
         {
             return this[index];
         }
 
-		[Obsolete("Use 'Count' property instead")]
-		public int Size
+        [Obsolete("Use 'Count' property instead")]
+        public int Size
         {
-			get { return list.Count; }
+            get { return list.Count; }
         }
 
-		public int Count
-		{
-			get { return list.Count; }
-		}
-
-		public bool IsEmpty
+        public int Count
         {
-			get { return list.Count == 0; }
+            get { return list.Count; }
         }
 
-		public IEnumerable GetEncryptedDataObjects()
+        public bool IsEmpty
+        {
+            get { return list.Count == 0; }
+        }
+
+        public IEnumerable GetEncryptedDataObjects()
         {
             return list;
         }

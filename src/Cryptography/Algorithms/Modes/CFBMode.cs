@@ -8,8 +8,8 @@ namespace InflatablePalace.Cryptography.Algorithms.Modes
     {
         private IBlockTransform blockTransform;
         private bool encryption;
-        private byte[] current;
-        private byte[] temp;
+        private byte[] FR;
+        private byte[] FRE;
 
         public CFBMode(byte[] iv, IBlockTransform blockTransform, bool encryption, int paddingSizeInBytes)
             : base(iv, blockTransform.BlockSizeInBytes, paddingSizeInBytes)
@@ -19,9 +19,9 @@ namespace InflatablePalace.Cryptography.Algorithms.Modes
             if (iv.Length != blockTransform.BlockSizeInBytes)
                 throw new ArgumentOutOfRangeException(nameof(iv));
 
-            this.current = CryptoPool.Rent(iv.Length);
-            this.temp = CryptoPool.Rent(iv.Length);
-            Array.Copy(iv, this.current, iv.Length);
+            this.FR = CryptoPool.Rent(iv.Length);
+            this.FRE = CryptoPool.Rent(iv.Length);
+            iv.CopyTo(this.FR, 0);
 
             this.blockTransform = blockTransform;
             this.encryption = encryption;
@@ -31,10 +31,10 @@ namespace InflatablePalace.Cryptography.Algorithms.Modes
         {
             if (disposing)
             {
-                CryptoPool.Return(current);
-                current = null;
-                CryptoPool.Return(temp);
-                temp = null;
+                CryptoPool.Return(FR);
+                FR = null;
+                CryptoPool.Return(FRE);
+                FRE = null;
             }
             base.Dispose(disposing);
         }
@@ -46,15 +46,15 @@ namespace InflatablePalace.Cryptography.Algorithms.Modes
 
             while (input.Length > 0)
             {
-                blockTransform.Transform(current, temp);
+                blockTransform.Transform(FR, FRE);
                 // TODO: Vectorize
                 for (int i = 0; i < blockSize; i++)
-                    temp[i] ^= input[i];
+                    FRE[i] ^= input[i];
                 if (encryption)
-                    temp.AsSpan(0, blockSize).CopyTo(current.AsSpan());
+                    FRE.AsSpan(0, blockSize).CopyTo(FR.AsSpan());
                 else
-                    input.Slice(0, blockSize).CopyTo(current.AsSpan());
-                temp.AsSpan(0, blockSize).CopyTo(output);
+                    input.Slice(0, blockSize).CopyTo(FR.AsSpan());
+                FRE.AsSpan(0, blockSize).CopyTo(output);
                 input = input.Slice(blockSize);
                 output = output.Slice(blockSize);
                 outputCount += blockSize;
@@ -78,17 +78,17 @@ namespace InflatablePalace.Cryptography.Algorithms.Modes
 
             if (input.Length > 0)
             {
-                blockTransform.Transform(current, temp);
+                blockTransform.Transform(FR, FRE);
                 // TODO: Vectorize
                 for (int i = 0; i < input.Length; i++)
-                    temp[i] ^= input[i];
-                temp.AsSpan(0, output.Length).CopyTo(output);
+                    FRE[i] ^= input[i];
+                FRE.AsSpan(0, output.Length).CopyTo(output);
                 outputSize += output.Length;
             }
 
             // Reset vectors
-            IV.CopyTo(current.AsSpan());
-            CryptographicOperations.ZeroMemory(temp);
+            IV.CopyTo(FR.AsSpan());
+            CryptographicOperations.ZeroMemory(FRE);
 
             return outputSize;
         }

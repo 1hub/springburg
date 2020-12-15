@@ -66,8 +66,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 if (secKeyData != null && secKeyData.Length > 0)
                 {
                     using var keyCipher = PgpUtilities.GetSymmetricAlgorithm(keyAlgorithm);
-                    using var encryptor = keyCipher.CreateDecryptor(key, new byte[keyCipher.BlockSize]);
-                    byte[] keyBytes = encryptor.TransformFinalBlock(secKeyData, 0, secKeyData.Length);
+                    keyCipher.Padding = PaddingMode.None;
+                    using var keyDecryptor = new ZeroPaddedCryptoTransformWrapper(keyCipher.CreateDecryptor(key, new byte[keyCipher.BlockSize / 8]));
+                    byte[] keyBytes = keyDecryptor.TransformFinalBlock(secKeyData, 0, secKeyData.Length);
 
                     keyAlgorithm = (SymmetricKeyAlgorithmTag)keyBytes[0];
 
@@ -76,16 +77,27 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
 
                 var c = PgpUtilities.GetSymmetricAlgorithm(keyAlgorithm);
-                var iv = new byte[c.BlockSize];
-                var decryptor = c.CreateDecryptor(key, iv);
+                var iv = new byte[c.BlockSize / 8];
+
+                ICryptoTransform decryptor;
+                if (encData is SymmetricEncIntegrityPacket)
+                {
+                    decryptor = c.CreateDecryptor(key, iv);
+                }
+                else
+                {
+                    c.Mode = CipherMode.ECB;
+                    decryptor = new OpenPGPCFBTransformWrapper(c.CreateEncryptor(key, null), iv, false);
+                }
+
                 encStream = new CryptoStream(encData.GetInputStream(), new ZeroPaddedCryptoTransformWrapper(decryptor), CryptoStreamMode.Read);
 
                 if (encData is SymmetricEncIntegrityPacket)
                 {
                     truncStream = new TruncatedStream(encStream);
 
-                    HashAlgorithm digest = SHA1.Create();
-                    encStream = new CryptoStream(truncStream, digest, CryptoStreamMode.Read);
+                    hashAlgorithm = SHA1.Create();
+                    encStream = new CryptoStream(truncStream, hashAlgorithm, CryptoStreamMode.Read);
                 }
 
                 if (Streams.ReadFully(encStream, iv, 0, iv.Length) < iv.Length)
@@ -114,7 +126,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 {
                     throw new PgpDataValidationException("quick check failed.");
                 }
-
 
                 return encStream;
             }

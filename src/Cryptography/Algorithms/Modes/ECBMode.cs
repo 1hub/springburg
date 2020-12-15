@@ -17,7 +17,7 @@ namespace InflatablePalace.Cryptography.Algorithms.Modes
         {
             int outputCount = 0;
             int blockSize = blockTransform.BlockSizeInBytes;
-            while (input.Length > blockSize)
+            while (input.Length >= blockSize)
             {
                 blockTransform.Transform(input.Slice(0, blockSize), output.Slice(0, blockSize));
                 outputCount += blockSize;

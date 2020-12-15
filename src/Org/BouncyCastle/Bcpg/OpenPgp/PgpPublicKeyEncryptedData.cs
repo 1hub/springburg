@@ -99,10 +99,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             encryptionAlgorithm.IV = new byte[(encryptionAlgorithm.BlockSize + 7) / 8];
             encryptionAlgorithm.Padding = PaddingMode.Zeros;
 
+
+            ICryptoTransform decryptor;
+            if (encData is SymmetricEncIntegrityPacket)
+            {
+                decryptor = encryptionAlgorithm.CreateDecryptor();
+            }
+            else
+            {
+                encryptionAlgorithm.Mode = CipherMode.ECB;
+                decryptor = new OpenPGPCFBTransformWrapper(encryptionAlgorithm.CreateEncryptor(), encryptionAlgorithm.IV, false);
+            }
+
             //var zeroPaddedStream = new ZeroPaddedStream(encData.GetInputStream(), encryptionAlgorithm.BlockSize / 8);
             /*encStream = 
                 new OuterTrancateStream(new CryptoStream(zeroPaddedStream, encryptionAlgorithm.CreateDecryptor(), CryptoStreamMode.Read), zeroPaddedStream);*/
-            encStream = new CryptoStream(encData.GetInputStream(), new ZeroPaddedCryptoTransformWrapper(encryptionAlgorithm.CreateDecryptor()), CryptoStreamMode.Read);
+            encStream = new CryptoStream(encData.GetInputStream(), new ZeroPaddedCryptoTransformWrapper(decryptor), CryptoStreamMode.Read);
 
 
             /*IBufferedCipher cipher;
@@ -154,8 +166,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 					IDigest digest = DigestUtilities.GetDigest(digestName);
 
 					encStream = new DigestStream(truncStream, digest, null);*/
-                    HashAlgorithm digest = SHA1.Create();
-                    encStream = new CryptoStream(truncStream, digest, CryptoStreamMode.Read);
+                    hashAlgorithm = SHA1.Create();
+                    encStream = new CryptoStream(truncStream, hashAlgorithm, CryptoStreamMode.Read);
                 }
 
                 if (Streams.ReadFully(encStream, iv, 0, iv.Length) < iv.Length)

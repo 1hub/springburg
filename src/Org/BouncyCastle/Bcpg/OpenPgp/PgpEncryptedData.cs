@@ -12,7 +12,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         internal class TruncatedStream
             : BaseInputStream
         {
-            private const int LookAheadSize = 22;
+            private const int LookAheadSize = 20;
             private const int LookAheadBufSize = 512;
             private const int LookAheadBufLimit = LookAheadBufSize - LookAheadSize;
 
@@ -134,16 +134,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             //
             // process the MDC packet
             //
-            byte[] lookAhead = truncStream.GetLookAhead();
-            byte[] digest = hashAlgorithm.TransformFinalBlock(lookAhead, 0, 2);
-            byte[] streamDigest = new byte[digest.Length];
-            Array.Copy(lookAhead, 2, streamDigest, 0, streamDigest.Length);
+            byte[] digest = hashAlgorithm.Hash;
+            byte[] streamDigest = truncStream.GetLookAhead();
 
-            if (digest.Length != streamDigest.Length)
-                return false;
-
-            // FIXME: Constant time
-            return digest.SequenceEqual(streamDigest); //Arrays.ConstantTimeAreEqual(digest, streamDigest);
+            return CryptographicOperations.FixedTimeEquals(digest, streamDigest);
         }
     }
 }

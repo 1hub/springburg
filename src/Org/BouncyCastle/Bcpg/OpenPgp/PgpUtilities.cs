@@ -524,7 +524,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 case SymmetricKeyAlgorithmTag.Aes256:
                     symmetricAlgorithm = Aes.Create();
                     symmetricAlgorithm.BlockSize = 128;
-                    symmetricAlgorithm.FeedbackSize = 128;
                     switch (symmetricKeyAlgorithmTag)
                     {
                         case SymmetricKeyAlgorithmTag.Aes128:
@@ -560,6 +559,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
 
             symmetricAlgorithm.Mode = CipherMode.CFB;
+            symmetricAlgorithm.FeedbackSize = symmetricAlgorithm.BlockSize;
             return symmetricAlgorithm;
         }
 

@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\InflatablePalace.OpenPGP\InflatablePalace.csproj" />
+    <ProjectReference Include="..\src\InflatablePalace.csproj" />
   </ItemGroup>
 
   <ItemGroup>
