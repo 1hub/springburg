@@ -2,18 +2,17 @@ using Org.BouncyCastle.Bcpg.Attr;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-	/// <remarks>Container for a list of user attribute subpackets.</remarks>
+    /// <summary>Container for a list of user attribute subpackets.</summary>
     public class PgpUserAttributeSubpacketVector
     {
         private readonly UserAttributeSubpacket[] packets;
 
-		internal PgpUserAttributeSubpacketVector(
-            UserAttributeSubpacket[] packets)
+        internal PgpUserAttributeSubpacketVector(UserAttributeSubpacket[] packets)
         {
             this.packets = packets;
         }
 
-		public UserAttributeSubpacket GetSubpacket(
+        public UserAttributeSubpacket GetSubpacket(
             UserAttributeSubpacketTag type)
         {
             for (int i = 0; i != packets.Length; i++)
@@ -24,38 +23,38 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 }
             }
 
-			return null;
+            return null;
         }
 
-		public ImageAttrib GetImageAttribute()
+        public ImageAttrib GetImageAttribute()
         {
             UserAttributeSubpacket p = GetSubpacket(UserAttributeSubpacketTag.ImageAttribute);
 
-            return p == null ? null : (ImageAttrib) p;
+            return p == null ? null : (ImageAttrib)p;
         }
 
-		internal UserAttributeSubpacket[] ToSubpacketArray()
+        internal UserAttributeSubpacket[] ToSubpacketArray()
         {
             return packets;
         }
 
-		public override bool Equals(
+        public override bool Equals(
             object obj)
         {
             if (obj == this)
                 return true;
 
-			PgpUserAttributeSubpacketVector other = obj as PgpUserAttributeSubpacketVector;
+            PgpUserAttributeSubpacketVector other = obj as PgpUserAttributeSubpacketVector;
 
-			if (other == null)
-				return false;
+            if (other == null)
+                return false;
 
-			if (other.packets.Length != packets.Length)
+            if (other.packets.Length != packets.Length)
             {
                 return false;
             }
 
-			for (int i = 0; i != packets.Length; i++)
+            for (int i = 0; i != packets.Length; i++)
             {
                 if (!other.packets[i].Equals(packets[i]))
                 {
@@ -63,19 +62,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 }
             }
 
-			return true;
+            return true;
         }
 
-		public override int GetHashCode()
+        public override int GetHashCode()
         {
             int code = 0;
 
-			foreach (object o in packets)
-			{
-				code ^= o.GetHashCode();
-			}
+            foreach (object o in packets)
+            {
+                code ^= o.GetHashCode();
+            }
 
-			return code;
+            return code;
         }
     }
 }

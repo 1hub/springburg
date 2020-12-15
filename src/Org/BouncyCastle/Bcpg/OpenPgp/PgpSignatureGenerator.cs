@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using Org.BouncyCastle.Bcpg.Sig;
@@ -53,8 +52,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             lastb = 0;
         }
 
-        public void Update(
-            byte b)
+        public void Update(byte b)
         {
             if (signatureType == PgpSignature.CanonicalTextDocument)
             {
@@ -66,8 +64,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        private void doCanonicalUpdateByte(
-            byte b)
+        private void doCanonicalUpdateByte(byte b)
         {
             if (b == '\r')
             {
@@ -94,14 +91,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             doUpdateByte((byte)'\n');
         }
 
-        private void doUpdateByte(
-            byte b)
+        private void doUpdateByte(byte b)
         {
             dig.TransformBlock(new byte[] { b }, 0, 1, null, 0);
         }
 
-        public void Update(
-            params byte[] b)
+        public void Update(params byte[] b)
         {
             Update(b, 0, b.Length);
         }

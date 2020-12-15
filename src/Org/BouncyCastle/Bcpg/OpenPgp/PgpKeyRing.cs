@@ -3,23 +3,16 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    public abstract class PgpKeyRing
-        : PgpObject
+    public abstract class PgpKeyRing : PgpObject
     {
-        internal PgpKeyRing()
-        {
-        }
-
-        internal static TrustPacket ReadOptionalTrustPacket(
-            BcpgInputStream bcpgInput)
+        protected static TrustPacket ReadOptionalTrustPacket(BcpgInputStream bcpgInput)
         {
             return (bcpgInput.NextPacketTag() == PacketTag.Trust)
                 ? (TrustPacket)bcpgInput.ReadPacket()
                 : null;
         }
 
-        internal static IList<PgpSignature> ReadSignaturesAndTrust(
-            BcpgInputStream bcpgInput)
+        protected static IList<PgpSignature> ReadSignaturesAndTrust(BcpgInputStream bcpgInput)
         {
             try
             {
@@ -29,7 +22,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 {
                     SignaturePacket signaturePacket = (SignaturePacket)bcpgInput.ReadPacket();
                     TrustPacket trustPacket = ReadOptionalTrustPacket(bcpgInput);
-
                     sigList.Add(new PgpSignature(signaturePacket, trustPacket));
                 }
 
@@ -41,7 +33,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        internal static void ReadUserIDs(
+        protected static void ReadUserIDs(
             BcpgInputStream bcpgInput,
             out IList<object> ids,
             out IList<TrustPacket> idTrusts,
@@ -66,11 +58,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     ids.Add(new PgpUserAttributeSubpacketVector(user.GetSubpackets()));
                 }
 
-                idTrusts.Add(
-                    ReadOptionalTrustPacket(bcpgInput));
-
-                idSigs.Add(
-                    ReadSignaturesAndTrust(bcpgInput));
+                idTrusts.Add(ReadOptionalTrustPacket(bcpgInput));
+                idSigs.Add(ReadSignaturesAndTrust(bcpgInput));
             }
         }
     }

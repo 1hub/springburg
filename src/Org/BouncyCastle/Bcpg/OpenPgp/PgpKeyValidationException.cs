@@ -2,9 +2,9 @@ using System;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>
+    /// <summary>
     /// Thrown if the key checksum is invalid.
-    /// </remarks>
+    /// </summary>
     [Serializable]
     public class PgpKeyValidationException
         : PgpException

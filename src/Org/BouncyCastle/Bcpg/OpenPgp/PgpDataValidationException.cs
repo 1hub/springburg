@@ -2,12 +2,11 @@ using System;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>
+    /// <summary>
     /// Thrown if the IV at the start of a data stream indicates the wrong key is being used.
-    /// </remarks>
+    /// </summary>
     [Serializable]
-    public class PgpDataValidationException
-        : PgpException
+    public class PgpDataValidationException : PgpException
     {
         public PgpDataValidationException() : base() { }
         public PgpDataValidationException(string message) : base(message) { }

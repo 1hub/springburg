@@ -1,7 +1,5 @@
-using System;
 using System.Formats.Asn1;
 using System.IO;
-using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
@@ -14,12 +12,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             switch (algID)
             {
-                case SymmetricKeyAlgorithmTag.Aes128:
-                    return 16;
-                case SymmetricKeyAlgorithmTag.Aes192:
-                    return 24;
-                case SymmetricKeyAlgorithmTag.Aes256:
-                    return 32;
+                case SymmetricKeyAlgorithmTag.Aes128: return 16;
+                case SymmetricKeyAlgorithmTag.Aes192: return 24;
+                case SymmetricKeyAlgorithmTag.Aes256: return 32;
                 default:
                     throw new PgpException("unknown symmetric algorithm ID: " + algID);
             }

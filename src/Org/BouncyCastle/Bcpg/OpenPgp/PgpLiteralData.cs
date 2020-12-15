@@ -4,8 +4,7 @@ using System.IO;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>Class for processing literal data objects.</summary>
-    public class PgpLiteralData
-        : PgpObject
+    public class PgpLiteralData : PgpObject
     {
         public const char Binary = 'b';
         public const char Text = 't';
@@ -16,50 +15,27 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         private readonly LiteralDataPacket data;
 
-        public PgpLiteralData(
-            BcpgInputStream bcpgInput)
+        internal PgpLiteralData(LiteralDataPacket data)
         {
-            Packet packet = bcpgInput.ReadPacket();
-            if (!(packet is LiteralDataPacket))
-                throw new IOException("unexpected packet in stream: " + packet);
-
-            this.data = (LiteralDataPacket)packet;
+            this.data = data;
         }
 
         /// <summary>The format of the data stream - Binary or Text</summary>
-        public int Format
-        {
-            get { return data.Format; }
-        }
+        public int Format => data.Format;
 
         /// <summary>The file name that's associated with the data stream.</summary>
-        public string FileName
-        {
-            get { return data.FileName; }
-        }
+        public string FileName => data.FileName;
 
-        /// Return the file name as an unintrepreted byte array.
-        public byte[] GetRawFileName()
-        {
-            return data.GetRawFileName();
-        }
+        /// <summary>Return the file name as an unintrepreted byte array.</summary>
+        public byte[] GetRawFileName() => data.GetRawFileName();
 
         /// <summary>The modification time for the file.</summary>
-        public DateTime ModificationTime
-        {
-            get { return DateTimeOffset.FromUnixTimeSeconds(data.ModificationTime).DateTime; }
-        }
+        public DateTime ModificationTime => DateTimeOffset.FromUnixTimeSeconds(data.ModificationTime).UtcDateTime;
 
         /// <summary>The raw input stream for the data stream.</summary>
-        public Stream GetInputStream()
-        {
-            return data.GetInputStream();
-        }
+        public Stream GetInputStream() => data.GetInputStream();
 
         /// <summary>The input stream representing the data stream.</summary>
-        public Stream GetDataStream()
-        {
-            return GetInputStream();
-        }
+        public Stream GetDataStream() => data.GetInputStream();
     }
 }

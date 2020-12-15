@@ -1,36 +1,32 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>
+    /// <summary>
     /// Class to hold a single master public key and its subkeys.
-    /// <p>
+    /// </summary>
+    /// <remarks>
     /// Often PGP keyring files consist of multiple master keys, if you are trying to process
-    /// or construct one of these you should use the <c>PgpPublicKeyRingBundle</c> class.
-    /// </p>
+    /// or construct one of these you should use the PgpPublicKeyRingBundle class.
     /// </remarks>
-    public class PgpPublicKeyRing
-        : PgpKeyRing
+    public class PgpPublicKeyRing : PgpKeyRing
     {
         private readonly IList<PgpPublicKey> keys;
 
-        public PgpPublicKeyRing(
-            byte[] encoding)
-            : this(new MemoryStream(encoding, false))
-        {
-        }
-
-        internal PgpPublicKeyRing(
-            IList<PgpPublicKey> pubKeys)
+        public PgpPublicKeyRing(IList<PgpPublicKey> pubKeys)
         {
             this.keys = pubKeys;
         }
 
-        public PgpPublicKeyRing(
-            Stream inputStream)
+        public PgpPublicKeyRing(byte[] encoding)
+            : this(new MemoryStream(encoding, false))
+        {
+        }
+
+        public PgpPublicKeyRing(Stream inputStream)
         {
             this.keys = new List<PgpPublicKey>();
 
@@ -56,7 +52,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             keys.Add(new PgpPublicKey(pubPk, trustPk, keySigs, ids, idTrusts, idSigs));
 
-
             // Read subkeys
             while (bcpgInput.NextPacketTag() == PacketTag.PublicSubkey)
             {
@@ -65,44 +60,23 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>Return the first public key in the ring.</summary>
-        public virtual PgpPublicKey GetPublicKey()
-        {
-            return (PgpPublicKey) keys[0];
-        }
+        public PgpPublicKey GetPublicKey() => keys[0];
 
         /// <summary>Return the public key referred to by the passed in key ID if it is present.</summary>
-        public virtual PgpPublicKey GetPublicKey(
-            long keyId)
-        {
-            foreach (PgpPublicKey k in keys)
-            {
-                if (keyId == k.KeyId)
-                {
-                    return k;
-                }
-            }
-
-            return null;
-        }
+        public PgpPublicKey GetPublicKey(long keyId) => keys.Where(k => k.KeyId == keyId).FirstOrDefault();
 
         /// <summary>Allows enumeration of all the public keys.</summary>
         /// <returns>An <c>IEnumerable</c> of <c>PgpPublicKey</c> objects.</returns>
-        public virtual IEnumerable GetPublicKeys()
-        {
-            return keys;
-        }
+        public IEnumerable<PgpPublicKey> GetPublicKeys() => keys;
 
-        public virtual byte[] GetEncoded()
+        public byte[] GetEncoded()
         {
             MemoryStream bOut = new MemoryStream();
-
             Encode(bOut);
-
             return bOut.ToArray();
         }
 
-        public virtual void Encode(
-            Stream outStr)
+        public void Encode(Stream outStr)
         {
             if (outStr == null)
                 throw new ArgumentNullException("outStr");
@@ -121,8 +95,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <param name="pubKey">The public key to be inserted.</param>
         /// <returns>A new <c>PgpPublicKeyRing</c></returns>
         public static PgpPublicKeyRing InsertPublicKey(
-            PgpPublicKeyRing	pubRing,
-            PgpPublicKey		pubKey)
+            PgpPublicKeyRing pubRing,
+            PgpPublicKey pubKey)
         {
             IList<PgpPublicKey> keys = new List<PgpPublicKey>(pubRing.keys);
             bool found = false;
@@ -130,7 +104,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             for (int i = 0; i != keys.Count; i++)
             {
-                PgpPublicKey key = (PgpPublicKey) keys[i];
+                PgpPublicKey key = (PgpPublicKey)keys[i];
 
                 if (key.KeyId == pubKey.KeyId)
                 {
@@ -166,17 +140,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <param name="pubKey">The public key to be removed.</param>
         /// <returns>A new <c>PgpPublicKeyRing</c>, or null if pubKey is not found.</returns>
         public static PgpPublicKeyRing RemovePublicKey(
-            PgpPublicKeyRing	pubRing,
-            PgpPublicKey		pubKey)
+            PgpPublicKeyRing pubRing,
+            PgpPublicKey pubKey)
         {
             IList<PgpPublicKey> keys = new List<PgpPublicKey>(pubRing.keys);
             bool found = false;
 
             for (int i = 0; i < keys.Count; i++)
             {
-                PgpPublicKey key = (PgpPublicKey) keys[i];
-
-                if (key.KeyId == pubKey.KeyId)
+                if (keys[i].KeyId == pubKey.KeyId)
                 {
                     found = true;
                     keys.RemoveAt(i);
@@ -186,7 +158,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return found ? new PgpPublicKeyRing(keys) : null;
         }
 
-        internal static PublicKeyPacket ReadPublicKeyPacket(BcpgInputStream bcpgInput)
+        private static PublicKeyPacket ReadPublicKeyPacket(BcpgInputStream bcpgInput)
         {
             Packet packet = bcpgInput.ReadPacket();
             if (!(packet is PublicKeyPacket))
@@ -195,9 +167,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return (PublicKeyPacket)packet;
         }
 
-        internal static PgpPublicKey ReadSubkey(BcpgInputStream bcpgInput)
+        private static PgpPublicKey ReadSubkey(BcpgInputStream bcpgInput)
         {
-            PublicKeyPacket	pk = ReadPublicKeyPacket(bcpgInput);
+            PublicKeyPacket pk = ReadPublicKeyPacket(bcpgInput);
             TrustPacket kTrust = ReadOptionalTrustPacket(bcpgInput);
 
             // PGP 8 actually leaves out the signature.

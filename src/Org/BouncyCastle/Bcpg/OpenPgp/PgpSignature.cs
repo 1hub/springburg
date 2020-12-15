@@ -6,17 +6,9 @@ using System.Text;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>A PGP signature object.</remarks>
+    /// <summary>A PGP signature object.</summary>
     public class PgpSignature
     {
-        private static SignaturePacket Cast(Packet packet)
-        {
-            if (!(packet is SignaturePacket))
-                throw new IOException("unexpected packet in stream: " + packet);
-
-            return (SignaturePacket)packet;
-        }
-
         public const int BinaryDocument = 0x00;
         public const int CanonicalTextDocument = 0x01;
         public const int StandAlone = 0x02;
@@ -42,21 +34,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private PgpPublicKey pubKey;
         private byte lastb; // Initial value anything but '\r'
 
-        internal PgpSignature(
-            BcpgInputStream bcpgInput)
-            : this(Cast(bcpgInput.ReadPacket()))
-        {
-        }
-
-        internal PgpSignature(
-            SignaturePacket sigPacket)
+        internal PgpSignature(SignaturePacket sigPacket)
             : this(sigPacket, null)
         {
         }
 
-        internal PgpSignature(
-            SignaturePacket sigPacket,
-            TrustPacket trustPacket)
+        internal PgpSignature(SignaturePacket sigPacket, TrustPacket trustPacket)
         {
             if (sigPacket == null)
                 throw new ArgumentNullException("sigPacket");
@@ -67,51 +50,25 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>The OpenPGP version number for this signature.</summary>
-        public int Version
-        {
-            get { return sigPck.Version; }
-        }
+        public int Version => sigPck.Version;
 
         /// <summary>The key algorithm associated with this signature.</summary>
-        public PublicKeyAlgorithmTag KeyAlgorithm
-        {
-            get { return sigPck.KeyAlgorithm; }
-        }
+        public PublicKeyAlgorithmTag KeyAlgorithm => sigPck.KeyAlgorithm;
 
         /// <summary>The hash algorithm associated with this signature.</summary>
-        public HashAlgorithmTag HashAlgorithm
-        {
-            get { return sigPck.HashAlgorithm; }
-        }
+        public HashAlgorithmTag HashAlgorithm => sigPck.HashAlgorithm;
 
         /// <summary>Return true if this signature represents a certification.</summary>
-        public bool IsCertification()
-        {
-            return IsCertification(SignatureType);
-        }
+        public bool IsCertification() => IsCertification(SignatureType);
 
-        public void InitVerify(
-            PgpPublicKey pubKey)
+        public void InitVerify(PgpPublicKey pubKey)
         {
             lastb = 0;
             this.sig = PgpUtilities.GetHashAlgorithm(sigPck.HashAlgorithm);
             this.pubKey = pubKey;
-            /*if (sig == null)
-            {
-                GetSig();
-            }
-            try
-            {
-                sig.Init(false, pubKey.GetKey());
-            }
-            catch (InvalidKeyException e)
-            {
-                throw new PgpException("invalid key.", e);
-            }*/
         }
 
-        public void Update(
-            byte b)
+        public void Update(byte b)
         {
             if (signatureType == CanonicalTextDocument)
             {
@@ -123,8 +80,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        private void doCanonicalUpdateByte(
-            byte b)
+        private void doCanonicalUpdateByte(byte b)
         {
             if (b == '\r')
             {
@@ -150,8 +106,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             sig.TransformBlock(new byte[] { (byte)'\r', (byte)'\n' }, 0, 2, null, 0);
         }
 
-        public void Update(
-            params byte[] bytes)
+        public void Update(params byte[] bytes)
         {
             Update(bytes, 0, bytes.Length);
         }
@@ -189,7 +144,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             if (key is ECDsa ecdsa)
                 return ecdsa.VerifyHash(hash, GetSignature(), DSASignatureFormat.Rfc3279DerSequence);
             throw new NotImplementedException();
-            //return sig.VerifySignature(GetSignature());
         }
 
         private void UpdateWithIdData(
@@ -248,9 +202,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
 
             return this.Verify();
-            /*this.Update(sigPck.GetSignatureTrailer());
-
-			return sig.VerifySignature(this.GetSignature());*/
         }
 
         /// <summary>
@@ -272,9 +223,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
 
             return this.Verify();
-            /*Update(sigPck.GetSignatureTrailer());
-
-			return sig.VerifySignature(GetSignature());*/
         }
 
         /// <summary>Verify a certification for the passed in key against the passed in master key.</summary>
@@ -289,9 +237,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             UpdateWithPublicKey(pubKey);
 
             return this.Verify();
-            /*Update(sigPck.GetSignatureTrailer());
-
-			return sig.VerifySignature(GetSignature());*/
         }
 
         /// <summary>Verify a key certification, such as revocation, for the passed in key.</summary>
@@ -309,9 +254,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             UpdateWithPublicKey(pubKey);
 
             return this.Verify();
-            /*Update(sigPck.GetSignatureTrailer());
-
-			return sig.VerifySignature(GetSignature());*/
         }
 
         public int SignatureType

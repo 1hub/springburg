@@ -3,8 +3,7 @@ using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>Generator for old style PGP V3 Signatures.</remarks>
-    // TODO Should be able to implement ISigner?
+    /// <summary>Generator for old style PGP V3 Signatures.</summary>
     public class PgpV3SignatureGenerator
     {
         private PublicKeyAlgorithmTag keyAlgorithm;

@@ -7,13 +7,14 @@ using Org.BouncyCastle.Utilities;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>
+    /// <summary>
     /// General class for reading a PGP object stream.
-    /// <p>
+    /// </summary>
+    /// <remarks>
     /// Note: if this class finds a PgpPublicKey or a PgpSecretKey it
     /// will create a PgpPublicKeyRing, or a PgpSecretKeyRing for each
     /// key found. If all you are trying to do is read a key ring file use
-    /// either PgpPublicKeyRingBundle or PgpSecretKeyRingBundle.</p>
+    /// either PgpPublicKeyRingBundle or PgpSecretKeyRingBundle.
     /// </remarks>
     public class PgpObjectFactory
     {
@@ -49,7 +50,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                         {
                             try
                             {
-                                l.Add(new PgpSignature(bcpgIn));
+                                l.Add(new PgpSignature((SignaturePacket)bcpgIn.ReadPacket()));
                             }
                             catch (PgpException e)
                             {
@@ -74,9 +75,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 //				case PacketTag.PublicSubkey:
                 //					return PgpPublicKeyRing.ReadSubkey(bcpgIn);
                 case PacketTag.CompressedData:
-                    return new PgpCompressedData(bcpgIn);
+                    return new PgpCompressedData((CompressedDataPacket)bcpgIn.ReadPacket());
                 case PacketTag.LiteralData:
-                    return new PgpLiteralData(bcpgIn);
+                    return new PgpLiteralData((LiteralDataPacket)bcpgIn.ReadPacket());
                 case PacketTag.PublicKeyEncryptedSession:
                 case PacketTag.SymmetricKeyEncryptedSessionKey:
                     return new PgpEncryptedDataList(bcpgIn);
@@ -88,7 +89,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                         {
                             try
                             {
-                                l.Add(new PgpOnePassSignature(bcpgIn));
+                                l.Add(new PgpOnePassSignature((OnePassSignaturePacket)bcpgIn.ReadPacket()));
                             }
                             catch (PgpException e)
                             {
@@ -99,21 +100,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                         return new PgpOnePassSignatureList(l.ToArray());
                     }
                 case PacketTag.Marker:
-                    return new PgpMarker(bcpgIn);
+                    return new PgpMarker((MarkerPacket)bcpgIn.ReadPacket());
                 case PacketTag.Experimental1:
                 case PacketTag.Experimental2:
                 case PacketTag.Experimental3:
                 case PacketTag.Experimental4:
-                    return new PgpExperimental(bcpgIn);
+                    return new PgpExperimental((ExperimentalPacket)bcpgIn.ReadPacket());
             }
 
             throw new IOException("unknown object in stream " + bcpgIn.NextPacketTag());
-        }
-
-        [Obsolete("Use NextPgpObject() instead")]
-        public object NextObject()
-        {
-            return NextPgpObject();
         }
 
         /// <summary>
@@ -136,15 +131,16 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// </summary>
         /// <param name="type">The type of objects to return. All other objects are ignored.</param>
         /// <returns>An <c>IList</c> containing the filtered objects from this factory, in order.</returns>
-        public IList<PgpObject> FilterPgpObjects(Type type)
+        public IList<T> FilterPgpObjects<T>()
+            where T : PgpObject
         {
-            IList<PgpObject> result = new List<PgpObject>();
+            IList<T> result = new List<T>();
             PgpObject pgpObject;
             while ((pgpObject = NextPgpObject()) != null)
             {
-                if (type.IsAssignableFrom(pgpObject.GetType()))
+                if (pgpObject is T castedObject)
                 {
-                    result.Add(pgpObject);
+                    result.Add(castedObject);
                 }
             }
             return result;

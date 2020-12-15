@@ -5,10 +5,10 @@ using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>
+    /// <summary>
     /// Generator for a PGP master and subkey ring.
     /// This class will generate both the secret and public key rings
-    /// </remarks>
+    /// </summary>
     public class PgpKeyRingGenerator
     {
         private IList<PgpSecretKey> keys = new List<PgpSecretKey>();
@@ -371,8 +371,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 pgpSecretKey = (PgpSecretKey)enumerator.Current;
 
                 PgpPublicKey k = new PgpPublicKey(pgpSecretKey.PublicKey);
-                k.publicPk = new PublicSubkeyPacket(
-                    k.Algorithm, k.CreationTime, k.publicPk.Key);
+                k.publicPk = new PublicSubkeyPacket(k.Algorithm, k.CreationTime, k.publicPk.Key);
 
                 pubKeys.Add(k);
             }

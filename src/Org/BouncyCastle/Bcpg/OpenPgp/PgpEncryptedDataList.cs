@@ -6,14 +6,12 @@ using System.IO;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <remarks>A holder for a list of PGP encryption method packets.</remarks>
-    public class PgpEncryptedDataList
-        : PgpObject
+    public class PgpEncryptedDataList : PgpObject
     {
         private readonly IList<PgpEncryptedData> list = new List<PgpEncryptedData>();
         private readonly InputStreamPacket data;
 
-        public PgpEncryptedDataList(
-            BcpgInputStream bcpgInput)
+        internal PgpEncryptedDataList(BcpgInputStream bcpgInput)
         {
             var packets = new List<Packet>();
 
@@ -44,19 +42,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public PgpEncryptedData this[int index]
         {
-            get { return (PgpEncryptedData)list[index]; }
-        }
-
-        [Obsolete("Use 'object[index]' syntax instead")]
-        public object Get(int index)
-        {
-            return this[index];
-        }
-
-        [Obsolete("Use 'Count' property instead")]
-        public int Size
-        {
-            get { return list.Count; }
+            get { return list[index]; }
         }
 
         public int Count
@@ -69,7 +55,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             get { return list.Count == 0; }
         }
 
-        public IEnumerable GetEncryptedDataObjects()
+        public IEnumerable<PgpEncryptedData> GetEncryptedDataObjects()
         {
             return list;
         }

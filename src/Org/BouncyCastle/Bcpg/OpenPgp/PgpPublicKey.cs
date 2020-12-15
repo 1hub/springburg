@@ -4,14 +4,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
-using System.Numerics;
 using System.Security.Cryptography;
 using Ed25519Dsa = InflatablePalace.Cryptography.Algorithms.Ed25519;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>General class to handle a PGP public key object.</remarks>
+    /// <summary>General class to handle a PGP public key object.</summary>
     public class PgpPublicKey
     {
         public static byte[] CalculateFingerprint(PublicKeyPacket publicPk)
@@ -569,7 +567,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public IEnumerable<PgpSignature> GetSignaturesForId(string id)
         {
             if (id == null)
-                throw new ArgumentNullException("id");
+                throw new ArgumentNullException(nameof(id));
 
             for (int i = 0; i != ids.Count; i++)
             {
@@ -675,7 +673,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
                     if (idTrusts[i] != null)
                     {
-                        bcpgOut.WritePacket((ContainedPacket)idTrusts[i]);
+                        bcpgOut.WritePacket(idTrusts[i]);
                     }
 
                     foreach (PgpSignature sig in (IList)idSigs[i])
@@ -703,7 +701,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             {
                 while (!revoked && (ns < keySigs.Count))
                 {
-                    if (((PgpSignature)keySigs[ns++]).SignatureType == PgpSignature.KeyRevocation)
+                    if (keySigs[ns++].SignatureType == PgpSignature.KeyRevocation)
                     {
                         revoked = true;
                     }
@@ -713,7 +711,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             {
                 while (!revoked && (ns < subSigs.Count))
                 {
-                    if (((PgpSignature)subSigs[ns++]).SignatureType == PgpSignature.SubkeyRevocation)
+                    if (subSigs[ns++].SignatureType == PgpSignature.SubkeyRevocation)
                     {
                         revoked = true;
                     }
@@ -760,7 +758,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             {
                 if (id.Equals(returnKey.ids[i]))
                 {
-                    sigList = (IList<PgpSignature>)returnKey.idSigs[i];
+                    sigList = returnKey.idSigs[i];
                 }
             }
 
@@ -946,7 +944,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                         if (certification == sig)
                         {
                             found = true;
-                            returnKey = PgpPublicKey.RemoveCertification(returnKey, id, certification);
+                            returnKey = RemoveCertification(returnKey, id, certification);
                         }
                     }
                 }
@@ -961,7 +959,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                             if (certification == sig)
                             {
                                 found = true;
-                                returnKey = PgpPublicKey.RemoveCertification(returnKey, id, certification);
+                                returnKey = RemoveCertification(returnKey, id, certification);
                             }
                         }
                     }

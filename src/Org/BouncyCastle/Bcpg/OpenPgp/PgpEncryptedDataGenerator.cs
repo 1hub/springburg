@@ -471,7 +471,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// it created by the Open() method.
         /// </p>
         /// </summary>
-        public void Close()
+        void IStreamGenerator.Close()
         {
             if (cOut != null)
             {

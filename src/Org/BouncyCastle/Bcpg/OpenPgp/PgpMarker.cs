@@ -3,23 +3,17 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>
+    /// <summary>
     /// A PGP marker packet - in general these should be ignored other than where
     /// the idea is to preserve the original input stream.
-    /// </remarks>
-    public class PgpMarker
-        : PgpObject
+    /// </summary>
+    public class PgpMarker : PgpObject
     {
         private readonly MarkerPacket data;
 
-        public PgpMarker(
-            BcpgInputStream bcpgInput)
+        internal PgpMarker(MarkerPacket data)
         {
-            Packet packet = bcpgInput.ReadPacket();
-            if (!(packet is MarkerPacket))
-                throw new IOException("unexpected packet in stream: " + packet);
-
-            this.data = (MarkerPacket)packet;
+            this.data = data;
         }
     }
 }

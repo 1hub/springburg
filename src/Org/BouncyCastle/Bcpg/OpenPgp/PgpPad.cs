@@ -2,13 +2,9 @@
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>Padding functions.</remarks>
-    public sealed class PgpPad
+    /// <summary>Padding functions.</summary>
+    static class PgpPad
     {
-        private PgpPad()
-        {
-        }
-
         public static byte[] PadSessionData(byte[] sessionInfo)
         {
             return PadSessionData(sessionInfo, true);

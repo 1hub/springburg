@@ -855,7 +855,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             lOut.Write(TEST_DATA, 0, TEST_DATA.Length);
             sGen.Update(TEST_DATA);
 
-            lGen.Close();
+            lOut.Close();
 
             sGen.Generate().Encode(bOut);
 
@@ -896,7 +896,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             lOut.Write(data, 0, data.Length);
             sGen.Update(data);
 
-            lGen.Close();
+            lOut.Close();
 
             PgpSignature sig = sGen.Generate();
 
@@ -951,7 +951,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             lOut.Write(TEST_DATA, 0, TEST_DATA.Length);
             sGen.Update(TEST_DATA);
 
-            lGen.Close();
+            lOut.Close();
 
             sGen.Generate().Encode(bOut);
 
@@ -991,7 +991,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             lOut.Write(data, 0, data.Length);
             sGen.Update(data);
 
-            lGen.Close();
+            lOut.Close();
 
             PgpSignature sig = sGen.Generate();
 

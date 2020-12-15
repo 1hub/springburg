@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using Org.BouncyCastle.Utilities.IO;
 
@@ -9,8 +8,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     public abstract class PgpEncryptedData
     {
-        internal class TruncatedStream
-            : BaseInputStream
+        protected class TruncatedStream : BaseInputStream
         {
             private const int LookAheadSize = 20;
             private const int LookAheadBufSize = 512;
@@ -89,13 +87,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        internal InputStreamPacket encData;
-        internal CryptoStream encStream;
+        protected InputStreamPacket encData;
+        protected CryptoStream encStream;
         protected HashAlgorithm hashAlgorithm;
-        internal TruncatedStream truncStream;
+        protected TruncatedStream truncStream;
 
-        internal PgpEncryptedData(
-            InputStreamPacket encData)
+        internal PgpEncryptedData(InputStreamPacket encData)
         {
             this.encData = encData;
         }
@@ -120,8 +117,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             if (!IsIntegrityProtected())
                 throw new PgpException("data not integrity protected.");
-
-            CryptoStream dIn = (CryptoStream)encStream;
 
             //
             // make sure we are at the end.

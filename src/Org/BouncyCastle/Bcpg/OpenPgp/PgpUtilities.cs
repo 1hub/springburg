@@ -1,10 +1,7 @@
 using InflatablePalace.Cryptography.Algorithms;
 using InflatablePalace.OpenPGP;
 using System;
-using System.Diagnostics;
 using System.Formats.Asn1;
-using System.IO;
-using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -173,25 +170,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             return keySize;
         }
-
-        /*public static KeyParameter MakeKey(
-            SymmetricKeyAlgorithmTag algorithm,
-            byte[] keyBytes)
-        {
-            string algName = GetSymmetricCipherName(algorithm);
-
-            return ParameterUtilities.CreateKeyParameter(algName, keyBytes);
-        }
-
-        public static byte[] MakeRandomKey(
-            SymmetricKeyAlgorithmTag algorithm,
-            RandomNumberGenerator random)
-        {
-            int keySize = GetKeySize(algorithm);
-            byte[] keyBytes = new byte[(keySize + 7) / 8];
-            random.GetBytes(keyBytes);
-            return MakeKey(algorithm, keyBytes);
-        }*/
 
         internal static byte[] EncodePassPhrase(char[] passPhrase, bool utf8)
         {

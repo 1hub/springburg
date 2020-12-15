@@ -6,9 +6,8 @@ using Org.BouncyCastle.Utilities.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>A password based encryption object.</remarks>
-    public class PgpPbeEncryptedData
-        : PgpEncryptedData
+    /// <summary>A password based encryption object.</summary>
+    public class PgpPbeEncryptedData : PgpEncryptedData
     {
         private readonly SymmetricKeyEncSessionPacket keyData;
 
@@ -112,15 +111,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 // Note: the oracle attack on the "quick check" bytes is not deemed
                 // a security risk for PBE (see PgpPublicKeyEncryptedData)
 
-                bool repeatCheckPassed =
-                        iv[iv.Length - 2] == (byte)v1
-                    && iv[iv.Length - 1] == (byte)v2;
+                bool repeatCheckPassed = iv[iv.Length - 2] == (byte)v1 && iv[iv.Length - 1] == (byte)v2;
 
                 // Note: some versions of PGP appear to produce 0 for the extra
                 // bytes rather than repeating the two previous bytes
-                bool zeroesCheckPassed =
-                        v1 == 0
-                    && v2 == 0;
+                bool zeroesCheckPassed = v1 == 0 && v2 == 0;
 
                 if (!repeatCheckPassed && !zeroesCheckPassed)
                 {

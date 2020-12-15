@@ -4,7 +4,7 @@ using System.IO.Compression;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>Class for producing compressed data packets.</remarks>
+    /// <summary>Class for producing compressed data packets.</summary>
     public class PgpCompressedDataGenerator
         : IStreamGenerator
     {
@@ -55,8 +55,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="IOException"></exception>
-        public Stream Open(
-            Stream outStr)
+        public Stream Open(Stream outStr)
         {
             if (dOut != null)
                 throw new InvalidOperationException("generator already in open state");
@@ -96,9 +95,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="IOException"></exception>
         /// <exception cref="PgpException"></exception>
-        public Stream Open(
-            Stream outStr,
-            byte[] buffer)
+        public Stream Open(Stream outStr, byte[] buffer)
         {
             if (dOut != null)
                 throw new InvalidOperationException("generator already in open state");
@@ -125,7 +122,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     break;
                 case CompressionAlgorithmTag.Zip:
                     dOut = new DeflateStream(pkOut, compression, leaveOpen: true);
-                        //new SafeZOutputStream(pkOut, compression, true);
                     break;
                 /*case CompressionAlgorithmTag.ZLib:
                     dOut = new SafeZOutputStream(pkOut, compression, false);
@@ -140,7 +136,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>Close the compressed object.</summary>summary>
-        public void Close()
+        void IStreamGenerator.Close()
         {
             if (dOut != null)
             {

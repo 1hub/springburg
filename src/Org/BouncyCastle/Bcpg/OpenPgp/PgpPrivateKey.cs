@@ -1,4 +1,3 @@
-using System;
 using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
@@ -6,7 +5,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     /// <remarks>General class to contain a private key for use with other OpenPGP objects.</remarks>
     public class PgpPrivateKey
     {
-        private readonly long keyID;
+        private readonly long keyId;
         private readonly PublicKeyPacket publicKeyPacket;
         private readonly AsymmetricAlgorithm privateKey;
 
@@ -17,34 +16,25 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <param name="publicKeyPacket">the public key data packet to be associated with this private key.</param>
         /// <param name="privateKey">the private key data packet to be associated with this private key.</param>
         public PgpPrivateKey(
-            long keyID,
+            long keyId,
             PublicKeyPacket publicKeyPacket,
             AsymmetricAlgorithm privateKey)
         {
             //if (!privateKey.IsPrivate)
             //    throw new ArgumentException("Expected a private key", "privateKey");
 
-            this.keyID = keyID;
+            this.keyId = keyId;
             this.publicKeyPacket = publicKeyPacket;
             this.privateKey = privateKey;
         }
 
         /// <summary>The keyId associated with the contained private key.</summary>
-        public long KeyId
-        {
-            get { return keyID; }
-        }
+        public long KeyId => keyId;
 
         /// <summary>The public key packet associated with this private key, if available.</summary>
-        public PublicKeyPacket PublicKeyPacket
-        {
-            get { return publicKeyPacket; }
-        }
+        public PublicKeyPacket PublicKeyPacket => publicKeyPacket;
 
         /// <summary>The contained private key.</summary>
-        public AsymmetricAlgorithm Key
-        {
-            get { return privateKey; }
-        }
+        public AsymmetricAlgorithm Key => privateKey;
     }
 }
