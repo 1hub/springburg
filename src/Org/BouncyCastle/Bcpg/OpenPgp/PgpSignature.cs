@@ -7,7 +7,7 @@ using System.Text;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>A PGP signature object.</summary>
-    public class PgpSignature
+    public class PgpSignature : PgpSignatureBase
     {
         public const int BinaryDocument = 0x00;
         public const int CanonicalTextDocument = 0x01;
@@ -27,12 +27,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public const int Timestamp = 0x40;
 
         private readonly SignaturePacket sigPck;
-        private readonly int signatureType;
         private readonly TrustPacket trustPck;
 
-        private HashAlgorithm sig;
-        private PgpPublicKey pubKey;
-        private byte lastb; // Initial value anything but '\r'
+        private PgpPublicKey publicKey;
 
         internal PgpSignature(SignaturePacket sigPacket)
             : this(sigPacket, null)
@@ -45,7 +42,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 throw new ArgumentNullException("sigPacket");
 
             this.sigPck = sigPacket;
-            this.signatureType = sigPck.SignatureType;
             this.trustPck = trustPacket;
         }
 
@@ -56,95 +52,18 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public PublicKeyAlgorithmTag KeyAlgorithm => sigPck.KeyAlgorithm;
 
         /// <summary>The hash algorithm associated with this signature.</summary>
-        public HashAlgorithmTag HashAlgorithm => sigPck.HashAlgorithm;
+        public override HashAlgorithmTag HashAlgorithm => sigPck.HashAlgorithm;
 
         /// <summary>Return true if this signature represents a certification.</summary>
         public bool IsCertification() => IsCertification(SignatureType);
 
-        public void InitVerify(PgpPublicKey pubKey)
+        public void InitVerify(PgpPublicKey publicKey)
         {
-            lastb = 0;
-            this.sig = PgpUtilities.GetHashAlgorithm(sigPck.HashAlgorithm);
-            this.pubKey = pubKey;
+            this.publicKey = publicKey;
+            Init(sigPck.SignatureType);
         }
 
-        public void Update(byte b)
-        {
-            if (signatureType == CanonicalTextDocument)
-            {
-                doCanonicalUpdateByte(b);
-            }
-            else
-            {
-                sig.TransformBlock(new byte[] { b }, 0, 1, null, 0);
-            }
-        }
-
-        private void doCanonicalUpdateByte(byte b)
-        {
-            if (b == '\r')
-            {
-                doUpdateCRLF();
-            }
-            else if (b == '\n')
-            {
-                if (lastb != '\r')
-                {
-                    doUpdateCRLF();
-                }
-            }
-            else
-            {
-                sig.TransformBlock(new byte[] { b }, 0, 1, null, 0);
-            }
-
-            lastb = b;
-        }
-
-        private void doUpdateCRLF()
-        {
-            sig.TransformBlock(new byte[] { (byte)'\r', (byte)'\n' }, 0, 2, null, 0);
-        }
-
-        public void Update(params byte[] bytes)
-        {
-            Update(bytes, 0, bytes.Length);
-        }
-
-        public void Update(
-            byte[] bytes,
-            int off,
-            int length)
-        {
-            if (signatureType == CanonicalTextDocument)
-            {
-                int finish = off + length;
-
-                for (int i = off; i != finish; i++)
-                {
-                    doCanonicalUpdateByte(bytes[i]);
-                }
-            }
-            else
-            {
-                sig.TransformBlock(bytes, off, length, null, 0);
-            }
-        }
-
-        public bool Verify()
-        {
-            byte[] trailer = GetSignatureTrailer();
-            sig.TransformFinalBlock(trailer, 0, trailer.Length);
-            var hash = sig.Hash;
-            var key = pubKey.GetKey();
-            if (key is RSA rsa)
-                return rsa.VerifyHash(hash, GetSignature(), PgpUtilities.GetHashAlgorithmName(sigPck.HashAlgorithm), RSASignaturePadding.Pkcs1);
-            if (key is DSA dsa)
-                return dsa.VerifySignature(hash, GetSignature(), DSASignatureFormat.Rfc3279DerSequence);
-            if (key is ECDsa ecdsa)
-                return ecdsa.VerifyHash(hash, GetSignature(), DSASignatureFormat.Rfc3279DerSequence);
-            throw new NotImplementedException();
-        }
+        public bool Verify() => Verify(GetSignature(), GetSignatureTrailer(), this.publicKey.GetKey());
 
         private void UpdateWithIdData(
             int header,
@@ -245,8 +164,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public bool VerifyCertification(
             PgpPublicKey pubKey)
         {
-            if (SignatureType != KeyRevocation
-                && SignatureType != SubkeyRevocation)
+            if (SignatureType != KeyRevocation && SignatureType != SubkeyRevocation)
             {
                 throw new InvalidOperationException("signature is not a key signature");
             }
@@ -256,33 +174,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return this.Verify();
         }
 
-        public int SignatureType
-        {
-            get { return sigPck.SignatureType; }
-        }
+        public int SignatureType => sigPck.SignatureType;
 
         /// <summary>The ID of the key that created the signature.</summary>
-        public long KeyId
-        {
-            get { return sigPck.KeyId; }
-        }
-
-        [Obsolete("Use 'CreationTime' property instead")]
-        public DateTime GetCreationTime()
-        {
-            return CreationTime;
-        }
+        public long KeyId => sigPck.KeyId;
 
         /// <summary>The creation time of this signature.</summary>
-        public DateTime CreationTime
-        {
-            get { return DateTimeOffset.FromUnixTimeSeconds(sigPck.CreationTime).DateTime; }
-        }
+        public DateTime CreationTime => DateTimeOffset.FromUnixTimeSeconds(sigPck.CreationTime).DateTime;
 
-        public byte[] GetSignatureTrailer()
-        {
-            return sigPck.GetSignatureTrailer();
-        }
+        public byte[] GetSignatureTrailer() => sigPck.GetSignatureTrailer();
 
         /// <summary>
         /// Return true if the signature has either hashed or unhashed subpackets.

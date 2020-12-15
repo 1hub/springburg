@@ -6,21 +6,20 @@ using Org.BouncyCastle.Bcpg.Sig;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>Generator for PGP signatures.</remarks>
-    // TODO Should be able to implement ISigner?
-    public class PgpSignatureGenerator
+    /// <summary>Generator for PGP signatures.</summary>
+    public class PgpSignatureGenerator : PgpSignatureBase
     {
         private static readonly SignatureSubpacket[] EmptySignatureSubpackets = new SignatureSubpacket[0];
 
         private PublicKeyAlgorithmTag keyAlgorithm;
         private HashAlgorithmTag hashAlgorithm;
-        private PgpPrivateKey privKey;
-        private HashAlgorithm dig;
-        private int signatureType;
-        private byte lastb;
 
         private SignatureSubpacket[] unhashed = EmptySignatureSubpackets;
         private SignatureSubpacket[] hashed = EmptySignatureSubpackets;
+
+        private PgpPrivateKey privateKey;
+
+        public override HashAlgorithmTag HashAlgorithm => hashAlgorithm;
 
         /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
         public PgpSignatureGenerator(
@@ -32,93 +31,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>Initialise the generator for signing.</summary>
-        public void InitSign(
-            int sigType,
-            PgpPrivateKey key)
+        public void InitSign(int signatureType, PgpPrivateKey privateKey)
         {
-            InitSign(sigType, key, null);
-        }
-
-        /// <summary>Initialise the generator for signing.</summary>
-        public void InitSign(
-            int sigType,
-            PgpPrivateKey key,
-            RandomNumberGenerator random)
-        {
-            this.privKey = key;
-            this.signatureType = sigType;
-
-            dig = PgpUtilities.GetHashAlgorithm(hashAlgorithm);
-            lastb = 0;
-        }
-
-        public void Update(byte b)
-        {
-            if (signatureType == PgpSignature.CanonicalTextDocument)
-            {
-                doCanonicalUpdateByte(b);
-            }
-            else
-            {
-                doUpdateByte(b);
-            }
-        }
-
-        private void doCanonicalUpdateByte(byte b)
-        {
-            if (b == '\r')
-            {
-                doUpdateCRLF();
-            }
-            else if (b == '\n')
-            {
-                if (lastb != '\r')
-                {
-                    doUpdateCRLF();
-                }
-            }
-            else
-            {
-                doUpdateByte(b);
-            }
-
-            lastb = b;
-        }
-
-        private void doUpdateCRLF()
-        {
-            doUpdateByte((byte)'\r');
-            doUpdateByte((byte)'\n');
-        }
-
-        private void doUpdateByte(byte b)
-        {
-            dig.TransformBlock(new byte[] { b }, 0, 1, null, 0);
-        }
-
-        public void Update(params byte[] b)
-        {
-            Update(b, 0, b.Length);
-        }
-
-        public void Update(
-            byte[] b,
-            int off,
-            int len)
-        {
-            if (signatureType == PgpSignature.CanonicalTextDocument)
-            {
-                int finish = off + len;
-
-                for (int i = off; i != finish; i++)
-                {
-                    doCanonicalUpdateByte(b[i]);
-                }
-            }
-            else
-            {
-                dig.TransformBlock(b, off, len, null, 0);
-            }
+            this.privateKey = privateKey;
+            Init(signatureType);
         }
 
         public void SetHashedSubpackets(
@@ -138,12 +54,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>Return the one pass header associated with the current signature.</summary>
-        public PgpOnePassSignature GenerateOnePassVersion(
-            bool isNested)
+        public PgpOnePassSignature GenerateOnePassVersion(bool isNested)
         {
-            return new PgpOnePassSignature(
-                new OnePassSignaturePacket(
-                    signatureType, hashAlgorithm, keyAlgorithm, privKey.KeyId, isNested));
+            return new PgpOnePassSignature(new OnePassSignaturePacket(signatureType, hashAlgorithm, keyAlgorithm, privateKey.KeyId, isNested));
         }
 
         /// <summary>Return a signature object containing the current signature state.</summary>
@@ -159,7 +72,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             if (!packetPresent(hashed, SignatureSubpacketTag.IssuerKeyId)
                 && !packetPresent(unhashed, SignatureSubpacketTag.IssuerKeyId))
             {
-                unhPkts = insertSubpacket(unhPkts, new IssuerKeyId(false, privKey.KeyId));
+                unhPkts = insertSubpacket(unhPkts, new IssuerKeyId(false, privateKey.KeyId));
             }
 
             int version = 4;
@@ -185,6 +98,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 sOut.WriteByte((byte)data.Length);
                 sOut.Write(data, 0, data.Length);
 
+                int hDataLength = (int)sOut.Length;
+                sOut.WriteByte((byte)version);
+                sOut.WriteByte(0xff);
+                sOut.WriteByte((byte)(hDataLength >> 24));
+                sOut.WriteByte((byte)(hDataLength >> 16));
+                sOut.WriteByte((byte)(hDataLength >> 8));
+                sOut.WriteByte((byte)hDataLength);
+
                 hData = sOut.ToArray();
             }
             catch (IOException e)
@@ -192,48 +113,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 throw new PgpException("exception encoding hashed data.", e);
             }
 
-            dig.TransformBlock(hData, 0, hData.Length, null, 0);
-
-            hData = new byte[]
-            {
-                (byte) version,
-                0xff,
-                (byte)(hData.Length >> 24),
-                (byte)(hData.Length >> 16),
-                (byte)(hData.Length >> 8),
-                (byte) hData.Length
-            };
-
-            byte[] sigBytes;
-
-            dig.TransformFinalBlock(hData, 0, hData.Length);
-
-            // an RSA signature
-            bool isRsa = keyAlgorithm == PublicKeyAlgorithmTag.RsaSign
-                || keyAlgorithm == PublicKeyAlgorithmTag.RsaGeneral;
-
-            if (isRsa && privKey.Key is not RSA)
+            bool isRsa = keyAlgorithm == PublicKeyAlgorithmTag.RsaSign || keyAlgorithm == PublicKeyAlgorithmTag.RsaGeneral;
+            if (isRsa != privateKey.Key is RSA)
                 throw new PgpException("invalid combination of algorithms");
 
-            if (privKey.Key is RSA rsa)
-                sigBytes = rsa.SignHash(dig.Hash, PgpUtilities.GetHashAlgorithmName(hashAlgorithm), RSASignaturePadding.Pkcs1);
-            else if (privKey.Key is DSA dsa)
-                sigBytes = dsa.CreateSignature(dig.Hash, DSASignatureFormat.Rfc3279DerSequence);
-            else if (privKey.Key is ECDsa ecdsa)
-                sigBytes = ecdsa.SignHash(dig.Hash, DSASignatureFormat.Rfc3279DerSequence);
-            else
-                throw new NotImplementedException();
-
-            byte[] digest = dig.Hash;
-            byte[] fingerPrint = new byte[] { digest[0], digest[1] };
-
-            MPInteger[] sigValues = isRsa
-                ? PgpUtilities.RsaSigToMpi(sigBytes)
-                : PgpUtilities.DsaSigToMpi(sigBytes);
+            var signature = Sign(hData, privateKey.Key);
 
             return new PgpSignature(
-                new SignaturePacket(signatureType, privKey.KeyId, keyAlgorithm,
-                    hashAlgorithm, hPkts, unhPkts, fingerPrint, sigValues));
+                new SignaturePacket(signatureType, privateKey.KeyId, keyAlgorithm,
+                    hashAlgorithm, hPkts, unhPkts, signature.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
         }
 
         /// <summary>Generate a certification for the passed in ID and key.</summary>
@@ -281,7 +169,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 throw new PgpException("cannot encode subpacket array", e);
             }
 
-            return this.Generate();
+            return Generate();
         }
 
         /// <summary>Generate a certification for the passed in key against the passed in master key.</summary>
@@ -301,16 +189,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Generate a certification, such as a revocation, for the passed in key.</summary>
         /// <param name="pubKey">The key we are certifying.</param>
         /// <returns>The certification.</returns>
-        public PgpSignature GenerateCertification(
-            PgpPublicKey pubKey)
+        public PgpSignature GenerateCertification(PgpPublicKey pubKey)
         {
             UpdateWithPublicKey(pubKey);
 
             return Generate();
         }
 
-        private byte[] GetEncodedPublicKey(
-            PgpPublicKey pubKey)
+        private byte[] GetEncodedPublicKey(PgpPublicKey pubKey)
         {
             try
             {
