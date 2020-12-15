@@ -1,12 +1,10 @@
 using System;
-using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>Generator for old style PGP V3 Signatures.</summary>
     public class PgpV3SignatureGenerator : PgpSignatureBase
     {
-        private PublicKeyAlgorithmTag keyAlgorithm;
         private HashAlgorithmTag hashAlgorithm;
 
         private PgpPrivateKey privateKey;
@@ -15,10 +13,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
         public PgpV3SignatureGenerator(
-            PublicKeyAlgorithmTag keyAlgorithm,
             HashAlgorithmTag hashAlgorithm)
         {
-            this.keyAlgorithm = keyAlgorithm;
             this.hashAlgorithm = hashAlgorithm;
         }
 
@@ -32,7 +28,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Return the one pass header associated with the current signature.</summary>
         public PgpOnePassSignature GenerateOnePassVersion(bool isNested)
         {
-            return new PgpOnePassSignature(new OnePassSignaturePacket(signatureType, hashAlgorithm, keyAlgorithm, privateKey.KeyId, isNested));
+            return new PgpOnePassSignature(new OnePassSignaturePacket(signatureType, hashAlgorithm, privateKey.PublicKeyPacket.Algorithm, privateKey.KeyId, isNested));
         }
 
         /// <summary>Return a V3 signature object containing the current signature state.</summary>
@@ -49,12 +45,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 (byte) creationTime
             };
 
-            bool isRsa = keyAlgorithm == PublicKeyAlgorithmTag.RsaSign || keyAlgorithm == PublicKeyAlgorithmTag.RsaGeneral;
-            if (isRsa != privateKey.Key is RSA)
-                throw new PgpException("invalid combination of algorithms");
-
             var signature = Sign(hData, privateKey.Key);
-            return new PgpSignature(new SignaturePacket(3, signatureType, privateKey.KeyId, keyAlgorithm, hashAlgorithm, creationTime, sig.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
+            return new PgpSignature(new SignaturePacket(3, signatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm, hashAlgorithm, creationTime, sig.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
         }
     }
 }

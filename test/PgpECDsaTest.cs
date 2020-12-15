@@ -58,7 +58,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // try a signature
             //
-            PgpSignatureGenerator signGen = new PgpSignatureGenerator(PublicKeyAlgorithmTag.ECDsa, HashAlgorithmTag.Sha256);
+            PgpSignatureGenerator signGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha256);
             signGen.InitSign(PgpSignature.BinaryDocument, ecdsaKeyPair.PrivateKey);
 
             signGen.Update(msg);
@@ -99,7 +99,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // try a signature using encoded key
             //
-            signGen = new PgpSignatureGenerator(PublicKeyAlgorithmTag.ECDsa, HashAlgorithmTag.Sha256);
+            signGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha256);
             signGen.InitSign(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey(passPhrase));
             signGen.Update(msg);
 
@@ -150,7 +150,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpSecretKey key = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKey, false), "test".ToCharArray());
 
-            PgpSignatureGenerator signGen = new PgpSignatureGenerator(PublicKeyAlgorithmTag.ECDsa, HashAlgorithmTag.Sha256);
+            PgpSignatureGenerator signGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha256);
             signGen.InitSign(PgpSignature.BinaryDocument, key.ExtractPrivateKey(null));
             signGen.Update(msg);
 

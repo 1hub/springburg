@@ -116,7 +116,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 			byte[]					dataBytes = Encoding.ASCII.GetBytes(data);
 			MemoryStream			bOut = new MemoryStream();
 			MemoryStream			testIn = new MemoryStream(dataBytes, false);
-			PgpSignatureGenerator	sGen = new PgpSignatureGenerator(PublicKeyAlgorithmTag.Dsa, digest);
+			PgpSignatureGenerator	sGen = new PgpSignatureGenerator(digest);
 
 			sGen.InitSign(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test".ToCharArray()));
 

@@ -278,8 +278,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             try
             {
-                PgpSignatureGenerator sGen = new PgpSignatureGenerator(
-                    masterKey.PublicKey.Algorithm, HashAlgorithmTag.Sha1);
+                PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
 
                 //
                 // Generate the certification
@@ -323,7 +322,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             try
             {
-                PgpSignatureGenerator sGen = new PgpSignatureGenerator(masterKey.PublicKey.Algorithm, hashAlgorithm);
+                PgpSignatureGenerator sGen = new PgpSignatureGenerator(hashAlgorithm);
 
                 //
                 // Generate the certification

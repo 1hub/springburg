@@ -279,7 +279,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
             MemoryStream testIn = new MemoryStream(dataBytes, false);
 
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PublicKeyAlgorithmTag.Dsa, HashAlgorithmTag.Sha1);
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
 
             sGen.InitSign(PgpSignature.BinaryDocument, pgpPrivKey);
 
@@ -413,8 +413,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
             MemoryStream bOut = new MemoryStream();
             MemoryStream testIn = new MemoryStream(dataBytes, false);
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(
-                PublicKeyAlgorithmTag.Dsa, HashAlgorithmTag.Sha1);
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
 
             sGen.InitSign(PgpSignature.CanonicalTextDocument, pgpPrivKey);
 

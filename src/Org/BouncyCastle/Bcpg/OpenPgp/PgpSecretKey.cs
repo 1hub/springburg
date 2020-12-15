@@ -294,15 +294,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpSignatureSubpacketVector hashedPackets,
             PgpSignatureSubpacketVector unhashedPackets)
         {
-            PgpSignatureGenerator sGen;
-            try
-            {
-                sGen = new PgpSignatureGenerator(keyPair.PublicKey.Algorithm, HashAlgorithmTag.Sha1);
-            }
-            catch (Exception e)
-            {
-                throw new PgpException("Creating signature generator: " + e.Message, e);
-            }
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
 
             //
             // Generate the certification
@@ -332,15 +324,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpSignatureSubpacketVector unhashedPackets,
             HashAlgorithmTag hashAlgorithm)
         {
-            PgpSignatureGenerator sGen;
-            try
-            {
-                sGen = new PgpSignatureGenerator(keyPair.PublicKey.Algorithm, hashAlgorithm);
-            }
-            catch (Exception e)
-            {
-                throw new PgpException("Creating signature generator: " + e.Message, e);
-            }
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(hashAlgorithm);
 
             //
             // Generate the certification

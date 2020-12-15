@@ -90,7 +90,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // try a signature
             //
-            PgpSignatureGenerator signGen = new PgpSignatureGenerator(PublicKeyAlgorithmTag.EdDsa, HashAlgorithmTag.Sha256);
+            PgpSignatureGenerator signGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha256);
             signGen.InitSign(PgpSignature.BinaryDocument, eddsaKeyPair.PrivateKey);
 
             signGen.Update(msg);
@@ -131,7 +131,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // try a signature using encoded key
             //
-            signGen = new PgpSignatureGenerator(PublicKeyAlgorithmTag.EdDsa, HashAlgorithmTag.Sha256);
+            signGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha256);
             signGen.InitSign(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey(passPhrase));
             signGen.Update(msg);
 

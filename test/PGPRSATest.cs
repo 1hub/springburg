@@ -484,8 +484,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpUserAttributeSubpacketVector uVec = vGen.Generate();
 
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(
-                PublicKeyAlgorithmTag.RsaGeneral, HashAlgorithmTag.Sha1);
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
 
             sGen.InitSign(PgpSignature.PositiveCertification, pgpSec.GetSecretKey().ExtractPrivateKey(pass));
 
@@ -866,7 +865,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             keyEnc = key.GetEncoded();
 
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PublicKeyAlgorithmTag.RsaGeneral, HashAlgorithmTag.Sha1);
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
 
             sGen.InitSign(PgpSignature.KeyRevocation, secretKey.ExtractPrivateKey(passPhrase));
 
@@ -959,8 +958,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             MemoryStream testIn = new MemoryStream(dataBytes, false);
 
-            sGen = new PgpSignatureGenerator(
-                PublicKeyAlgorithmTag.RsaGeneral, HashAlgorithmTag.Sha1);
+            sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
 
             sGen.InitSign(PgpSignature.BinaryDocument, pgpPrivKey);
 
@@ -1042,8 +1040,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             bOut = new UncloseableMemoryStream();
 
             testIn = new MemoryStream(dataBytes);
-            PgpV3SignatureGenerator sGenV3 = new PgpV3SignatureGenerator(
-                PublicKeyAlgorithmTag.RsaGeneral, HashAlgorithmTag.Sha1);
+            PgpV3SignatureGenerator sGenV3 = new PgpV3SignatureGenerator(HashAlgorithmTag.Sha1);
 
             sGen.InitSign(PgpSignature.BinaryDocument, pgpPrivKey);
 
@@ -1150,7 +1147,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             MemoryStream bOut = new UncloseableMemoryStream();
             MemoryStream testIn = new MemoryStream(dataBytes, false);
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PublicKeyAlgorithmTag.RsaGeneral, hashAlgorithm);
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(hashAlgorithm);
 
             sGen.InitSign(PgpSignature.BinaryDocument, privKey);
 

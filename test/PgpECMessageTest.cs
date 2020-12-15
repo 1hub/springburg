@@ -70,7 +70,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             byte[] msg = Encoding.UTF8.GetBytes("hello world!");
 
-            PgpSignatureGenerator signGen = new PgpSignatureGenerator(PublicKeyAlgorithmTag.ECDsa, HashAlgorithmTag.Sha256);
+            PgpSignatureGenerator signGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha256);
             signGen.InitSign(PgpSignature.BinaryDocument, key.ExtractPrivateKey(null));
             signGen.Update(msg);
             PgpSignature sig = signGen.Generate();
