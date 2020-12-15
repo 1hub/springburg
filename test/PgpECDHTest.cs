@@ -94,7 +94,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             //AsymmetricCipherKeyPair kpSign = keyGen.GenerateKeyPair();
 
-            PgpKeyPair ecdsaKeyPair = new PgpKeyPair(PublicKeyAlgorithmTag.ECDsa, ecdsa, DateTime.UtcNow);
+            PgpKeyPair ecdsaKeyPair = new PgpKeyPair(ecdsa, DateTime.UtcNow);
 
             //
             // Generate an encryption key
@@ -105,7 +105,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             //AsymmetricCipherKeyPair kpEnc = keyGen.GenerateKeyPair();
 
-            PgpKeyPair ecdhKeyPair = new PgpKeyPair(PublicKeyAlgorithmTag.ECDH, ecdh, DateTime.UtcNow);
+            PgpKeyPair ecdhKeyPair = new PgpKeyPair(ecdh, DateTime.UtcNow);
 
             //
             // Generate a key ring
@@ -243,7 +243,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //AsymmetricCipherKeyPair kpEnc = keyGen.GenerateKeyPair();
             //ECDiffieHellman ecdh = ECDiffieHellman.Create(curve);
 
-            PgpKeyPair ecdhKeyPair = new PgpKeyPair(PublicKeyAlgorithmTag.ECDH, ecdh, DateTime.UtcNow);
+            PgpKeyPair ecdhKeyPair = new PgpKeyPair(ecdh, DateTime.UtcNow);
 
             PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
             MemoryStream ldOut = new MemoryStream();

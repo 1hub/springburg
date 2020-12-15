@@ -51,14 +51,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private void GenerateAndSign()
         {
-            //SecureRandom random = SecureRandom.GetInstance("SHA1PRNG");
-
-            /*IAsymmetricCipherKeyPairGenerator keyGen = GeneratorUtilities.GetKeyPairGenerator("ECDSA");
-            keyGen.Init(new ECKeyGenerationParameters(SecObjectIdentifiers.SecP256r1, random));
-
-            AsymmetricCipherKeyPair kpSign = keyGen.GenerateKeyPair();*/
-
-            PgpKeyPair ecdsaKeyPair = new PgpKeyPair(PublicKeyAlgorithmTag.ECDsa, /*kpSign*/ECDsa.Create(ECCurve.NamedCurves.nistP256), DateTime.UtcNow);
+            PgpKeyPair ecdsaKeyPair = new PgpKeyPair(ECDsa.Create(ECCurve.NamedCurves.nistP256), DateTime.UtcNow);
 
             byte[] msg = Encoding.ASCII.GetBytes("hello world!");
 

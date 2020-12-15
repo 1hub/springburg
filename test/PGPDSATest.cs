@@ -565,7 +565,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
 			AsymmetricCipherKeyPair kp = kpg.GenerateKeyPair();*/
 
-            PgpKeyPair pgpKp = new PgpKeyPair(PublicKeyAlgorithmTag.Dsa, dsa, DateTime.UtcNow);
+            PgpKeyPair pgpKp = new PgpKeyPair(dsa, DateTime.UtcNow);
 
             PgpPublicKey k1 = pgpKp.PublicKey;
             PgpPrivateKey k2 = pgpKp.PrivateKey;

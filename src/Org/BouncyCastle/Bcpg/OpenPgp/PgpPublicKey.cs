@@ -126,23 +126,20 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// Note: the time passed in affects the value of the key's keyId, so you probably only want
         /// to do this once for a lightweight key, or make sure you keep track of the time you used.
         /// </remarks>
-        /// <param name="algorithm">Asymmetric algorithm type representing the public key.</param>
         /// <param name="pubKey">Actual public key to associate.</param>
         /// <param name="time">Date of creation.</param>
         /// <exception cref="ArgumentException">If <c>pubKey</c> is not public.</exception>
         /// <exception cref="PgpException">On key creation problem.</exception>
         public PgpPublicKey(
-            PublicKeyAlgorithmTag algorithm,
             AsymmetricAlgorithm pubKey,
             DateTime time)
         {
-            //if (pubKey.IsPrivate)
-            //    throw new ArgumentException("Expected a public key", "pubKey");
-
             IBcpgKey bcpgKey;
+            PublicKeyAlgorithmTag algorithm;
             if (pubKey is RSA rK)
             {
                 var rKParams = rK.ExportParameters(false);
+                algorithm = PublicKeyAlgorithmTag.RsaGeneral;
                 bcpgKey = new RsaPublicBcpgKey(
                     new MPInteger(rKParams.Modulus),
                     new MPInteger(rKParams.Exponent));
@@ -150,6 +147,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             else if (pubKey is DSA dK)
             {
                 var dKParams = dK.ExportParameters(false);
+                algorithm = PublicKeyAlgorithmTag.Dsa;
                 bcpgKey = new DsaPublicBcpgKey(
                     new MPInteger(dKParams.P),
                     new MPInteger(dKParams.Q),
@@ -160,6 +158,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             else if (pubKey is X25519 x25519K)
             {
                 var ecdhKParams = x25519K.ExportParameters(false);
+                algorithm = PublicKeyAlgorithmTag.ECDH;
                 bcpgKey = new ECDHPublicBcpgKey(
                     new Oid("1.3.6.1.4.1.3029.1.5.1"),
                     new MPInteger(new byte[] { 0x40 }.Concat(ecdhKParams.Q.X).ToArray()),
@@ -169,30 +168,31 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             else if (pubKey is ECDiffieHellman ecdhK)
             {
                 var ecdhKParams = ecdhK.ExportParameters(false);
+                algorithm = PublicKeyAlgorithmTag.ECDH;
                 bcpgKey = new ECDHPublicBcpgKey(
                     ecdhKParams.Curve.Oid,
                     PgpUtilities.EncodePoint(ecdhKParams.Q),
                     HashAlgorithmTag.Sha256,
                     SymmetricKeyAlgorithmTag.Aes128);
             }
+            else if (pubKey is Ed25519Dsa ed25519K)
+            {
+                var ed25519KParams = ed25519K.ExportParameters(false);
+                var pointBytes = new byte[1 + ed25519KParams.Q.X.Length];
+                pointBytes[0] = 0x40;
+                Array.Copy(ed25519KParams.Q.X, 0, pointBytes, 1, ed25519KParams.Q.X.Length);
+                algorithm = PublicKeyAlgorithmTag.EdDsa;
+                bcpgKey = new ECDsaPublicBcpgKey(
+                    new Oid("1.3.6.1.4.1.11591.15.1"),
+                    new MPInteger(pointBytes));
+            }
             else if (pubKey is ECDsa ecdsaK)
             {
                 var ecdsaKParams = ecdsaK.ExportParameters(false);
-                if (algorithm == PublicKeyAlgorithmTag.EdDsa)
-                {
-                    var pointBytes = new byte[1 + ecdsaKParams.Q.X.Length];
-                    pointBytes[0] = 0x40;
-                    Array.Copy(ecdsaKParams.Q.X, 0, pointBytes, 1, ecdsaKParams.Q.X.Length);
-                    bcpgKey = new ECDsaPublicBcpgKey(
-                        new Oid("1.3.6.1.4.1.11591.15.1"),
-                        new MPInteger(pointBytes));
-                }
-                else
-                {
-                    bcpgKey = new ECDsaPublicBcpgKey(
-                        ecdsaKParams.Curve.Oid,
-                        PgpUtilities.EncodePoint(ecdsaKParams.Q));
-                }
+                algorithm = PublicKeyAlgorithmTag.ECDsa;
+                bcpgKey = new ECDsaPublicBcpgKey(
+                    ecdsaKParams.Curve.Oid,
+                    PgpUtilities.EncodePoint(ecdsaKParams.Q));
             }
             /*
             else if (pubKey is ElGamalPublicKeyParameters)

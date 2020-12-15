@@ -16,11 +16,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     public class PgpKeyPair
     {
         public PgpKeyPair(
-            PublicKeyAlgorithmTag algorithm,
             AsymmetricAlgorithm keyPair,
             DateTime time)
         {
-            this.PublicKey = new PgpPublicKey(algorithm, keyPair, time);
+            this.PublicKey = new PgpPublicKey(keyPair, time);
             this.PrivateKey = new PgpPrivateKey(this.PublicKey.KeyId, this.PublicKey.PublicKeyPacket, keyPair);
         }
 

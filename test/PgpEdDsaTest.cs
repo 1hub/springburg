@@ -83,7 +83,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             AsymmetricCipherKeyPair kpSign = keyGen.GenerateKeyPair();*/
 
-            PgpKeyPair eddsaKeyPair = new PgpKeyPair(PublicKeyAlgorithmTag.EdDsa, new Ed25519Dsa(), DateTime.UtcNow);
+            PgpKeyPair eddsaKeyPair = new PgpKeyPair(new Ed25519Dsa(), DateTime.UtcNow);
 
             byte[] msg = Encoding.ASCII.GetBytes("hello world!");
 

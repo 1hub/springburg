@@ -824,7 +824,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpSecretKey secretKey = new PgpSecretKey(
                 PgpSignature.DefaultCertification,
-                PublicKeyAlgorithmTag.RsaGeneral,
                 rsa,
                 DateTime.UtcNow,
                 "fred",
@@ -895,7 +894,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // use of PgpKeyPair
             //
-            PgpKeyPair pgpKp = new PgpKeyPair(PublicKeyAlgorithmTag.RsaGeneral, rsa, DateTime.UtcNow);
+            PgpKeyPair pgpKp = new PgpKeyPair(rsa, DateTime.UtcNow);
 
             PgpPublicKey k1 = pgpKp.PublicKey;
             PgpPrivateKey k2 = pgpKp.PrivateKey;
@@ -910,7 +909,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //kp = kpg.GenerateKeyPair();
             rsa = RSA.Create(1024);
 
-            secretKey = new PgpSecretKey(PgpSignature.DefaultCertification, PublicKeyAlgorithmTag.RsaGeneral, /*kp.Public, kp.Private*/rsa, DateTime.UtcNow, "fred", SymmetricKeyAlgorithmTag.Aes256, passPhrase, null, null);
+            secretKey = new PgpSecretKey(PgpSignature.DefaultCertification, rsa, DateTime.UtcNow, "fred", SymmetricKeyAlgorithmTag.Aes256, passPhrase, null, null);
 
             secretKey.ExtractPrivateKey(passPhrase);
 

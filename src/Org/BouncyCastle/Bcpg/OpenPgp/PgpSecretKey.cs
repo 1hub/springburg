@@ -363,7 +363,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public PgpSecretKey(
             int certificationLevel,
-            PublicKeyAlgorithmTag algorithm,
             AsymmetricAlgorithm keyPair,
             DateTime time,
             string id,
@@ -371,13 +370,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             char[] passPhrase,
             PgpSignatureSubpacketVector hashedPackets,
             PgpSignatureSubpacketVector unhashedPackets)
-            : this(certificationLevel, new PgpKeyPair(algorithm, keyPair, time), id, encAlgorithm, passPhrase, false, hashedPackets, unhashedPackets)
+            : this(certificationLevel, new PgpKeyPair(keyPair, time), id, encAlgorithm, passPhrase, false, hashedPackets, unhashedPackets)
         {
         }
 
         public PgpSecretKey(
             int certificationLevel,
-            PublicKeyAlgorithmTag algorithm,
             AsymmetricAlgorithm keyPair,
             DateTime time,
             string id,
@@ -386,7 +384,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             bool useSha1,
             PgpSignatureSubpacketVector hashedPackets,
             PgpSignatureSubpacketVector unhashedPackets)
-            : this(certificationLevel, new PgpKeyPair(algorithm, keyPair, time), id, encAlgorithm, passPhrase, useSha1, hashedPackets, unhashedPackets)
+            : this(certificationLevel, new PgpKeyPair(keyPair, time), id, encAlgorithm, passPhrase, useSha1, hashedPackets, unhashedPackets)
         {
         }
 
