@@ -97,7 +97,7 @@ namespace Org.BouncyCastle.Bcpg
             this.encAlgorithm = encAlgorithm;
             this.s2kUsage = s2kUsage;
             this.s2k = s2k;
-            this.iv = (byte[])iv.Clone();
+            this.iv = iv == null ? null : (byte[])iv.Clone();
             this.secKeyData = secKeyData;
         }
 

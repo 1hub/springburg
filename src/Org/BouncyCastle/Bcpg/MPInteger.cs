@@ -35,11 +35,18 @@ namespace Org.BouncyCastle.Bcpg
 
         public override void Encode(BcpgOutputStream bcpgOut)
         {
-            int length = value.Length * 8;
-            for (int mask = 0x80; mask >= 0 && (value[0] & mask) == 0; mask >>= 1)
-                length--;
-            bcpgOut.WriteShort((short)length);
-            bcpgOut.Write(value);
+            if (value.Length == 0)
+            {
+                bcpgOut.WriteShort(0);
+            }
+            else
+            {
+                int length = value.Length * 8;
+                for (int mask = 0x80; mask >= 0 && (value[0] & mask) == 0; mask >>= 1)
+                    length--;
+                bcpgOut.WriteShort((short)length);
+                bcpgOut.Write(value);
+            }
         }
     }
 }

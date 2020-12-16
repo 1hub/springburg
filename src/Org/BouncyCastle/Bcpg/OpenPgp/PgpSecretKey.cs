@@ -1024,7 +1024,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 }
                 else
                 {
-                    byte[] tmpIv = keyData.AsSpan(pos - iv.Length).ToArray();
+                    byte[] tmpIv = keyData.AsSpan(pos - iv.Length, iv.Length).ToArray();
                     tmp = EncryptData(encAlgorithm, encKey, rawKeyData, pos + 2, encLen, ref tmpIv);
                 }
 
