@@ -34,14 +34,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     var flg = inputStream.ReadByte();
                     if ((flg & 0x20) != 0)
                     {
-                        // Skip FDICT
+                        // Skip FDICT, to be tested
                         inputStream.ReadByte();
                         inputStream.ReadByte();
                         inputStream.ReadByte();
                         inputStream.ReadByte();
                     }
-                    // FIXME: Truncate Adler32 at the end
-                    return new DeflateStream(inputStream, CompressionMode.Decompress);
+                    // Truncate the Adler32 hash
+                    var truncatedStream = new TruncatedStream(inputStream, 4);
+                    return new DeflateStream(truncatedStream, CompressionMode.Decompress);
                 // FIXME
                 //case CompressionAlgorithmTag.BZip2:
                 //   return new CBZip2InputStream(GetInputStream());

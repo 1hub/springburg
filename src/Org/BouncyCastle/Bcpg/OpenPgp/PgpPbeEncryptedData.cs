@@ -93,9 +93,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
                 if (encData is SymmetricEncIntegrityPacket)
                 {
-                    truncStream = new TruncatedStream(encStream);
-
                     hashAlgorithm = SHA1.Create();
+                    truncStream = new TruncatedStream(encStream, hashAlgorithm.HashSize / 8);
                     encStream = new CryptoStream(truncStream, hashAlgorithm, CryptoStreamMode.Read);
                 }
 

@@ -845,11 +845,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpSecretKey key,
             char[] oldPassPhrase,
             char[] newPassPhrase,
-            SymmetricKeyAlgorithmTag newEncAlgorithm,
-            RandomNumberGenerator rand)
+            SymmetricKeyAlgorithmTag newEncAlgorithm)
         {
             return DoCopyWithNewPassword(key, PgpUtilities.EncodePassPhrase(oldPassPhrase, false),
-                PgpUtilities.EncodePassPhrase(newPassPhrase, false), true, newEncAlgorithm, rand);
+                PgpUtilities.EncodePassPhrase(newPassPhrase, false), true, newEncAlgorithm);
         }
 
         /// <summary>
@@ -868,11 +867,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpSecretKey key,
             char[] oldPassPhrase,
             char[] newPassPhrase,
-            SymmetricKeyAlgorithmTag newEncAlgorithm,
-            RandomNumberGenerator rand)
+            SymmetricKeyAlgorithmTag newEncAlgorithm)
         {
             return DoCopyWithNewPassword(key, PgpUtilities.EncodePassPhrase(oldPassPhrase, true),
-                PgpUtilities.EncodePassPhrase(newPassPhrase, true), true, newEncAlgorithm, rand);
+                PgpUtilities.EncodePassPhrase(newPassPhrase, true), true, newEncAlgorithm);
         }
 
         /// <summary>
@@ -891,10 +889,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpSecretKey key,
             byte[] rawOldPassPhrase,
             byte[] rawNewPassPhrase,
-            SymmetricKeyAlgorithmTag newEncAlgorithm,
-            RandomNumberGenerator rand)
+            SymmetricKeyAlgorithmTag newEncAlgorithm)
         {
-            return DoCopyWithNewPassword(key, rawOldPassPhrase, rawNewPassPhrase, false, newEncAlgorithm, rand);
+            return DoCopyWithNewPassword(key, rawOldPassPhrase, rawNewPassPhrase, false, newEncAlgorithm);
         }
 
         internal static PgpSecretKey DoCopyWithNewPassword(
@@ -902,8 +899,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             byte[] rawOldPassPhrase,
             byte[] rawNewPassPhrase,
             bool clearPassPhrase,
-            SymmetricKeyAlgorithmTag newEncAlgorithm,
-            RandomNumberGenerator rand)
+            SymmetricKeyAlgorithmTag newEncAlgorithm)
         {
             if (key.IsPrivateKeyEmpty)
                 throw new PgpException("no private key in this SecretKey - public key present only.");

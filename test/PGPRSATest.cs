@@ -919,7 +919,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             const string newPass = "newPass";
 
-            secretKey = PgpSecretKey.CopyWithNewPassword(secretKey, passPhrase, newPass.ToCharArray(), secretKey.KeyEncryptionAlgorithm, RandomNumberGenerator.Create());
+            secretKey = PgpSecretKey.CopyWithNewPassword(secretKey, passPhrase, newPass.ToCharArray(), secretKey.KeyEncryptionAlgorithm);
 
             secretKey.ExtractPrivateKey(newPass.ToCharArray());
 

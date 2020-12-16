@@ -1,6 +1,9 @@
+using InflatablePalace.Cryptography.Algorithms;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
@@ -13,6 +16,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         private Stream dOut;
         private BcpgOutputStream pkOut;
+        private Adler32 checksum;
 
         public PgpCompressedDataGenerator(
             CompressionAlgorithmTag algorithm)
@@ -28,7 +32,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             {
                 case CompressionAlgorithmTag.Uncompressed:
                 case CompressionAlgorithmTag.Zip:
-                //case CompressionAlgorithmTag.ZLib:
+                case CompressionAlgorithmTag.ZLib:
                 //case CompressionAlgorithmTag.BZip2:
                     break;
                 default:
@@ -123,10 +127,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 case CompressionAlgorithmTag.Zip:
                     dOut = new DeflateStream(pkOut, compression, leaveOpen: true);
                     break;
-                /*case CompressionAlgorithmTag.ZLib:
-                    dOut = new SafeZOutputStream(pkOut, compression, false);
+                case CompressionAlgorithmTag.ZLib:
+                    checksum = new Adler32();
+                    byte cmf = 0x78; // Deflate, 32K window size
+                    byte flg = 0; // Fastest compression level
+                    // Checksum
+                    flg |= (byte)(31 - ((cmf << 8) + flg) % 31);
+                    Debug.Assert(((cmf << 8) + flg) % 31 == 0);
+                    pkOut.WriteByte(cmf); 
+                    pkOut.WriteByte(flg);
+                    dOut =
+                        new CryptoStream(
+                            new DeflateStream(pkOut, compression, leaveOpen: true),
+                            checksum,
+                            CryptoStreamMode.Write);
                     break;
-                case CompressionAlgorithmTag.BZip2:
+                /*case CompressionAlgorithmTag.BZip2:
                     dOut = new SafeCBZip2OutputStream(pkOut);
                     break;*/
                 default:
@@ -145,6 +161,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     dOut.Close();
                 }
                 dOut = null;
+
+                if (checksum != null)
+                {
+                    pkOut.Write(checksum.Hash);
+                    checksum = null;
+                }
 
                 pkOut.Finish();
                 pkOut.Flush();

@@ -24,4 +24,8 @@
     <EmbeddedResource Include="data\**\*.*" Exclude="**\README.txt" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="PgpKeyRingTest.cs" />
+  </ItemGroup>
+
 </Project>

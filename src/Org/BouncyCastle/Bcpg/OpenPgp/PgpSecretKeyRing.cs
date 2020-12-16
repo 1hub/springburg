@@ -183,8 +183,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpSecretKeyRing ring,
             char[] oldPassPhrase,
             char[] newPassPhrase,
-            SymmetricKeyAlgorithmTag newEncAlgorithm,
-            RandomNumberGenerator rand)
+            SymmetricKeyAlgorithmTag newEncAlgorithm)
         {
             IList<PgpSecretKey> newKeys = new List<PgpSecretKey>(ring.keys.Count);
             foreach (PgpSecretKey secretKey in ring.GetSecretKeys())
@@ -195,7 +194,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 }
                 else
                 {
-                    newKeys.Add(PgpSecretKey.CopyWithNewPassword(secretKey, oldPassPhrase, newPassPhrase, newEncAlgorithm, rand));
+                    newKeys.Add(PgpSecretKey.CopyWithNewPassword(secretKey, oldPassPhrase, newPassPhrase, newEncAlgorithm));
                 }
             }
 
