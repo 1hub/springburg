@@ -3,22 +3,10 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    public static class Rfc6637Utilities
+    static class Rfc6637Utilities
     {
         // "Anonymous Sender    ", which is the octet sequence
         private static readonly byte[] ANONYMOUS_SENDER = new byte[] { 0x41, 0x6E, 0x6F, 0x6E, 0x79, 0x6D, 0x6F, 0x75, 0x73, 0x20, 0x53, 0x65, 0x6E, 0x64, 0x65, 0x72, 0x20, 0x20, 0x20, 0x20 };
-
-        public static int GetKeyLength(SymmetricKeyAlgorithmTag algID)
-        {
-            switch (algID)
-            {
-                case SymmetricKeyAlgorithmTag.Aes128: return 16;
-                case SymmetricKeyAlgorithmTag.Aes192: return 24;
-                case SymmetricKeyAlgorithmTag.Aes256: return 32;
-                default:
-                    throw new PgpException("unknown symmetric algorithm ID: " + algID);
-            }
-        }
 
         // RFC 6637 - Section 8
         // curve_OID_len = (byte)len(curve_OID);

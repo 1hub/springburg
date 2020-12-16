@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 
 namespace Org.BouncyCastle.Utilities.IO
@@ -12,7 +11,6 @@ namespace Org.BouncyCastle.Utilities.IO
         public sealed override bool CanSeek { get { return false; } }
         public sealed override bool CanWrite { get { return false; } }
 
-#if PORTABLE
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -21,13 +19,6 @@ namespace Org.BouncyCastle.Utilities.IO
             }
             base.Dispose(disposing);
         }
-#else
-		public override void Close()
-        {
-            closed = true;
-            base.Close();
-        }
-#endif
 
         public sealed override void Flush() {}
         public sealed override long Length { get { throw new NotSupportedException(); } }

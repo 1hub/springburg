@@ -156,7 +156,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     new byte[] { 0, 0, 0, 1 },
                     Rfc6637Utilities.CreateUserKeyingMaterial(privKey.PublicKeyPacket));
 
-                derivedKey = derivedKey.AsSpan(0, Rfc6637Utilities.GetKeyLength(ecKey.SymmetricKeyAlgorithm)).ToArray();
+                derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm)).ToArray();
 
                 var C = KeyWrapAlgorithm.UnwrapKey(derivedKey, keyEnc);
                 return PgpPad.UnpadSessionData(C);

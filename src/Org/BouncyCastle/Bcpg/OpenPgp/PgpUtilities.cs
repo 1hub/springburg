@@ -6,71 +6,24 @@ using System.Text;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>Basic utility class.</remarks>
-    public sealed class PgpUtilities
+    /// <summary>Basic utility class.</summary>
+    public static class PgpUtilities
     {
-        private PgpUtilities()
-        {
-        }
-
-        public static string GetDigestName(
-            HashAlgorithmTag hashAlgorithm)
+        public static string GetDigestName(HashAlgorithmTag hashAlgorithm)
         {
             switch (hashAlgorithm)
             {
-                case HashAlgorithmTag.Sha1:
-                    return "SHA1";
-                case HashAlgorithmTag.MD2:
-                    return "MD2";
-                case HashAlgorithmTag.MD5:
-                    return "MD5";
-                case HashAlgorithmTag.RipeMD160:
-                    return "RIPEMD160";
-                case HashAlgorithmTag.Sha224:
-                    return "SHA224";
-                case HashAlgorithmTag.Sha256:
-                    return "SHA256";
-                case HashAlgorithmTag.Sha384:
-                    return "SHA384";
-                case HashAlgorithmTag.Sha512:
-                    return "SHA512";
+                case HashAlgorithmTag.Sha1: return "SHA1";
+                case HashAlgorithmTag.MD2: return "MD2";
+                case HashAlgorithmTag.MD5: return "MD5";
+                case HashAlgorithmTag.RipeMD160: return "RIPEMD160";
+                case HashAlgorithmTag.Sha224: return "SHA224";
+                case HashAlgorithmTag.Sha256: return "SHA256";
+                case HashAlgorithmTag.Sha384: return "SHA384";
+                case HashAlgorithmTag.Sha512: return "SHA512";
                 default:
                     throw new PgpException("unknown hash algorithm tag in GetDigestName: " + hashAlgorithm);
             }
-        }
-
-        public static string GetSignatureName(
-            PublicKeyAlgorithmTag keyAlgorithm,
-            HashAlgorithmTag hashAlgorithm)
-        {
-            string encAlg;
-            switch (keyAlgorithm)
-            {
-                case PublicKeyAlgorithmTag.RsaGeneral:
-                case PublicKeyAlgorithmTag.RsaSign:
-                    encAlg = "RSA";
-                    break;
-                case PublicKeyAlgorithmTag.Dsa:
-                    encAlg = "DSA";
-                    break;
-                case PublicKeyAlgorithmTag.ECDH:
-                    encAlg = "ECDH";
-                    break;
-                case PublicKeyAlgorithmTag.ECDsa:
-                    encAlg = "ECDSA";
-                    break;
-                case PublicKeyAlgorithmTag.EdDsa:
-                    encAlg = "EdDSA";
-                    break;
-                case PublicKeyAlgorithmTag.ElGamalEncrypt: // in some malformed cases.
-                case PublicKeyAlgorithmTag.ElGamalGeneral:
-                    encAlg = "ElGamal";
-                    break;
-                default:
-                    throw new PgpException("unknown algorithm tag in signature:" + keyAlgorithm);
-            }
-
-            return GetDigestName(hashAlgorithm) + "with" + encAlg;
         }
 
         public static string GetSymmetricCipherName(
@@ -78,34 +31,20 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             switch (algorithm)
             {
-                case SymmetricKeyAlgorithmTag.Null:
-                    return null;
-                case SymmetricKeyAlgorithmTag.TripleDes:
-                    return "DESEDE";
-                case SymmetricKeyAlgorithmTag.Idea:
-                    return "IDEA";
-                case SymmetricKeyAlgorithmTag.Cast5:
-                    return "CAST5";
-                case SymmetricKeyAlgorithmTag.Blowfish:
-                    return "Blowfish";
-                case SymmetricKeyAlgorithmTag.Safer:
-                    return "SAFER";
-                case SymmetricKeyAlgorithmTag.Des:
-                    return "DES";
-                case SymmetricKeyAlgorithmTag.Aes128:
-                    return "AES";
-                case SymmetricKeyAlgorithmTag.Aes192:
-                    return "AES";
-                case SymmetricKeyAlgorithmTag.Aes256:
-                    return "AES";
-                case SymmetricKeyAlgorithmTag.Twofish:
-                    return "Twofish";
-                case SymmetricKeyAlgorithmTag.Camellia128:
-                    return "Camellia";
-                case SymmetricKeyAlgorithmTag.Camellia192:
-                    return "Camellia";
-                case SymmetricKeyAlgorithmTag.Camellia256:
-                    return "Camellia";
+                case SymmetricKeyAlgorithmTag.Null: return null;
+                case SymmetricKeyAlgorithmTag.TripleDes: return "DESEDE";
+                case SymmetricKeyAlgorithmTag.Idea: return "IDEA";
+                case SymmetricKeyAlgorithmTag.Cast5: return "CAST5";
+                case SymmetricKeyAlgorithmTag.Blowfish: return "Blowfish";
+                case SymmetricKeyAlgorithmTag.Safer: return "SAFER";
+                case SymmetricKeyAlgorithmTag.Des: return "DES";
+                case SymmetricKeyAlgorithmTag.Aes128: return "AES";
+                case SymmetricKeyAlgorithmTag.Aes192: return "AES";
+                case SymmetricKeyAlgorithmTag.Aes256: return "AES";
+                case SymmetricKeyAlgorithmTag.Twofish: return "Twofish";
+                case SymmetricKeyAlgorithmTag.Camellia128: return "Camellia";
+                case SymmetricKeyAlgorithmTag.Camellia192: return "Camellia";
+                case SymmetricKeyAlgorithmTag.Camellia256: return "Camellia";
                 default:
                     throw new PgpException("unknown symmetric algorithm: " + algorithm);
             }
@@ -113,35 +52,28 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public static int GetKeySize(SymmetricKeyAlgorithmTag algorithm)
         {
-            int keySize;
             switch (algorithm)
             {
                 case SymmetricKeyAlgorithmTag.Des:
-                    keySize = 64;
-                    break;
+                    return 64;
                 case SymmetricKeyAlgorithmTag.Idea:
                 case SymmetricKeyAlgorithmTag.Cast5:
                 case SymmetricKeyAlgorithmTag.Blowfish:
                 case SymmetricKeyAlgorithmTag.Safer:
                 case SymmetricKeyAlgorithmTag.Aes128:
                 case SymmetricKeyAlgorithmTag.Camellia128:
-                    keySize = 128;
-                    break;
+                    return 128;
                 case SymmetricKeyAlgorithmTag.TripleDes:
                 case SymmetricKeyAlgorithmTag.Aes192:
                 case SymmetricKeyAlgorithmTag.Camellia192:
-                    keySize = 192;
-                    break;
+                    return 192;
                 case SymmetricKeyAlgorithmTag.Aes256:
                 case SymmetricKeyAlgorithmTag.Twofish:
                 case SymmetricKeyAlgorithmTag.Camellia256:
-                    keySize = 256;
-                    break;
+                    return 256;
                 default:
                     throw new PgpException("unknown symmetric algorithm: " + algorithm);
             }
-
-            return keySize;
         }
 
         internal static byte[] EncodePassPhrase(char[] passPhrase, bool utf8)

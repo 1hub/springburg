@@ -100,7 +100,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                         new byte[] { 0, 0, 0, 1 },
                         Rfc6637Utilities.CreateUserKeyingMaterial(pubKey.PublicKeyPacket));
 
-                    derivedKey = derivedKey.AsSpan(0, Rfc6637Utilities.GetKeyLength(ecKey.SymmetricKeyAlgorithm)).ToArray();
+                    derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm)).ToArray();
 
                     byte[] paddedSessionData = PgpPad.PadSessionData(sessionInfo, sessionKeyObfuscation);
                     byte[] C = KeyWrapAlgorithm.WrapKey(derivedKey, paddedSessionData);
