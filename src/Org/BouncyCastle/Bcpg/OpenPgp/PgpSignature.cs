@@ -63,7 +63,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             Init(sigPck.SignatureType);
         }
 
-        public bool Verify() => Verify(GetSignature(), GetSignatureTrailer(), this.publicKey.GetKey());
+        public bool Verify() => Verify(sigPck.GetSignature(), GetSignatureTrailer(), this.publicKey.GetKey());
 
         private void UpdateWithIdData(
             int header,
@@ -211,35 +211,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return pcks == null ? null : new PgpSignatureSubpacketVector(pcks);
         }
 
-        public byte[] GetSignature()
-        {
-            MPInteger[] sigValues = sigPck.GetSignature();
-            byte[] signature;
+        internal MPInteger[] GetDecodedSignature() => sigPck.GetSignature();
 
-            if (sigValues != null)
-            {
-                if (sigValues.Length == 1)    // an RSA signature
-                {
-                    signature = sigValues[0].Value;
-                }
-                else
-                {
-                    var writer = new AsnWriter(AsnEncodingRules.DER);
-                    using (var sequence = writer.PushSequence())
-                    {
-                        writer.WriteIntegerUnsigned(sigValues[0].Value);
-                        writer.WriteIntegerUnsigned(sigValues[1].Value);
-                    }
-                    signature = writer.Encode();
-                }
-            }
-            else
-            {
-                signature = sigPck.GetSignatureBytes();
-            }
-
-            return signature;
-        }
+        public byte[] GetSignature() => sigPck.GetSignatureBytes();
 
         // TODO Handle the encoding stuff by subclassing BcpgObject?
         public byte[] GetEncoded()

@@ -1,7 +1,6 @@
 using InflatablePalace.Cryptography.Algorithms;
 using InflatablePalace.OpenPGP;
 using System;
-using System.Formats.Asn1;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -12,32 +11,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     {
         private PgpUtilities()
         {
-        }
-
-        public static MPInteger[] DsaSigToMpi(
-            byte[] encoding)
-        {
-            try
-            {
-                var reader = new AsnReader(encoding, AsnEncodingRules.DER);
-                var sequence = reader.ReadSequence();
-                var i1 = sequence.ReadInteger();
-                var i2 = sequence.ReadInteger();
-                return new MPInteger[]{
-                    new MPInteger(i1.ToByteArray(isBigEndian: true, isUnsigned: true)),
-                    new MPInteger(i2.ToByteArray(isBigEndian: true, isUnsigned: true))
-                };
-            }
-            catch (AsnContentException)
-            {
-                throw new PgpException("not a DSA signature");
-            }
-        }
-
-        public static MPInteger[] RsaSigToMpi(
-            byte[] encoding)
-        {
-            return new MPInteger[] { new MPInteger(encoding) };
         }
 
         public static string GetDigestName(

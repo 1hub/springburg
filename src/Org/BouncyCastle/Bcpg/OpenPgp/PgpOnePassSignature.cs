@@ -28,7 +28,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>Verify the calculated signature against the passed in PgpSignature.</summary>
-        public bool Verify(PgpSignature pgpSig) => Verify(pgpSig.GetSignature(), pgpSig.GetSignatureTrailer(), this.publicKey.GetKey());
+        public bool Verify(PgpSignature pgpSig) => Verify(pgpSig.GetDecodedSignature(), pgpSig.GetSignatureTrailer(), this.publicKey.GetKey());
 
         public byte[] GetEncoded()
         {

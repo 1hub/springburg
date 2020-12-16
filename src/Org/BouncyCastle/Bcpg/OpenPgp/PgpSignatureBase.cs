@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
@@ -79,16 +80,24 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        protected bool Verify(byte[] signature, byte[] trailer, AsymmetricAlgorithm key)
+        protected bool Verify(MPInteger[] signature, byte[] trailer, AsymmetricAlgorithm key)
         {
             sig.TransformFinalBlock(trailer, 0, trailer.Length);
             var hash = sig.Hash;
             if (key is RSA rsa)
-                return rsa.VerifyHash(hash, signature, PgpUtilities.GetHashAlgorithmName(HashAlgorithm), RSASignaturePadding.Pkcs1);
+                return rsa.VerifyHash(hash, signature[0].Value, PgpUtilities.GetHashAlgorithmName(HashAlgorithm), RSASignaturePadding.Pkcs1);
+
+            Debug.Assert(signature.Length == 2);
+            int rsLength = Math.Max(signature[0].Value.Length, signature[1].Value.Length);
+            byte[] sigBytes = new byte[rsLength * 2];
+            signature[0].Value.CopyTo(sigBytes, rsLength - signature[0].Value.Length);
+            signature[1].Value.CopyTo(sigBytes, sigBytes.Length - signature[1].Value.Length);
+
             if (key is DSA dsa)
-                return dsa.VerifySignature(hash, signature, DSASignatureFormat.Rfc3279DerSequence);
+                return dsa.VerifySignature(hash, sigBytes, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
             if (key is ECDsa ecdsa)
-                return ecdsa.VerifyHash(hash, signature, DSASignatureFormat.Rfc3279DerSequence);
+                return ecdsa.VerifyHash(hash, sigBytes, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+
             throw new NotImplementedException();
         }
 
@@ -100,16 +109,24 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             if (privateKey is RSA rsa)
                 sigBytes = rsa.SignHash(sig.Hash, PgpUtilities.GetHashAlgorithmName(HashAlgorithm), RSASignaturePadding.Pkcs1);
             else if (privateKey is DSA dsa)
-                sigBytes = dsa.CreateSignature(sig.Hash, DSASignatureFormat.Rfc3279DerSequence);
+                sigBytes = dsa.CreateSignature(sig.Hash, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
             else if (privateKey is ECDsa ecdsa)
-                sigBytes = ecdsa.SignHash(sig.Hash, DSASignatureFormat.Rfc3279DerSequence);
+                sigBytes = ecdsa.SignHash(sig.Hash, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
             else
                 throw new NotImplementedException();
 
-            byte[] digest = sig.Hash;
-            byte[] fingerPrint = new byte[] { digest[0], digest[1] };
-
-            MPInteger[] sigValues = privateKey is RSA ? PgpUtilities.RsaSigToMpi(sigBytes) : PgpUtilities.DsaSigToMpi(sigBytes);
+            MPInteger[] sigValues;
+            if (privateKey is RSA)
+            {
+                sigValues = new MPInteger[] { new MPInteger(sigBytes) };
+            }
+            else
+            {
+                sigValues = new MPInteger[] {
+                    new MPInteger(sigBytes.AsSpan(0, sigBytes.Length / 2).ToArray()),
+                    new MPInteger(sigBytes.AsSpan(sigBytes.Length / 2).ToArray())
+                };
+            }
 
             return (sigValues, sig.Hash);
         }
