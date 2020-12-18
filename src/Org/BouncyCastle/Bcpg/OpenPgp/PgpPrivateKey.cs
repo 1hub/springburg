@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>General class to contain a private key for use with other OpenPGP objects.</remarks>
+    /// <summary>General class to contain a private key for use with other OpenPGP objects.</summary>
     public class PgpPrivateKey
     {
         private readonly long keyId;
@@ -10,9 +10,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private readonly AsymmetricAlgorithm privateKey;
 
         /// <summary>
-		/// Create a PgpPrivateKey from a keyID, the associated public data packet, and a regular private key.
-		/// </summary>
-		/// <param name="keyID">ID of the corresponding public key.</param>
+        /// Create a PgpPrivateKey from a keyID, the associated public data packet, and a regular private key.
+        /// </summary>
+        /// <param name="keyId">ID of the corresponding public key.</param>
         /// <param name="publicKeyPacket">the public key data packet to be associated with this private key.</param>
         /// <param name="privateKey">the private key data packet to be associated with this private key.</param>
         public PgpPrivateKey(

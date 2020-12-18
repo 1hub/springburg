@@ -18,7 +18,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private readonly IList<PgpPublicKey> extraPubKeys;
 
         public PgpSecretKeyRing(IList<PgpSecretKey> keys)
-            : this(keys, new List<PgpPublicKey>())
+            : this(keys, Array.Empty<PgpPublicKey>())
         {
         }
 
@@ -26,8 +26,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             IList<PgpSecretKey> keys,
             IList<PgpPublicKey> extraPubKeys)
         {
-            this.keys = keys;
-            this.extraPubKeys = extraPubKeys;
+            this.keys = new List<PgpSecretKey>(keys);
+            this.extraPubKeys = new List<PgpPublicKey>(extraPubKeys);
         }
 
         public PgpSecretKeyRing(byte[] encoding)
@@ -50,57 +50,20 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
 
             SecretKeyPacket secret = (SecretKeyPacket)bcpgInput.ReadPacket();
-
-            //
-            // ignore GPG comment packets if found.
-            //
-            while (bcpgInput.NextPacketTag() == PacketTag.Experimental2)
-            {
-                bcpgInput.ReadPacket();
-            }
-
-            TrustPacket trust = ReadOptionalTrustPacket(bcpgInput);
-
-            // revocation and direct signatures
-            IList<PgpSignature> keySigs = ReadSignaturesAndTrust(bcpgInput);
-
-            IList<object> ids;
-            IList<TrustPacket> idTrusts;
-            IList<IList<PgpSignature>> idSigs;
-            ReadUserIDs(bcpgInput, out ids, out idTrusts, out idSigs);
-
-            keys.Add(new PgpSecretKey(secret, new PgpPublicKey(secret.PublicKeyPacket, trust, keySigs, ids, idTrusts, idSigs)));
-
+            keys.Add(new PgpSecretKey(secret, ReadPublicKey(bcpgInput, secret.PublicKeyPacket)));
 
             // Read subkeys
-            while (bcpgInput.NextPacketTag() == PacketTag.SecretSubkey
-                || bcpgInput.NextPacketTag() == PacketTag.PublicSubkey)
+            while (bcpgInput.NextPacketTag() == PacketTag.SecretSubkey || bcpgInput.NextPacketTag() == PacketTag.PublicSubkey)
             {
                 if (bcpgInput.NextPacketTag() == PacketTag.SecretSubkey)
                 {
                     SecretSubkeyPacket sub = (SecretSubkeyPacket)bcpgInput.ReadPacket();
-
-                    //
-                    // ignore GPG comment packets if found.
-                    //
-                    while (bcpgInput.NextPacketTag() == PacketTag.Experimental2)
-                    {
-                        bcpgInput.ReadPacket();
-                    }
-
-                    TrustPacket subTrust = ReadOptionalTrustPacket(bcpgInput);
-                    IList<PgpSignature> sigList = ReadSignaturesAndTrust(bcpgInput);
-
-                    keys.Add(new PgpSecretKey(sub, new PgpPublicKey(sub.PublicKeyPacket, subTrust, sigList)));
+                    keys.Add(new PgpSecretKey(sub, ReadPublicKey(bcpgInput, sub.PublicKeyPacket, subKey: true)));
                 }
                 else
                 {
                     PublicSubkeyPacket sub = (PublicSubkeyPacket)bcpgInput.ReadPacket();
-
-                    TrustPacket subTrust = ReadOptionalTrustPacket(bcpgInput);
-                    IList<PgpSignature> sigList = ReadSignaturesAndTrust(bcpgInput);
-
-                    extraPubKeys.Add(new PgpPublicKey(sub, subTrust, sigList));
+                    extraPubKeys.Add(ReadPublicKey(bcpgInput, sub, subKey: true));
                 }
             }
         }
@@ -132,19 +95,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return bOut.ToArray();
         }
 
-        public void Encode(Stream outStr)
+        public void Encode(Stream outputStream)
         {
-            if (outStr == null)
-                throw new ArgumentNullException("outStr");
+            if (outputStream == null)
+                throw new ArgumentNullException(nameof(outputStream));
 
             foreach (PgpSecretKey key in keys)
-            {
-                key.Encode(outStr);
-            }
+                key.Encode(outputStream);
             foreach (PgpPublicKey extraPubKey in extraPubKeys)
-            {
-                extraPubKey.Encode(outStr);
-            }
+                extraPubKey.Encode(outputStream);
         }
 
         /// <summary>
@@ -211,39 +170,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpSecretKey secKey)
         {
             IList<PgpSecretKey> keys = new List<PgpSecretKey>(secRing.keys);
-            bool found = false;
-            bool masterFound = false;
-
-            for (int i = 0; i != keys.Count; i++)
-            {
-                PgpSecretKey key = keys[i];
-
-                if (key.KeyId == secKey.KeyId)
-                {
-                    found = true;
-                    keys[i] = secKey;
-                }
-                if (key.IsMasterKey)
-                {
-                    masterFound = true;
-                }
-            }
-
-            if (!found)
-            {
-                if (secKey.IsMasterKey)
-                {
-                    if (masterFound)
-                        throw new ArgumentException("cannot add a master key to a ring that already has one");
-
-                    keys.Insert(0, secKey);
-                }
-                else
-                {
-                    keys.Add(secKey);
-                }
-            }
-
+            InsertKey(keys, secKey);
             return new PgpSecretKeyRing(keys, secRing.extraPubKeys);
         }
 
@@ -256,20 +183,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpSecretKey secKey)
         {
             IList<PgpSecretKey> keys = new List<PgpSecretKey>(secRing.keys);
-            bool found = false;
-
-            for (int i = 0; i < keys.Count; i++)
-            {
-                PgpSecretKey key = keys[i];
-
-                if (key.KeyId == secKey.KeyId)
-                {
-                    found = true;
-                    keys.RemoveAt(i);
-                }
-            }
-
-            return found ? new PgpSecretKeyRing(keys, secRing.extraPubKeys) : null;
+            return RemoveKey(keys, secKey) ? new PgpSecretKeyRing(keys, secRing.extraPubKeys) : null;
         }
     }
 }

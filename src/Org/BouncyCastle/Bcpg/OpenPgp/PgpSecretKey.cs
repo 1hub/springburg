@@ -9,8 +9,8 @@ using Ed25519Dsa = InflatablePalace.Cryptography.Algorithms.Ed25519;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>General class to handle a PGP secret key object.</remarks>
-    public class PgpSecretKey
+    /// <summary>General class to handle a PGP secret key object.</summary>
+    public class PgpSecretKey : IPgpKey
     {
         private readonly SecretKeyPacket secret;
         private readonly PgpPublicKey pub;

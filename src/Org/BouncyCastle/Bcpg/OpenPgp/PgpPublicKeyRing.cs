@@ -14,11 +14,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     /// </remarks>
     public class PgpPublicKeyRing : PgpKeyRing
     {
-        private readonly IList<PgpPublicKey> keys;
+        private IList<PgpPublicKey> keys;
 
         public PgpPublicKeyRing(IList<PgpPublicKey> pubKeys)
         {
-            this.keys = pubKeys;
+            this.keys = new List<PgpPublicKey>(pubKeys);
         }
 
         public PgpPublicKeyRing(byte[] encoding)
@@ -39,23 +39,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     + "tag 0x" + ((int)initialTag).ToString("X"));
             }
 
-            PublicKeyPacket pubPk = ReadPublicKeyPacket(bcpgInput);
-            TrustPacket trustPk = ReadOptionalTrustPacket(bcpgInput);
-
-            // direct signatures and revocations
-            IList<PgpSignature> keySigs = ReadSignaturesAndTrust(bcpgInput);
-
-            IList<object> ids;
-            IList<TrustPacket> idTrusts;
-            IList<IList<PgpSignature>> idSigs;
-            ReadUserIDs(bcpgInput, out ids, out idTrusts, out idSigs);
-
-            keys.Add(new PgpPublicKey(pubPk, trustPk, keySigs, ids, idTrusts, idSigs));
+            PublicKeyPacket pubPk = (PublicKeyPacket)bcpgInput.ReadPacket();
+            keys.Add(ReadPublicKey(bcpgInput, pubPk));
 
             // Read subkeys
             while (bcpgInput.NextPacketTag() == PacketTag.PublicSubkey)
             {
-                keys.Add(ReadSubkey(bcpgInput));
+                pubPk = (PublicSubkeyPacket)bcpgInput.ReadPacket();
+                keys.Add(ReadPublicKey(bcpgInput, pubPk, subKey: true));
             }
         }
 
@@ -76,15 +67,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return bOut.ToArray();
         }
 
-        public void Encode(Stream outStr)
+        public void Encode(Stream outputStream)
         {
-            if (outStr == null)
-                throw new ArgumentNullException("outStr");
+            if (outputStream == null)
+                throw new ArgumentNullException(nameof(outputStream));
 
             foreach (PgpPublicKey k in keys)
-            {
-                k.Encode(outStr);
-            }
+                k.Encode(outputStream);
         }
 
         /// <summary>
@@ -99,39 +88,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpPublicKey pubKey)
         {
             IList<PgpPublicKey> keys = new List<PgpPublicKey>(pubRing.keys);
-            bool found = false;
-            bool masterFound = false;
-
-            for (int i = 0; i != keys.Count; i++)
-            {
-                PgpPublicKey key = (PgpPublicKey)keys[i];
-
-                if (key.KeyId == pubKey.KeyId)
-                {
-                    found = true;
-                    keys[i] = pubKey;
-                }
-                if (key.IsMasterKey)
-                {
-                    masterFound = true;
-                }
-            }
-
-            if (!found)
-            {
-                if (pubKey.IsMasterKey)
-                {
-                    if (masterFound)
-                        throw new ArgumentException("cannot add a master key to a ring that already has one");
-
-                    keys.Insert(0, pubKey);
-                }
-                else
-                {
-                    keys.Add(pubKey);
-                }
-            }
-
+            InsertKey(keys, pubKey);
             return new PgpPublicKeyRing(keys);
         }
 
@@ -144,38 +101,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpPublicKey pubKey)
         {
             IList<PgpPublicKey> keys = new List<PgpPublicKey>(pubRing.keys);
-            bool found = false;
-
-            for (int i = 0; i < keys.Count; i++)
-            {
-                if (keys[i].KeyId == pubKey.KeyId)
-                {
-                    found = true;
-                    keys.RemoveAt(i);
-                }
-            }
-
-            return found ? new PgpPublicKeyRing(keys) : null;
-        }
-
-        private static PublicKeyPacket ReadPublicKeyPacket(BcpgInputStream bcpgInput)
-        {
-            Packet packet = bcpgInput.ReadPacket();
-            if (!(packet is PublicKeyPacket))
-                throw new IOException("unexpected packet in stream: " + packet);
-
-            return (PublicKeyPacket)packet;
-        }
-
-        private static PgpPublicKey ReadSubkey(BcpgInputStream bcpgInput)
-        {
-            PublicKeyPacket pk = ReadPublicKeyPacket(bcpgInput);
-            TrustPacket kTrust = ReadOptionalTrustPacket(bcpgInput);
-
-            // PGP 8 actually leaves out the signature.
-            IList<PgpSignature> sigList = ReadSignaturesAndTrust(bcpgInput);
-
-            return new PgpPublicKey(pk, kTrust, sigList);
+            return RemoveKey(keys, pubKey) ? new PgpPublicKeyRing(keys) : null;
         }
     }
 }

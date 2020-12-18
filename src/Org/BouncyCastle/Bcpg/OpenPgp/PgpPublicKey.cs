@@ -10,7 +10,7 @@ using Ed25519Dsa = InflatablePalace.Cryptography.Algorithms.Ed25519;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>General class to handle a PGP public key object.</summary>
-    public class PgpPublicKey
+    public class PgpPublicKey : IPgpKey
     {
         public static byte[] CalculateFingerprint(PublicKeyPacket publicPk)
         {

@@ -1,10 +1,9 @@
 using System;
-using System.IO;
+
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Basic packet for a PGP public subkey</remarks>
-    public class PublicSubkeyPacket
-        : PublicKeyPacket
+    /// <summary>Basic packet for a PGP public subkey</summary>
+    public class PublicSubkeyPacket : PublicKeyPacket
     {
         internal PublicSubkeyPacket(
             BcpgInputStream bcpgIn)

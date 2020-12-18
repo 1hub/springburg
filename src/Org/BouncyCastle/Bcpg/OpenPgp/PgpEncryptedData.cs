@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    public abstract partial class PgpEncryptedData
+    public abstract class PgpEncryptedData
     {
         protected InputStreamPacket encData;
         private CryptoStream encStream;

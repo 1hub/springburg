@@ -1,11 +1,10 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <remarks>A holder for a list of PGP encryption method packets.</remarks>
+    /// <summary>A holder for a list of PGP encryption method packets.</summary>
     public class PgpEncryptedDataList : PgpObject
     {
         private readonly IList<PgpEncryptedData> list = new List<PgpEncryptedData>();
@@ -40,24 +39,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        public PgpEncryptedData this[int index]
-        {
-            get { return list[index]; }
-        }
+        public PgpEncryptedData this[int index] => list[index];
 
-        public int Count
-        {
-            get { return list.Count; }
-        }
+        public int Count => list.Count;
 
-        public bool IsEmpty
-        {
-            get { return list.Count == 0; }
-        }
+        public bool IsEmpty => list.Count == 0;
 
-        public IEnumerable<PgpEncryptedData> GetEncryptedDataObjects()
-        {
-            return list;
-        }
+        public IEnumerable<PgpEncryptedData> GetEncryptedDataObjects() => list;
     }
 }
