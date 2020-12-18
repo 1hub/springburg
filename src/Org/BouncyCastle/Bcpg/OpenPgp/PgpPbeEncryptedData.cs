@@ -55,83 +55,38 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         internal Stream DoGetDataStream(byte[] rawPassPhrase, bool clearPassPhrase)
         {
+            byte[] key = Array.Empty<byte>();
+
             try
             {
                 SymmetricKeyAlgorithmTag keyAlgorithm = keyData.EncAlgorithm;
 
-                byte[] key = PgpUtilities.DoMakeKeyFromPassPhrase(keyAlgorithm, keyData.S2k, rawPassPhrase, clearPassPhrase);
-
+                key = PgpUtilities.DoMakeKeyFromPassPhrase(keyAlgorithm, keyData.S2k, rawPassPhrase, clearPassPhrase);
                 byte[] secKeyData = keyData.GetSecKeyData();
                 if (secKeyData != null && secKeyData.Length > 0)
                 {
-                    using var keyCipher = PgpUtilities.GetSymmetricAlgorithm(keyAlgorithm);
-                    keyCipher.Padding = PaddingMode.None;
-                    using var keyDecryptor = new ZeroPaddedCryptoTransformWrapper(keyCipher.CreateDecryptor(key, new byte[keyCipher.BlockSize / 8]));
-                    byte[] keyBytes = keyDecryptor.TransformFinalBlock(secKeyData, 0, secKeyData.Length);
-
-                    keyAlgorithm = (SymmetricKeyAlgorithmTag)keyBytes[0];
-
-                    key = keyBytes.AsSpan(1).ToArray();
-                }
-
-
-                var c = PgpUtilities.GetSymmetricAlgorithm(keyAlgorithm);
-                var iv = new byte[c.BlockSize / 8];
-
-                ICryptoTransform decryptor;
-                if (encData is SymmetricEncIntegrityPacket)
-                {
-                    decryptor = c.CreateDecryptor(key, iv);
+                    byte[] secureKey = Array.Empty<byte>();
+                    try
+                    {
+                        using var keyCipher = PgpUtilities.GetSymmetricAlgorithm(keyAlgorithm);
+                        using var keyDecryptor = new ZeroPaddedCryptoTransformWrapper(keyCipher.CreateDecryptor(key, new byte[(keyCipher.BlockSize + 7) / 8]));
+                        secureKey = keyDecryptor.TransformFinalBlock(secKeyData, 0, secKeyData.Length);
+                        keyAlgorithm = (SymmetricKeyAlgorithmTag)secureKey[0];
+                        return GetDataStream(keyAlgorithm, secureKey.AsSpan(1), verifyIntegrity: true);
+                    }
+                    finally
+                    {
+                        CryptographicOperations.ZeroMemory(secureKey);
+                    }
                 }
                 else
                 {
-                    c.Mode = CipherMode.ECB;
-                    decryptor = new OpenPGPCFBTransformWrapper(c.CreateEncryptor(key, null), iv, false);
+                    return GetDataStream(keyAlgorithm, key, verifyIntegrity: true);
                 }
-
-                encStream = new CryptoStream(
-                    encData.GetInputStream(),
-                    new ZeroPaddedCryptoTransformWrapper(decryptor),
-                    CryptoStreamMode.Read);
-                if (encData is SymmetricEncIntegrityPacket)
-                {
-                    hashAlgorithm = SHA1.Create();
-                    tailEndCryptoTransform = new TailEndCryptoTransform(hashAlgorithm, hashAlgorithm.HashSize / 8);
-                    encStream = new CryptoStream(encStream, tailEndCryptoTransform, CryptoStreamMode.Read);
-                }
-
-                if (Streams.ReadFully(encStream, iv, 0, iv.Length) < iv.Length)
-                    throw new EndOfStreamException("unexpected end of stream.");
-
-                int v1 = encStream.ReadByte();
-                int v2 = encStream.ReadByte();
-
-                if (v1 < 0 || v2 < 0)
-                    throw new EndOfStreamException("unexpected end of stream.");
-
-                // Note: the oracle attack on the "quick check" bytes is not deemed
-                // a security risk for PBE (see PgpPublicKeyEncryptedData)
-
-                bool repeatCheckPassed = iv[iv.Length - 2] == (byte)v1 && iv[iv.Length - 1] == (byte)v2;
-
-                // Note: some versions of PGP appear to produce 0 for the extra
-                // bytes rather than repeating the two previous bytes
-                bool zeroesCheckPassed = v1 == 0 && v2 == 0;
-
-                if (!repeatCheckPassed && !zeroesCheckPassed)
-                {
-                    throw new PgpDataValidationException("quick check failed.");
-                }
-
-                return encStream;
             }
-            catch (PgpException e)
+            finally
             {
-                throw e;
-            }
-            catch (Exception e)
-            {
-                throw new PgpException("Exception creating cipher", e);
+                CryptographicOperations.ZeroMemory(key);
             }
         }
     }

@@ -570,11 +570,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
         {
             var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
-            c.Key = key;
-            c.IV = iv;
             c.Mode = cipherMode;
-            c.Padding = PaddingMode.None;
-            var decryptor = new ZeroPaddedCryptoTransformWrapper(c.CreateDecryptor());
+            var decryptor = new ZeroPaddedCryptoTransformWrapper(c.CreateDecryptor(key, iv));
             return decryptor.TransformFinalBlock(keyData, keyOff, keyLen);
         }
 
@@ -719,6 +716,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
             return value;
         }
+
         private byte[] ExportKeyParameter(BigInteger value, int length)
         {
             byte[] target = new byte[length];
@@ -1068,9 +1066,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             {
                 iv = PgpUtilities.GenerateIV((c.BlockSize + 7) / 8);
             }
-            c.Key = key;
-            c.IV = iv;
-            var encryptor = new ZeroPaddedCryptoTransformWrapper(c.CreateEncryptor());
+            var encryptor = new ZeroPaddedCryptoTransformWrapper(c.CreateEncryptor(key, iv));
             return encryptor.TransformFinalBlock(data, dataOff, dataLen);
         }
 

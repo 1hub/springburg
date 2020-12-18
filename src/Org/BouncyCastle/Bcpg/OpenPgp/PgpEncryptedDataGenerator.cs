@@ -49,7 +49,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             public override void AddSessionInfo(byte[] si)
             {
                 using var symmetricAlgorithm = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
-                using var encryptor = symmetricAlgorithm.CreateEncryptor(key, new byte[symmetricAlgorithm.BlockSize]);
+                using var encryptor = new ZeroPaddedCryptoTransformWrapper(symmetricAlgorithm.CreateEncryptor(key, new byte[(symmetricAlgorithm.BlockSize + 7) / 8]));
                 this.sessionInfo = encryptor.TransformFinalBlock(si, 0, si.Length - 2);
             }
 

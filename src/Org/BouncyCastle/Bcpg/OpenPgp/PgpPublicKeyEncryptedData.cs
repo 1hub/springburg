@@ -49,74 +49,27 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>Return the decrypted data stream for the packet.</summary>
-        public Stream GetDataStream(
-            PgpPrivateKey privKey)
+        public Stream GetDataStream(PgpPrivateKey privKey)
         {
-            byte[] sessionData = RecoverSessionData(privKey);
-
-            if (!ConfirmCheckSum(sessionData))
-                throw new PgpKeyValidationException("key checksum failed");
-
-            SymmetricKeyAlgorithmTag symmAlg = (SymmetricKeyAlgorithmTag)sessionData[0];
-            if (symmAlg == SymmetricKeyAlgorithmTag.Null)
-                return encData.GetInputStream();
-
-            SymmetricAlgorithm encryptionAlgorithm = PgpUtilities.GetSymmetricAlgorithm(symmAlg);
-            encryptionAlgorithm.Key = sessionData.AsSpan(1, sessionData.Length - 3).ToArray();
-            encryptionAlgorithm.IV = new byte[(encryptionAlgorithm.BlockSize + 7) / 8];
-            encryptionAlgorithm.Padding = PaddingMode.Zeros;
-
-
-            ICryptoTransform decryptor;
-            if (encData is SymmetricEncIntegrityPacket)
-            {
-                decryptor = encryptionAlgorithm.CreateDecryptor();
-            }
-            else
-            {
-                encryptionAlgorithm.Mode = CipherMode.ECB;
-                decryptor = new OpenPGPCFBTransformWrapper(encryptionAlgorithm.CreateEncryptor(), encryptionAlgorithm.IV, false);
-            }
-
-            //encStream = new CryptoStream(encData.GetInputStream(), new ZeroPaddedCryptoTransformWrapper(decryptor), CryptoStreamMode.Read);
+            byte[] sessionData = Array.Empty<byte>();
 
             try
             {
-                byte[] iv = new byte[(encryptionAlgorithm.BlockSize + 7) / 8];
+                sessionData = RecoverSessionData(privKey);
+                if (!ConfirmCheckSum(sessionData))
+                    throw new PgpKeyValidationException("key checksum failed");
 
-                encStream = new CryptoStream(
-                    encData.GetInputStream(),
-                    new ZeroPaddedCryptoTransformWrapper(decryptor),
-                    CryptoStreamMode.Read);
-                if (encData is SymmetricEncIntegrityPacket)
-                {
-                    hashAlgorithm = SHA1.Create();
-                    tailEndCryptoTransform = new TailEndCryptoTransform(hashAlgorithm, hashAlgorithm.HashSize / 8);
-                    encStream = new CryptoStream(encStream, tailEndCryptoTransform, CryptoStreamMode.Read);
-                }
-
-                if (Streams.ReadFully(encStream, iv, 0, iv.Length) < iv.Length)
-                    throw new EndOfStreamException("unexpected end of stream.");
-
-                int v1 = encStream.ReadByte();
-                int v2 = encStream.ReadByte();
-
-                if (v1 < 0 || v2 < 0)
-                    throw new EndOfStreamException("unexpected end of stream.");
+                SymmetricKeyAlgorithmTag symmAlg = (SymmetricKeyAlgorithmTag)sessionData[0];
+                if (symmAlg == SymmetricKeyAlgorithmTag.Null)
+                    return encData.GetInputStream();
 
                 // Note: the oracle attack on the "quick check" bytes is deemed
-                // a security risk for typical public key encryption usages,
-                // therefore we do not perform the check.
-
-                return encStream;
+                // a security risk for typical public key encryption usages.
+                return GetDataStream(symmAlg, sessionData.AsSpan(1, sessionData.Length - 3), verifyIntegrity: false);
             }
-            catch (PgpException e)
+            finally
             {
-                throw e;
-            }
-            catch (Exception e)
-            {
-                throw new PgpException("Exception starting decryption", e);
+                CryptographicOperations.ZeroMemory(sessionData.AsSpan());
             }
         }
 
@@ -174,7 +127,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 secKeyData[1].AsSpan(2).CopyTo(keyData.AsSpan(halfLength + halfLength - (secKeyData[1].Length - 2)));
                 return elGamal.Decrypt(keyData, RSAEncryptionPadding.Pkcs1).ToArray();
             }
-
 
             // TODO: ElGamal
             throw new NotImplementedException();

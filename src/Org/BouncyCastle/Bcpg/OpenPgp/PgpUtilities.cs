@@ -396,6 +396,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
+        /// <summary>
+        /// Get symmetric algorithm implementation in CFB mode with feedback size equal to block size
+        /// and no padding
+        /// </summary>
+        /// <param name="symmetricKeyAlgorithmTag">Algorithm identifier</param>
+        /// <returns>Symmetric algorithm implementation</returns>
         internal static SymmetricAlgorithm GetSymmetricAlgorithm(SymmetricKeyAlgorithmTag symmetricKeyAlgorithmTag)
         {
             SymmetricAlgorithm symmetricAlgorithm;
@@ -443,6 +449,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             symmetricAlgorithm.Mode = CipherMode.CFB;
             symmetricAlgorithm.FeedbackSize = symmetricAlgorithm.BlockSize;
+            symmetricAlgorithm.Padding = PaddingMode.None;
             return symmetricAlgorithm;
         }
 
