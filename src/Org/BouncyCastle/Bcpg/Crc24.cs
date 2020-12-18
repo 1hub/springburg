@@ -1,5 +1,3 @@
-using System;
-
 namespace Org.BouncyCastle.Bcpg
 {
     public class Crc24
@@ -13,8 +11,7 @@ namespace Org.BouncyCastle.Bcpg
         {
         }
 
-        public void Update(
-            int b)
+        public void Update(int b)
         {
             crc ^= b << 16;
             for (int i = 0; i < 8; i++)
@@ -26,12 +23,6 @@ namespace Org.BouncyCastle.Bcpg
                 }
             }
         }
-
-        /*[Obsolete("Use 'Value' property instead")]
-        public int GetValue()
-        {
-            return crc;
-        }*/
 
         public int Value
         {

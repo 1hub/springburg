@@ -1,14 +1,10 @@
 using System;
 using System.IO;
 
-using Org.BouncyCastle.Utilities;
-using Org.BouncyCastle.Utilities.IO;
-
 namespace Org.BouncyCastle.Bcpg
 {
     /// <remarks>Basic output stream.</remarks>
-    public class BcpgOutputStream
-        : BaseOutputStream
+    public class BcpgOutputStream : Stream
     {
         internal static BcpgOutputStream Wrap(
             Stream outStr)
@@ -27,6 +23,16 @@ namespace Org.BouncyCastle.Bcpg
         private int partialPower;
         private int partialOffset;
         private const int BufferSizePower = 16; // 2^16 size buffer on long files
+
+        public override bool CanRead => false;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => true;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
         /// <summary>Create a stream representing a general packet.</summary>
         /// <param name="outStr">Output stream to write to.</param>
@@ -243,39 +249,35 @@ namespace Org.BouncyCastle.Bcpg
             partialBuffer[partialOffset++] = b;
         }
 
-        private void WritePartial(
-            byte[] buffer,
-            int off,
-            int len)
+        private void WritePartial(ReadOnlySpan<byte> buffer)
         {
             if (partialOffset == partialBufferLength)
             {
                 PartialFlush(false);
             }
 
-            if (len <= (partialBufferLength - partialOffset))
+            if (buffer.Length <= (partialBufferLength - partialOffset))
             {
-                Array.Copy(buffer, off, partialBuffer, partialOffset, len);
-                partialOffset += len;
+                buffer.CopyTo(partialBuffer.AsSpan(partialOffset));
+                partialOffset += buffer.Length;
             }
             else
             {
                 int diff = partialBufferLength - partialOffset;
-                Array.Copy(buffer, off, partialBuffer, partialOffset, diff);
-                off += diff;
-                len -= diff;
+                buffer.Slice(0, diff).CopyTo(partialBuffer.AsSpan(partialOffset));
+                buffer = buffer.Slice(diff);
                 PartialFlush(false);
-                while (len > partialBufferLength)
+                while (buffer.Length > partialBufferLength)
                 {
-                    Array.Copy(buffer, off, partialBuffer, 0, partialBufferLength);
-                    off += partialBufferLength;
-                    len -= partialBufferLength;
+                    buffer.Slice(0, partialBufferLength).CopyTo(partialBuffer);
+                    buffer = buffer.Slice(partialBufferLength);
                     PartialFlush(false);
                 }
-                Array.Copy(buffer, off, partialBuffer, 0, len);
-                partialOffset += len;
+                buffer.CopyTo(partialBuffer);
+                partialOffset += buffer.Length;
             }
         }
+
         public override void WriteByte(
             byte value)
         {
@@ -288,6 +290,7 @@ namespace Org.BouncyCastle.Bcpg
                 outStr.WriteByte(value);
             }
         }
+
         public override void Write(
             byte[] buffer,
             int offset,
@@ -295,7 +298,7 @@ namespace Org.BouncyCastle.Bcpg
         {
             if (partialBuffer != null)
             {
-                WritePartial(buffer, offset, count);
+                WritePartial(buffer.AsSpan(offset, count));
             }
             else
             {
@@ -303,39 +306,42 @@ namespace Org.BouncyCastle.Bcpg
             }
         }
 
-        // Additional helper methods to write primitive types
-        internal virtual void WriteShort(
-            short n)
+        public override void Write(ReadOnlySpan<byte> buffer)
         {
-            this.Write(
-                (byte)(n >> 8),
-                (byte)n);
-        }
-        internal virtual void WriteInt(
-            int n)
-        {
-            this.Write(
-                (byte)(n >> 24),
-                (byte)(n >> 16),
-                (byte)(n >> 8),
-                (byte)n);
-        }
-        internal virtual void WriteLong(
-            long n)
-        {
-            this.Write(
-                (byte)(n >> 56),
-                (byte)(n >> 48),
-                (byte)(n >> 40),
-                (byte)(n >> 32),
-                (byte)(n >> 24),
-                (byte)(n >> 16),
-                (byte)(n >> 8),
-                (byte)n);
+            if (partialBuffer != null)
+            {
+                WritePartial(buffer);
+            }
+            else
+            {
+                outStr.Write(buffer);
+            }
         }
 
-        public void WritePacket(
-            ContainedPacket p)
+        public void Write(params byte[] buffer)
+        {
+            Write(buffer.AsSpan());
+        }
+
+        // Additional helper methods to write primitive types
+        internal virtual void WriteShort(short n)
+        {
+            this.Write(new byte[] { (byte)(n >> 8), (byte)n });
+        }
+
+        internal virtual void WriteInt(int n)
+        {
+            this.Write(new byte[] { (byte)(n >> 24), (byte)(n >> 16), (byte)(n >> 8), (byte)n });
+        }
+
+        internal virtual void WriteLong(long n)
+        {
+            this.Write(new byte[] {
+                (byte)(n >> 56), (byte)(n >> 48), (byte)(n >> 40), (byte)(n >> 32),
+                (byte)(n >> 24), (byte)(n >> 16), (byte)(n >> 8), (byte)n });
+        }
+
+        public void WritePacket(ContainedPacket p)
         {
             p.Encode(this);
         }
@@ -349,14 +355,12 @@ namespace Org.BouncyCastle.Bcpg
             this.Write(body);
         }
 
-        public void WriteObject(
-            BcpgObject bcpgObject)
+        public void WriteObject(BcpgObject bcpgObject)
         {
             bcpgObject.Encode(this);
         }
 
-        public void WriteObjects(
-            params BcpgObject[] v)
+        public void WriteObjects(params BcpgObject[] v)
         {
             foreach (BcpgObject o in v)
             {
@@ -391,5 +395,11 @@ namespace Org.BouncyCastle.Bcpg
             }
             base.Dispose(disposing);
         }
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
     }
 }
