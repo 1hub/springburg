@@ -60,6 +60,8 @@ namespace InflatablePalace.Cryptography.Algorithms
                 reKey(key.Length * 8, ref Key);
             }
 
+            public int BlockSizeInBytes => 16;
+
             public int Transform(ReadOnlySpan<byte> input, Span<byte> output)
             {
                 Span<uint> x = stackalloc uint[4];
@@ -89,7 +91,10 @@ namespace InflatablePalace.Cryptography.Algorithms
                 return input.Length;
             }
 
-            public int BlockSizeInBytes => 16;
+            public void Dispose()
+            {
+                Array.Clear(Key, 0, Key.Length);
+            }
 
             /// <summary>
             /// Run four bytes through keyed S-boxes and apply MDS matrix

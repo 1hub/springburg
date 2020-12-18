@@ -194,6 +194,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     ecdsaKParams.Curve.Oid,
                     PgpUtilities.EncodePoint(ecdsaKParams.Q));
             }
+            else if (pubKey is ElGamal elgamalK)
+            {
+                var elgamalKParams = elgamalK.ExportParameters(false);
+                algorithm = PublicKeyAlgorithmTag.ElGamalGeneral;
+                bcpgKey = new ElGamalPublicBcpgKey(
+                    new MPInteger(elgamalKParams.P),
+                    new MPInteger(elgamalKParams.G),
+                    new MPInteger(elgamalKParams.Y));
+            }
             /*
             else if (pubKey is ElGamalPublicKeyParameters)
             {
@@ -528,12 +537,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                             return new Ed25519Dsa(ecK.EncodedPoint.GetEncoded().AsSpan(3).ToArray());
                         goto default;
 
-                    /*
                     case PublicKeyAlgorithmTag.ElGamalEncrypt:
                     case PublicKeyAlgorithmTag.ElGamalGeneral:
                         ElGamalPublicBcpgKey elK = (ElGamalPublicBcpgKey)publicPk.Key;
-                        return new ElGamalPublicKeyParameters(elK.Y, new ElGamalParameters(elK.P, elK.G));*/
-                    default:
+                        return ElGamal.Create(new ElGamalParameters { Y = elK.Y.Value, P = elK.P.Value, G = elK.G.Value });
+
+                     /*
+                     case PublicKeyAlgorithmTag.ElGamalEncrypt:
+                     case PublicKeyAlgorithmTag.ElGamalGeneral:
+                         ElGamalPublicBcpgKey elK = (ElGamalPublicBcpgKey)publicPk.Key;
+                         return new ElGamalPublicKeyParameters(elK.Y, new ElGamalParameters(elK.P, elK.G));*/
+                     default:
                         throw new PgpException("unknown public key algorithm encountered");
                 }
             }

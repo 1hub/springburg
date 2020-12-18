@@ -68,6 +68,12 @@ namespace InflatablePalace.OpenPGP
                 return BlockSizeInBytes;
             }
 
+            public void Dispose()
+            {
+                Array.Clear(Km, 0, Km.Length);
+                Array.Clear(Kr, 0, Kr.Length);
+            }
+
             private static readonly uint[] S1 =
             {
                 0x30fb40d4, 0x9fa0ff0b, 0x6beccd2f, 0x3f258c7a, 0x1e213f2f, 0x9c004dd3, 0x6003e540, 0xcf9fc949,

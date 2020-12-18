@@ -1,3 +1,4 @@
+using InflatablePalace.Cryptography.Algorithms;
 using System.IO;
 using System.Security.Cryptography;
 
@@ -8,7 +9,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         protected InputStreamPacket encData;
         protected CryptoStream encStream;
         protected HashAlgorithm hashAlgorithm;
-        private protected TruncatedStream truncStream;
+        private protected TailEndCryptoTransform tailEndCryptoTransform;
 
         internal PgpEncryptedData(InputStreamPacket encData)
         {
@@ -48,7 +49,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             // process the MDC packet
             //
             var digest = hashAlgorithm.Hash;
-            var streamDigest = truncStream.GetLookAhead();
+            var streamDigest = tailEndCryptoTransform.TailEnd;
 
             return CryptographicOperations.FixedTimeEquals(digest, streamDigest);
         }

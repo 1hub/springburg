@@ -40,7 +40,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
                 PgpLiteralData data = (PgpLiteralData)fact.NextPgpObject();
 
-                Stream inputStream = data.GetInputStream();
+                Stream inputStream = new BufferedStream(data.GetInputStream());
 
                 for (int count = 0; count != i; count++)
                 {

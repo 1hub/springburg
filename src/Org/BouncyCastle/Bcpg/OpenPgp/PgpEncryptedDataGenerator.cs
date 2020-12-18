@@ -100,7 +100,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                         new byte[] { 0, 0, 0, 1 },
                         Rfc6637Utilities.CreateUserKeyingMaterial(pubKey.PublicKeyPacket));
 
-                    derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm)).ToArray();
+                    derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm) / 8).ToArray();
 
                     byte[] paddedSessionData = PgpPad.PadSessionData(sessionInfo, sessionKeyObfuscation);
                     byte[] C = KeyWrapAlgorithm.WrapKey(derivedKey, paddedSessionData);
@@ -112,6 +112,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     Array.Copy(C, 0, rv, VB.Length + 1, C.Length);
 
                     return rv;
+                }
+
+                if (pubKey.Algorithm == PublicKeyAlgorithmTag.ElGamalEncrypt || pubKey.Algorithm == PublicKeyAlgorithmTag.ElGamalGeneral)
+                {
+                    var asymmetricAlgorithm = pubKey.GetKey() as ElGamal;
+                    return asymmetricAlgorithm.Encrypt(sessionInfo, RSAEncryptionPadding.Pkcs1).ToArray();
                 }
 
                 // TODO: ElGamal

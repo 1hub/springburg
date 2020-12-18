@@ -1,5 +1,7 @@
+using InflatablePalace.Cryptography.Algorithms;
 using System.IO;
 using System.IO.Compression;
+using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
@@ -41,7 +43,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                         inputStream.ReadByte();
                     }
                     // Truncate the Adler32 hash
-                    var truncatedStream = new TruncatedStream(inputStream, 4);
+                    var adler32 = new Adler32();
+                    var truncatedStream = new CryptoStream(inputStream, new TailEndCryptoTransform(adler32, adler32.HashSize / 8), CryptoStreamMode.Read);
                     return new DeflateStream(truncatedStream, CompressionMode.Decompress);
                 // FIXME
                 //case CompressionAlgorithmTag.BZip2:

@@ -89,13 +89,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     decryptor = new OpenPGPCFBTransformWrapper(c.CreateEncryptor(key, null), iv, false);
                 }
 
-                encStream = new CryptoStream(encData.GetInputStream(), new ZeroPaddedCryptoTransformWrapper(decryptor), CryptoStreamMode.Read);
-
+                encStream = new CryptoStream(
+                    encData.GetInputStream(),
+                    new ZeroPaddedCryptoTransformWrapper(decryptor),
+                    CryptoStreamMode.Read);
                 if (encData is SymmetricEncIntegrityPacket)
                 {
                     hashAlgorithm = SHA1.Create();
-                    truncStream = new TruncatedStream(encStream, hashAlgorithm.HashSize / 8);
-                    encStream = new CryptoStream(truncStream, hashAlgorithm, CryptoStreamMode.Read);
+                    tailEndCryptoTransform = new TailEndCryptoTransform(hashAlgorithm, hashAlgorithm.HashSize / 8);
+                    encStream = new CryptoStream(encStream, tailEndCryptoTransform, CryptoStreamMode.Read);
                 }
 
                 if (Streams.ReadFully(encStream, iv, 0, iv.Length) < iv.Length)

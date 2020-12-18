@@ -65,6 +65,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     var ecdsaKParams = ecdsaK.ExportParameters(true);
                     secKey = new ECSecretBcpgKey(new MPInteger(ecdsaKParams.D));
                     break;
+                case PublicKeyAlgorithmTag.ElGamalEncrypt:
+                case PublicKeyAlgorithmTag.ElGamalGeneral:
+                    ElGamal esK = (ElGamal)privKey.Key;
+                    var esKParams = esK.ExportParameters(true);
+                    secKey = new ElGamalSecretBcpgKey(new MPInteger(esKParams.X));
+                    break;
                 /*case PublicKeyAlgorithmTag.ElGamalEncrypt:
                 case PublicKeyAlgorithmTag.ElGamalGeneral:
                     ElGamalPrivateKeyParameters esK = (ElGamalPrivateKeyParameters)privKey.Key;
@@ -570,20 +576,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             c.Padding = PaddingMode.None;
             var decryptor = new ZeroPaddedCryptoTransformWrapper(c.CreateDecryptor());
             return decryptor.TransformFinalBlock(keyData, keyOff, keyLen);
-            /*IBufferedCipher c;
-            try
-            {
-                string cName = PgpUtilities.GetSymmetricCipherName(encAlgorithm);
-                c = CipherUtilities.GetCipher(cName + modeAndPadding);
-            }
-            catch (Exception e)
-            {
-                throw new PgpException("Exception creating cipher", e);
-            }
-
-            c.Init(false, new ParametersWithIV(key, iv));
-
-            return c.DoFinal(keyData, keyOff, keyLen);*/
         }
 
         /// <summary>Extract a <c>PgpPrivateKey</c> from this secret key's encrypted contents.</summary>
@@ -686,15 +678,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                             eddsaPriv.X.Value,
                             eddsaPub.EncodedPoint.GetEncoded().AsSpan(3).ToArray());
                         break;
-                    /*
                     case PublicKeyAlgorithmTag.ElGamalEncrypt:
                     case PublicKeyAlgorithmTag.ElGamalGeneral:
                         ElGamalPublicBcpgKey elPub = (ElGamalPublicBcpgKey)pubPk.Key;
                         ElGamalSecretBcpgKey elPriv = new ElGamalSecretBcpgKey(bcpgIn);
-                        ElGamalParameters elParams = new ElGamalParameters(elPub.P, elPub.G);
-                        privateKey = new ElGamalPrivateKeyParameters(elPriv.X, elParams);
-                        break;*/
-                    default:
+                        ElGamalParameters elParams = new ElGamalParameters { P = elPub.P.Value, G = elPub.G.Value, Y = elPub.Y.Value, X = elPriv.X.Value };
+                        privateKey = ElGamal.Create(elParams);
+                        break; 
+                     /*
+                     case PublicKeyAlgorithmTag.ElGamalEncrypt:
+                     case PublicKeyAlgorithmTag.ElGamalGeneral:
+                         ElGamalPublicBcpgKey elPub = (ElGamalPublicBcpgKey)pubPk.Key;
+                         ElGamalSecretBcpgKey elPriv = new ElGamalSecretBcpgKey(bcpgIn);
+                         ElGamalParameters elParams = new ElGamalParameters(elPub.P, elPub.G);
+                         privateKey = new ElGamalPrivateKeyParameters(elPriv.X, elParams);
+                         break;*/
+                     default:
                         throw new PgpException("unknown public key algorithm encountered");
                 }
 

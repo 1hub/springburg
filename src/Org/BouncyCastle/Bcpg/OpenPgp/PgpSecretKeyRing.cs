@@ -1,9 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
@@ -218,7 +216,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             for (int i = 0; i != keys.Count; i++)
             {
-                PgpSecretKey key = (PgpSecretKey)keys[i];
+                PgpSecretKey key = keys[i];
 
                 if (key.KeyId == secKey.KeyId)
                 {
@@ -262,7 +260,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             for (int i = 0; i < keys.Count; i++)
             {
-                PgpSecretKey key = (PgpSecretKey)keys[i];
+                PgpSecretKey key = keys[i];
 
                 if (key.KeyId == secKey.KeyId)
                 {

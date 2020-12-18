@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace InflatablePalace.Cryptography.Algorithms
 {
-    interface IBlockTransform
+    interface IBlockTransform : IDisposable
     {
         int BlockSizeInBytes { get; }
 

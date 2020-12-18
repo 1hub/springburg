@@ -31,5 +31,14 @@ namespace InflatablePalace.Cryptography.Algorithms.Modes
         {
             return Transform(input, output);
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                blockTransform.Dispose();
+            }
+            base.Dispose(disposing);
+        }
     }
 }

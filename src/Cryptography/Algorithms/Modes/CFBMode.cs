@@ -35,6 +35,7 @@ namespace InflatablePalace.Cryptography.Algorithms.Modes
                 FR = null;
                 CryptoPool.Return(FRE);
                 FRE = null;
+                blockTransform.Dispose();
             }
             base.Dispose(disposing);
         }

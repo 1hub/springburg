@@ -78,17 +78,21 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 decryptor = new OpenPGPCFBTransformWrapper(encryptionAlgorithm.CreateEncryptor(), encryptionAlgorithm.IV, false);
             }
 
-            encStream = new CryptoStream(encData.GetInputStream(), new ZeroPaddedCryptoTransformWrapper(decryptor), CryptoStreamMode.Read);
+            //encStream = new CryptoStream(encData.GetInputStream(), new ZeroPaddedCryptoTransformWrapper(decryptor), CryptoStreamMode.Read);
 
             try
             {
                 byte[] iv = new byte[(encryptionAlgorithm.BlockSize + 7) / 8];
 
+                encStream = new CryptoStream(
+                    encData.GetInputStream(),
+                    new ZeroPaddedCryptoTransformWrapper(decryptor),
+                    CryptoStreamMode.Read);
                 if (encData is SymmetricEncIntegrityPacket)
                 {
                     hashAlgorithm = SHA1.Create();
-                    truncStream = new TruncatedStream(encStream, hashAlgorithm.HashSize / 8);
-                    encStream = new CryptoStream(truncStream, hashAlgorithm, CryptoStreamMode.Read);
+                    tailEndCryptoTransform = new TailEndCryptoTransform(hashAlgorithm, hashAlgorithm.HashSize / 8);
+                    encStream = new CryptoStream(encStream, tailEndCryptoTransform, CryptoStreamMode.Read);
                 }
 
                 if (Streams.ReadFully(encStream, iv, 0, iv.Length) < iv.Length)
@@ -156,11 +160,21 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     new byte[] { 0, 0, 0, 1 },
                     Rfc6637Utilities.CreateUserKeyingMaterial(privKey.PublicKeyPacket));
 
-                derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm)).ToArray();
+                derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm) / 8).ToArray();
 
                 var C = KeyWrapAlgorithm.UnwrapKey(derivedKey, keyEnc);
                 return PgpPad.UnpadSessionData(C);
             }
+
+            if (asymmetricAlgorithm is ElGamal elGamal)
+            {
+                int halfLength = Math.Max(secKeyData[0].Length, secKeyData[1].Length) - 2;
+                var keyData = new byte[halfLength * 2];
+                secKeyData[0].AsSpan(2).CopyTo(keyData.AsSpan(halfLength - (secKeyData[0].Length - 2)));
+                secKeyData[1].AsSpan(2).CopyTo(keyData.AsSpan(halfLength + halfLength - (secKeyData[1].Length - 2)));
+                return elGamal.Decrypt(keyData, RSAEncryptionPadding.Pkcs1).ToArray();
+            }
+
 
             // TODO: ElGamal
             throw new NotImplementedException();

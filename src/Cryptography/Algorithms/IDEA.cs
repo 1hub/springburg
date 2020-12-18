@@ -99,6 +99,11 @@ namespace InflatablePalace.Cryptography.Algorithms
                 return BlockSizeInBytes;
             }
 
+            public void Dispose()
+            {
+                Array.Clear(workingKey, 0, workingKey.Length);
+            }
+
             /// <summary>
             /// This function computes multiplicative inverse using Euclid's Greatest
             /// Common Divisor algorithm. Zero and one are self inverse.
