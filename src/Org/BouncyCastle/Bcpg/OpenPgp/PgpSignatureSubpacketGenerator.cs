@@ -87,23 +87,23 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public void SetPreferredHashAlgorithms(
             bool isCritical,
-            int[] algorithms)
+            HashAlgorithmTag[] algorithms)
         {
-            list.Add(new PreferredAlgorithms(SignatureSubpacketTag.PreferredHashAlgorithms, isCritical, algorithms));
+            list.Add(new PreferredAlgorithms(SignatureSubpacketTag.PreferredHashAlgorithms, isCritical, algorithms.Cast<byte>().ToArray()));
         }
 
         public void SetPreferredSymmetricAlgorithms(
             bool isCritical,
-            int[] algorithms)
+            SymmetricKeyAlgorithmTag[] algorithms)
         {
-            list.Add(new PreferredAlgorithms(SignatureSubpacketTag.PreferredSymmetricAlgorithms, isCritical, algorithms));
+            list.Add(new PreferredAlgorithms(SignatureSubpacketTag.PreferredSymmetricAlgorithms, isCritical, algorithms.Cast<byte>().ToArray()));
         }
 
         public void SetPreferredCompressionAlgorithms(
             bool isCritical,
-            int[] algorithms)
+            CompressionAlgorithmTag[] algorithms)
         {
-            list.Add(new PreferredAlgorithms(SignatureSubpacketTag.PreferredCompressionAlgorithms, isCritical, algorithms));
+            list.Add(new PreferredAlgorithms(SignatureSubpacketTag.PreferredCompressionAlgorithms, isCritical, algorithms.Cast<byte>().ToArray()));
         }
 
         public void SetKeyFlags(

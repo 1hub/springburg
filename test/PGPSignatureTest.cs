@@ -14,13 +14,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
     public class PgpSignatureTest
         : SimpleTest
     {
-        private const int[] NO_PREFERENCES = null;
-        private static readonly int[] PREFERRED_SYMMETRIC_ALGORITHMS
-            = new int[] { (int)SymmetricKeyAlgorithmTag.Aes128, (int)SymmetricKeyAlgorithmTag.TripleDes };
-        private static readonly int[] PREFERRED_HASH_ALGORITHMS
-            = new int[] { (int)HashAlgorithmTag.Sha1, (int)HashAlgorithmTag.Sha256 };
-        private static readonly int[] PREFERRED_COMPRESSION_ALGORITHMS
-            = new int[] { (int)CompressionAlgorithmTag.ZLib };
+        private static readonly SymmetricKeyAlgorithmTag[] PREFERRED_SYMMETRIC_ALGORITHMS
+            = new SymmetricKeyAlgorithmTag[] { SymmetricKeyAlgorithmTag.Aes128, SymmetricKeyAlgorithmTag.TripleDes };
+        private static readonly HashAlgorithmTag[] PREFERRED_HASH_ALGORITHMS
+            = new HashAlgorithmTag[] { HashAlgorithmTag.Sha1, HashAlgorithmTag.Sha256 };
+        private static readonly CompressionAlgorithmTag[] PREFERRED_COMPRESSION_ALGORITHMS
+            = new CompressionAlgorithmTag[] { CompressionAlgorithmTag.ZLib };
 
         private const int TEST_EXPIRATION_TIME = 10000;
         private const string TEST_USER_ID = "test user id";
@@ -453,14 +452,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 Fail("wrong issuer key ID found in certification");
             }
 
-            int[] prefAlgs = hashedPcks.GetPreferredCompressionAlgorithms();
-            preferredAlgorithmCheck("compression", PREFERRED_COMPRESSION_ALGORITHMS, prefAlgs);
-
-            prefAlgs = hashedPcks.GetPreferredHashAlgorithms();
-            preferredAlgorithmCheck("hash", PREFERRED_HASH_ALGORITHMS, prefAlgs);
-
-            prefAlgs = hashedPcks.GetPreferredSymmetricAlgorithms();
-            preferredAlgorithmCheck("symmetric", PREFERRED_SYMMETRIC_ALGORITHMS, prefAlgs);
+            preferredAlgorithmCheck("compression", PREFERRED_COMPRESSION_ALGORITHMS, hashedPcks.GetPreferredCompressionAlgorithms());
+            preferredAlgorithmCheck("hash", PREFERRED_HASH_ALGORITHMS, hashedPcks.GetPreferredHashAlgorithms());
+            preferredAlgorithmCheck("symmetric", PREFERRED_SYMMETRIC_ALGORITHMS, hashedPcks.GetPreferredSymmetricAlgorithms());
 
             SignatureSubpacketTag[] criticalHashed = hashedPcks.GetCriticalTags();
 
@@ -561,14 +555,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 Fail("creation of overridden date failed.");
             }
 
-            prefAlgs = hashedPcks.GetPreferredCompressionAlgorithms();
-            preferredAlgorithmCheck("compression", NO_PREFERENCES, prefAlgs);
-
-            prefAlgs = hashedPcks.GetPreferredHashAlgorithms();
-            preferredAlgorithmCheck("hash", NO_PREFERENCES, prefAlgs);
-
-            prefAlgs = hashedPcks.GetPreferredSymmetricAlgorithms();
-            preferredAlgorithmCheck("symmetric", NO_PREFERENCES, prefAlgs);
+            preferredAlgorithmCheck("compression", null, hashedPcks.GetPreferredCompressionAlgorithms());
+            preferredAlgorithmCheck("hash", null, hashedPcks.GetPreferredHashAlgorithms());
+            preferredAlgorithmCheck("symmetric", null, hashedPcks.GetPreferredSymmetricAlgorithms());
 
             if (hashedPcks.GetKeyExpirationTime() != 0)
             {
@@ -752,10 +741,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             }
         }
 
-        private void preferredAlgorithmCheck(
+        private void preferredAlgorithmCheck<T>(
             string	type,
-            int[]	expected,
-            int[]	prefAlgs)
+            T[]	expected,
+            T[]	prefAlgs)
+            where T : Enum
         {
             if (expected == null)
             {
@@ -773,7 +763,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
                 for (int i = 0; i != expected.Length; i++)
                 {
-                    if (expected[i] != prefAlgs[i])
+                    if (!Equals(expected[i], prefAlgs[i]))
                     {
                         Fail("wrong algorithm found for " + type + ": expected " + expected[i] + " got " + prefAlgs);
                     }

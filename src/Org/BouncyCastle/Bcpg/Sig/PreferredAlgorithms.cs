@@ -1,26 +1,10 @@
 using System;
+using System.Linq;
 
 namespace Org.BouncyCastle.Bcpg.Sig
 {
-    /**
-    * packet giving signature creation time.
-    */
-    public class PreferredAlgorithms
-        : SignatureSubpacket
+    public class PreferredAlgorithms : SignatureSubpacket
     {
-        private static byte[] IntToByteArray(
-            int[] v)
-        {
-            byte[] data = new byte[v.Length];
-
-            for (int i = 0; i != v.Length; i++)
-            {
-                data[i] = (byte)v[i];
-            }
-
-            return data;
-        }
-
         public PreferredAlgorithms(
             SignatureSubpacketTag type,
             bool critical,
@@ -33,21 +17,15 @@ namespace Org.BouncyCastle.Bcpg.Sig
         public PreferredAlgorithms(
             SignatureSubpacketTag type,
             bool critical,
-            int[] preferences)
-            : base(type, critical, false, IntToByteArray(preferences))
+            byte[] data)
+            : base(type, critical, false, data)
         {
         }
 
-        public int[] GetPreferences()
+        public T[] GetPreferences<T>()
+            where T : Enum
         {
-            int[] v = new int[data.Length];
-
-            for (int i = 0; i != v.Length; i++)
-            {
-                v[i] = data[i] & 0xff;
-            }
-
-            return v;
+            return data.Cast<T>().ToArray();
         }
     }
 }

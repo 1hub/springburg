@@ -132,25 +132,25 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return p == null ? 0 : ((KeyExpirationTime)p).Time;
         }
 
-        public int[] GetPreferredHashAlgorithms()
+        public HashAlgorithmTag[] GetPreferredHashAlgorithms()
         {
             SignatureSubpacket p = GetSubpacket(SignatureSubpacketTag.PreferredHashAlgorithms);
 
-            return p == null ? null : ((PreferredAlgorithms)p).GetPreferences();
+            return p == null ? null : ((PreferredAlgorithms)p).GetPreferences<HashAlgorithmTag>();
         }
 
-        public int[] GetPreferredSymmetricAlgorithms()
+        public SymmetricKeyAlgorithmTag[] GetPreferredSymmetricAlgorithms()
         {
             SignatureSubpacket p = GetSubpacket(SignatureSubpacketTag.PreferredSymmetricAlgorithms);
 
-            return p == null ? null : ((PreferredAlgorithms)p).GetPreferences();
+            return p == null ? null : ((PreferredAlgorithms)p).GetPreferences<SymmetricKeyAlgorithmTag>();
         }
 
-        public int[] GetPreferredCompressionAlgorithms()
+        public CompressionAlgorithmTag[] GetPreferredCompressionAlgorithms()
         {
             SignatureSubpacket p = GetSubpacket(SignatureSubpacketTag.PreferredCompressionAlgorithms);
 
-            return p == null ? null : ((PreferredAlgorithms)p).GetPreferences();
+            return p == null ? null : ((PreferredAlgorithms)p).GetPreferences<CompressionAlgorithmTag>();
         }
 
         public int GetKeyFlags()

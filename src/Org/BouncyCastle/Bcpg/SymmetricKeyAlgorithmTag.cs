@@ -1,9 +1,7 @@
 namespace Org.BouncyCastle.Bcpg
 {
-    /**
-    * Basic tags for symmetric key algorithms
-    */
-    public enum SymmetricKeyAlgorithmTag
+    /// <summary>Basic tags for symmetric key algorithms</summary>
+    public enum SymmetricKeyAlgorithmTag : byte
     {
         Null = 0,         // Plaintext or unencrypted data
         Idea = 1,         // IDEA [IDEA]
