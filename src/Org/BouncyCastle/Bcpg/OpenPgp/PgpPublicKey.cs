@@ -333,27 +333,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             get { return publicPk.GetTime(); }
         }
 
-        /// <summary>The number of valid days from creation time - zero means no expiry.</summary>
-        /// <remarks>WARNING: This method will return 1 for keys with version > 3 that expire in less than 1 day</remarks>
-        [Obsolete("Use 'GetValidSeconds' instead")]
-        public int ValidDays
-        {
-            get
-            {
-                if (publicPk.Version <= 3)
-                {
-                    return publicPk.ValidDays;
-                }
-
-                long expSecs = GetValidSeconds();
-                if (expSecs <= 0)
-                    return 0;
-
-                int days = (int)(expSecs / (24 * 60 * 60));
-                return System.Math.Max(1, days);
-            }
-        }
-
         /// <summary>Return the trust data associated with the public key, if present.</summary>
         /// <returns>A byte array with trust data, null otherwise.</returns>
         public byte[] GetTrustData()
@@ -366,48 +345,45 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return (byte[])trustPk.GetLevelAndTrustAmount().Clone();
         }
 
-        /// <summary>The number of valid seconds from creation time - zero means no expiry.</summary>
-        public long GetValidSeconds()
+        /// <summary>
+        /// Get validity of the public key from the time of creation.
+        /// </summary>
+        /// <retuns>The number of valid seconds from creation time or TimeSpan.MaxValue if it never expires.</returns>
+        /// <remarks>Depending on the version of the key format the precision is either to days or seconds.</remarks>
+        public TimeSpan GetValidity()
         {
             if (publicPk.Version <= 3)
             {
-                return (long)publicPk.ValidDays * (24 * 60 * 60);
+                return TimeSpan.FromDays(publicPk.ValidDays);
             }
 
             if (IsMasterKey)
             {
                 for (int i = 0; i != MasterKeyCertificationTypes.Length; i++)
                 {
-                    long seconds = GetExpirationTimeFromSig(true, MasterKeyCertificationTypes[i]);
-                    if (seconds >= 0)
+                    if (GetExpirationTimeFromSig(true, MasterKeyCertificationTypes[i], out var expiryTime))
                     {
-                        return seconds;
+                        return expiryTime;
                     }
                 }
             }
             else
             {
-                long seconds = GetExpirationTimeFromSig(false, PgpSignature.SubkeyBinding);
-                if (seconds >= 0)
+                if (GetExpirationTimeFromSig(false, PgpSignature.SubkeyBinding, out var expiryTime) ||
+                    GetExpirationTimeFromSig(false, PgpSignature.DirectKey, out expiryTime))
                 {
-                    return seconds;
-                }
-
-                seconds = GetExpirationTimeFromSig(false, PgpSignature.DirectKey);
-                if (seconds >= 0)
-                {
-                    return seconds;
+                    return expiryTime;
                 }
             }
 
-            return 0;
+            return TimeSpan.MaxValue;
         }
 
-        private long GetExpirationTimeFromSig(bool selfSigned, int signatureType)
+        private bool GetExpirationTimeFromSig(bool selfSigned, int signatureType, out TimeSpan expiryTime)
         {
-            long expiryTime = -1;
-            long lastDate = -1;
+            DateTime lastDate = DateTime.MinValue;
 
+            expiryTime = TimeSpan.MinValue;
             foreach (PgpSignature sig in GetSignaturesOfType(signatureType))
             {
                 if (selfSigned && sig.KeyId != this.KeyId)
@@ -420,23 +396,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 if (!hashed.HasSubpacket(SignatureSubpacketTag.KeyExpireTime))
                     continue;
 
-                long current = hashed.GetKeyExpirationTime();
-
+                TimeSpan current = hashed.GetKeyExpirationTime();
                 if (sig.KeyId == this.KeyId)
                 {
-                    if (sig.CreationTime.Ticks > lastDate)
+                    if (sig.CreationTime > lastDate)
                     {
-                        lastDate = sig.CreationTime.Ticks;
+                        lastDate = sig.CreationTime;
                         expiryTime = current;
                     }
                 }
-                else if (current == 0 || current > expiryTime)
+                else if (current != TimeSpan.MaxValue && current > expiryTime)
                 {
                     expiryTime = current;
                 }
             }
 
-            return expiryTime;
+            return expiryTime != TimeSpan.MinValue;
         }
 
         /// <summary>The keyId associated with the public key.</summary>

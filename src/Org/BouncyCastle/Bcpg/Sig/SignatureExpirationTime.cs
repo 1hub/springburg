@@ -9,11 +9,11 @@ namespace Org.BouncyCastle.Bcpg.Sig
         {
         }
 
-        public SignatureExpirationTime(bool critical, long time)
-            : base(SignatureSubpacketTag.ExpireTime, critical, false, SecondsToBytes(time))
+        public SignatureExpirationTime(bool critical, TimeSpan time)
+            : base(SignatureSubpacketTag.ExpireTime, critical, false, SecondsToBytes((long)time.TotalSeconds))
         {
         }
 
-        public long Time => BytesToSeconds(data);
+        public TimeSpan Time => TimeSpan.FromSeconds(BytesToSeconds(data));
     }
 }

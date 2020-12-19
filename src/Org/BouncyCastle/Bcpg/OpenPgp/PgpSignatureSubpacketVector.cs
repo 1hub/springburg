@@ -107,26 +107,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         /// <summary>
         /// Return the number of seconds a signature is valid for after its creation date.
-        /// A value of zero means the signature never expires.
         /// </summary>
-        /// <returns>Seconds a signature is valid for.</returns>
-        public long GetSignatureExpirationTime()
+        /// <returns>Seconds a signature is valid for or TimeSpan.MaxValue if signature never expires.</returns>
+        public TimeSpan GetSignatureExpirationTime()
         {
             SignatureSubpacket p = GetSubpacket(SignatureSubpacketTag.ExpireTime);
-
-            return p == null ? 0 : ((SignatureExpirationTime)p).Time;
+            return p == null ? TimeSpan.MaxValue : ((SignatureExpirationTime)p).Time;
         }
 
         /// <summary>
         /// Return the number of seconds a key is valid for after its creation date.
-        /// A value of zero means the key never expires.
         /// </summary>
-        /// <returns>Seconds a signature is valid for.</returns>
-        public long GetKeyExpirationTime()
+        /// <returns>Seconds a key is valid for or TimeSpan.MaxValue if signature never expires.</returns>
+        public TimeSpan GetKeyExpirationTime()
         {
             SignatureSubpacket p = GetSubpacket(SignatureSubpacketTag.KeyExpireTime);
-
-            return p == null ? 0 : ((KeyExpirationTime)p).Time;
+            return p == null ? TimeSpan.MaxValue : ((KeyExpirationTime)p).Time;
         }
 
         public HashAlgorithmTag[] GetPreferredHashAlgorithms()

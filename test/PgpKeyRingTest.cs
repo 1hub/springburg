@@ -2083,14 +2083,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 PgpPublicKey pubKey = secretKey.PublicKey;
 
-                if (pubKey.ValidDays != 28)
+                if (pubKey.GetValidity() != TimeSpan.FromDays(28))
                 {
-                    Fail("days wrong on secret key ring");
-                }
-
-                if (pubKey.GetValidSeconds() != 28 * 24 * 60 * 60)
-                {
-                    Fail("seconds wrong on secret key ring");
+                    Fail("validity wrong on secret key ring");
                 }
             }
 
@@ -2098,14 +2093,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             foreach (PgpPublicKey pubKey in publicRing.GetPublicKeys())
             {
-                if (pubKey.ValidDays != 28)
+                if (pubKey.GetValidity() != TimeSpan.FromDays(28))
                 {
-                    Fail("days wrong on public key ring");
-                }
-
-                if (pubKey.GetValidSeconds() != 28 * 24 * 60 * 60)
-                {
-                    Fail("seconds wrong on public key ring");
+                    Fail("validity wrong on public key ring");
                 }
             }
         }
@@ -2117,7 +2107,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             foreach (PgpPublicKey key in pubRing.GetPublicKeys())
             {
-                if (key.GetValidSeconds() != 0)
+                if (key.GetValidity() != TimeSpan.MaxValue)
                 {
                     Fail("expiration time non-zero");
                 }
@@ -2531,12 +2521,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     // this key has 2 self signatures on it - the most recent key validity is for 432495 seconds.
                     if (0x5afd53a9dbb2c40dL == pubKey.KeyId)
                     {
-                        IsTrue("wrong validity date", pubKey.GetValidSeconds() == 432495);
+                        IsTrue("wrong validity date", pubKey.GetValidity() == TimeSpan.FromSeconds(432495));
                     }
                     // this key has 3 self signatures on it - the most recent key validity is for 4320173 seconds.
                     else if (unchecked((long)0x89FCFA4B23363333L) == pubKey.KeyId)
                     {
-                        IsTrue("wrong validity date", pubKey.GetValidSeconds() == 4320173);
+                        IsTrue("wrong validity date", pubKey.GetValidity() == TimeSpan.FromSeconds(4320173));
                     }
                 }
             }

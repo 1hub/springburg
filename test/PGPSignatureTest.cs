@@ -20,7 +20,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         private static readonly CompressionAlgorithmTag[] PREFERRED_COMPRESSION_ALGORITHMS
             = new CompressionAlgorithmTag[] { CompressionAlgorithmTag.ZLib };
 
-        private const int TEST_EXPIRATION_TIME = 10000;
+        private TimeSpan TEST_EXPIRATION_TIME = TimeSpan.FromSeconds(10000);
         private const string TEST_USER_ID = "test user id";
         private static readonly byte[] TEST_DATA = Encoding.ASCII.GetBytes("hello world!\nhello world!\n");
         private static readonly byte[] TEST_DATA_WITH_CRLF = Encoding.ASCII.GetBytes("hello world!\r\nhello world!\r\n");
@@ -558,12 +558,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             preferredAlgorithmCheck("hash", null, hashedPcks.GetPreferredHashAlgorithms());
             preferredAlgorithmCheck("symmetric", null, hashedPcks.GetPreferredSymmetricAlgorithms());
 
-            if (hashedPcks.GetKeyExpirationTime() != 0)
+            if (hashedPcks.GetKeyExpirationTime() != TimeSpan.MaxValue)
             {
                 Fail("unexpected key expiration time found");
             }
 
-            if (hashedPcks.GetSignatureExpirationTime() != 0)
+            if (hashedPcks.GetSignatureExpirationTime() != TimeSpan.MaxValue)
             {
                 Fail("unexpected signature expiration time found");
             }
@@ -709,7 +709,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 PgpSignatureSubpacketVector v = sig.GetHashedSubPackets();
 
-                if (v.GetKeyExpirationTime() != 0)
+                if (v.GetKeyExpirationTime() != TimeSpan.MaxValue)
                 {
                     Fail("key expiration time not zero for missing subpackets");
                 }

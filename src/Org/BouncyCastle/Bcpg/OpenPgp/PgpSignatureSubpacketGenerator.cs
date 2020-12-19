@@ -47,7 +47,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// </summary>
         /// <param name="isCritical">True, if should be treated as critical, false otherwise.</param>
         /// <param name="seconds">The number of seconds the key is valid, or zero if no expiry.</param>
-        public void SetKeyExpirationTime(bool isCritical, long seconds)
+        public void SetKeyExpirationTime(bool isCritical, TimeSpan seconds)
         {
             list.Add(new KeyExpirationTime(isCritical, seconds));
         }
@@ -58,7 +58,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// </summary>
         /// <param name="isCritical">True, if should be treated as critical, false otherwise.</param>
         /// <param name="seconds">The number of seconds the signature is valid, or zero if no expiry.</param>
-        public void SetSignatureExpirationTime(bool isCritical, long seconds)
+        public void SetSignatureExpirationTime(bool isCritical, TimeSpan seconds)
         {
             list.Add(new SignatureExpirationTime(isCritical, seconds));
         }
