@@ -1,61 +1,35 @@
-using System;
+using PgpKeyFlags = Org.BouncyCastle.Bcpg.KeyFlags;
 
 namespace Org.BouncyCastle.Bcpg.Sig
 {
-    /**
-    * Packet holding the key flag values.
-    */
-    public class KeyFlags
-        : SignatureSubpacket
+    public class KeyFlags : SignatureSubpacket
     {
-        public const int CertifyOther = 0x01;
-        public const int SignData = 0x02;
-        public const int EncryptComms = 0x04;
-        public const int EncryptStorage = 0x08;
-        public const int Split = 0x10;
-        public const int Authentication = 0x20;
-        public const int Shared = 0x80;
-
-        private static byte[] IntToByteArray(
-            int v)
-        {
-            byte[] tmp = new byte[4];
-            int size = 0;
-
-            for (int i = 0; i != 4; i++)
-            {
-                tmp[i] = (byte)(v >> (i * 8));
-                if (tmp[i] != 0)
-                {
-                    size = i;
-                }
-            }
-
-            byte[] data = new byte[size + 1];
-            Array.Copy(tmp, 0, data, 0, data.Length);
-            return data;
-        }
-
-        public KeyFlags(
-            bool critical,
-            bool isLongLength,
-            byte[] data)
+        public KeyFlags(bool critical, bool isLongLength, byte[] data)
             : base(SignatureSubpacketTag.KeyFlags, critical, isLongLength, data)
         {
         }
 
-        public KeyFlags(
-            bool critical,
-            int flags)
-            : base(SignatureSubpacketTag.KeyFlags, critical, false, IntToByteArray(flags))
+        public KeyFlags(bool critical, PgpKeyFlags flags)
+            : base(SignatureSubpacketTag.KeyFlags, critical, false, CreateData((int)flags))
         {
+        }
+
+        private static byte[] CreateData(int v)
+        {
+            if (v > 0xffffff)
+                return new[] { (byte)v, (byte)(v >> 8), (byte)(v >> 16), (byte)(v >> 24) };
+            if (v > 0xffff)
+                return new[] { (byte)v, (byte)(v >> 8), (byte)(v >> 16) };
+            if (v > 0xff)
+                return new[] { (byte)v, (byte)(v >> 8) };
+            return new[] { (byte)v };
         }
 
         /// <summary>
         /// Return the flag values contained in the first 4 octets (note: at the moment
-        /// the standard only uses the first one).
+        /// the standard only uses the first two).
         /// </summary>
-        public int Flags
+        public PgpKeyFlags Flags
         {
             get
             {
@@ -66,7 +40,7 @@ namespace Org.BouncyCastle.Bcpg.Sig
                     flags |= (data[i] & 0xff) << (i * 8);
                 }
 
-                return flags;
+                return (PgpKeyFlags)flags;
             }
         }
     }

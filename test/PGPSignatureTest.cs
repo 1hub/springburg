@@ -4,7 +4,6 @@ using System.Text;
 
 using NUnit.Framework;
 
-using Org.BouncyCastle.Bcpg.Sig;
 using Org.BouncyCastle.Utilities.IO;
 using Org.BouncyCastle.Utilities.Test;
 
@@ -658,7 +657,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             checkValue(KeyFlags.CertifyOther, 0x01);
             checkValue(KeyFlags.SignData, 0x02);
-            checkValue(KeyFlags.EncryptComms, 0x04);
+            checkValue(KeyFlags.EncryptCommunications, 0x04);
             checkValue(KeyFlags.EncryptStorage, 0x08);
             checkValue(KeyFlags.Split, 0x10);
             checkValue(KeyFlags.Authentication, 0x20);
@@ -671,11 +670,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             checkValue(new byte[] { 4 }, 0x04);
         }
 
-        private void checkValue(int flag, int val)
+        private void checkValue(KeyFlags flag, int val)
         {
-            KeyFlags f = new KeyFlags(true, flag);
-
-            if (f.Flags != val)
+            Sig.KeyFlags f = new Sig.KeyFlags(true, flag);
+            if ((int)f.Flags != val)
             {
                 Fail("flag value mismatch");
             }
@@ -683,9 +681,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private void checkValue(byte[] flag, int val)
         {
-            KeyFlags f = new KeyFlags(true, false, flag);
-
-            if (f.Flags != val)
+            Sig.KeyFlags f = new Sig.KeyFlags(true, false, flag);
+            if ((int)f.Flags != val)
             {
                 Fail("flag value mismatch");
             }

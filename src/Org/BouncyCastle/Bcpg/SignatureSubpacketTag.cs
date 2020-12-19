@@ -1,33 +1,36 @@
 namespace Org.BouncyCastle.Bcpg
 {
-    /**
-    * Basic PGP signature sub-packet tag types.
-    */
+    /// <summary>Basic PGP signature sub-packet tag types.</summary>
     public enum SignatureSubpacketTag
     {
-        CreationTime = 2,						// signature creation time
-        ExpireTime = 3,							// signature expiration time
-        Exportable = 4,							// exportable certification
-        TrustSig = 5,							// trust signature
-        RegExp = 6,								// regular expression
-        Revocable = 7,							// revocable
-        KeyExpireTime = 9,						// key expiration time
-        Placeholder = 10,						// placeholder for backward compatibility
-        PreferredSymmetricAlgorithms = 11,		// preferred symmetric algorithms
-        RevocationKey = 12,						// revocation key
-        IssuerKeyId = 16,						// issuer key ID
-        NotationData = 20,						// notation data
-        PreferredHashAlgorithms = 21,			// preferred hash algorithms
-        PreferredCompressionAlgorithms = 22,	// preferred compression algorithms
-        KeyServerPreferences = 23,				// key server preferences
-        PreferredKeyServer = 24,				// preferred key server
-        PrimaryUserId = 25,						// primary user id
-        PolicyUrl = 26,							// policy URL
-        KeyFlags = 27,							// key flags
-        SignerUserId = 28,						// signer's user id
-        RevocationReason = 29,                  // reason for revocation
-        Features = 30,                          // features
-        SignatureTarget = 31,                   // signature target
-        EmbeddedSignature = 32                  // embedded signature
+        CreationTime = 2,
+        ExpireTime = 3,
+        Exportable = 4,
+        TrustSig = 5,
+        RegExp = 6,
+        Revocable = 7,
+        KeyExpireTime = 9,
+        Placeholder = 10,
+        PreferredSymmetricAlgorithms = 11,
+        RevocationKey = 12,
+        IssuerKeyId = 16,
+        NotationData = 20,
+        PreferredHashAlgorithms = 21,
+        PreferredCompressionAlgorithms = 22,
+        KeyServerPreferences = 23,
+        PreferredKeyServer = 24,
+        PrimaryUserId = 25,
+        PolicyUrl = 26,
+        KeyFlags = 27,
+        SignerUserId = 28,
+        RevocationReason = 29,
+        Features = 30,
+        SignatureTarget = 31,
+        EmbeddedSignature = 32,
+        IssuerFingerprint = 33,
+        PreferredAeadAlgorithms = 34,
+        IntendedRecipientFingerprint = 35,
+        AttestedCertifications = 36,
+        KeyBlock = 37,
     }
 }

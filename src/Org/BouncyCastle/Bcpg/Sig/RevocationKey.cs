@@ -6,27 +6,15 @@ namespace Org.BouncyCastle.Bcpg
     /// <summary>
     /// Represents revocation key OpenPGP signature sub packet.
     /// </summary>
-    public class RevocationKey
-        : SignatureSubpacket
+    public class RevocationKey : SignatureSubpacket
     {
-        // 1 octet of class, 
-        // 1 octet of public-key algorithm ID, 
-        // 20 octets of fingerprint
-        public RevocationKey(
-            bool isCritical,
-            bool isLongLength,
-            byte[] data)
+        public RevocationKey(bool isCritical, bool isLongLength, byte[] data)
             : base(SignatureSubpacketTag.RevocationKey, isCritical, isLongLength, data)
         {
         }
 
-        public RevocationKey(
-            bool isCritical,
-            RevocationKeyTag signatureClass,
-            PublicKeyAlgorithmTag keyAlgorithm,
-            byte[] fingerprint)
-            : base(SignatureSubpacketTag.RevocationKey, isCritical, false,
-                CreateData(signatureClass, keyAlgorithm, fingerprint))
+        public RevocationKey(bool isCritical, RevocationKeyTag signatureClass, PublicKeyAlgorithmTag keyAlgorithm, byte[] fingerprint)
+            : base(SignatureSubpacketTag.RevocationKey, isCritical, false, CreateData(signatureClass, keyAlgorithm, fingerprint))
         {
         }
 
@@ -35,29 +23,20 @@ namespace Org.BouncyCastle.Bcpg
             PublicKeyAlgorithmTag keyAlgorithm,
             byte[] fingerprint)
         {
+            // 1 octet of class, 
+            // 1 octet of public-key algorithm ID, 
+            // 20 octets of fingerprint
             byte[] data = new byte[2 + fingerprint.Length];
             data[0] = (byte)signatureClass;
             data[1] = (byte)keyAlgorithm;
-            Array.Copy(fingerprint, 0, data, 2, fingerprint.Length);
+            fingerprint.CopyTo(data, 2);
             return data;
         }
 
-        public virtual RevocationKeyTag SignatureClass
-        {
-            get { return (RevocationKeyTag)this.GetData()[0]; }
-        }
+        public RevocationKeyTag SignatureClass => (RevocationKeyTag)data[0];
 
-        public virtual PublicKeyAlgorithmTag Algorithm
-        {
-            get { return (PublicKeyAlgorithmTag)this.GetData()[1]; }
-        }
+        public PublicKeyAlgorithmTag Algorithm => (PublicKeyAlgorithmTag)data[1];
 
-        public virtual byte[] GetFingerprint()
-        {
-            byte[] data = this.GetData();
-            byte[] fingerprint = new byte[data.Length - 2];
-            Array.Copy(data, 2, fingerprint, 0, fingerprint.Length);
-            return fingerprint;
-        }
+        public ReadOnlySpan<byte> Fingerprint => data.AsSpan(2);
     }
 }

@@ -99,13 +99,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public DateTime GetSignatureCreationTime()
         {
             SignatureSubpacket p = GetSubpacket(SignatureSubpacketTag.CreationTime);
-
             if (p == null)
-            {
                 throw new PgpException("SignatureCreationTime not available");
-            }
 
-            return ((SignatureCreationTime)p).GetTime();
+            return ((SignatureCreationTime)p).Time;
         }
 
         /// <summary>
@@ -153,11 +150,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return p == null ? null : ((PreferredAlgorithms)p).GetPreferences<CompressionAlgorithmTag>();
         }
 
-        public int GetKeyFlags()
+        public KeyFlags GetKeyFlags()
         {
             SignatureSubpacket p = GetSubpacket(SignatureSubpacketTag.KeyFlags);
 
-            return p == null ? 0 : ((KeyFlags)p).Flags;
+            return p == null ? 0 : ((Sig.KeyFlags)p).Flags;
         }
 
         public string GetSignerUserId()
@@ -174,7 +171,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             if (primaryId != null)
             {
-                return primaryId.IsPrimaryUserId();
+                return primaryId.IsPrimaryUserId;
             }
 
             return false;

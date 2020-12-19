@@ -108,7 +108,7 @@ namespace Org.BouncyCastle.Bcpg
                 case SignatureSubpacketTag.PreferredSymmetricAlgorithms:
                     return new PreferredAlgorithms(type, isCritical, isLongLength, data);
                 case SignatureSubpacketTag.KeyFlags:
-                    return new KeyFlags(isCritical, isLongLength, data);
+                    return new Sig.KeyFlags(isCritical, isLongLength, data);
                 case SignatureSubpacketTag.PrimaryUserId:
                     return new PrimaryUserId(isCritical, isLongLength, data);
                 case SignatureSubpacketTag.SignerUserId:

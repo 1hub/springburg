@@ -11,7 +11,7 @@ namespace Org.BouncyCastle.Bcpg
     {
         private int version;
         private int signatureType;
-        private long creationTime;
+        private DateTime creationTime;
         private long keyId;
         private PublicKeyAlgorithmTag keyAlgorithm;
         private HashAlgorithmTag hashAlgorithm;
@@ -32,8 +32,8 @@ namespace Org.BouncyCastle.Bcpg
                 bcpgIn.ReadByte();
 
                 signatureType = bcpgIn.ReadByte();
-                creationTime = (((long)bcpgIn.ReadByte() << 24) | ((long)bcpgIn.ReadByte() << 16)
-                    | ((long)bcpgIn.ReadByte() << 8) | (uint)bcpgIn.ReadByte());
+                creationTime = DateTimeOffset.FromUnixTimeSeconds(
+                    ((long)bcpgIn.ReadByte() << 24) | ((long)bcpgIn.ReadByte() << 16) | ((long)bcpgIn.ReadByte() << 8) | (uint)bcpgIn.ReadByte()).UtcDateTime;
 
                 keyId |= (long)bcpgIn.ReadByte() << 56;
                 keyId |= (long)bcpgIn.ReadByte() << 48;
@@ -82,7 +82,7 @@ namespace Org.BouncyCastle.Bcpg
                     }
                     else if (p is SignatureCreationTime)
                     {
-                        creationTime = new DateTimeOffset(((SignatureCreationTime)p).GetTime(), TimeSpan.Zero).ToUnixTimeSeconds();
+                        creationTime = ((SignatureCreationTime)p).Time;
                     }
 
                     hashedData[i] = p;
@@ -207,7 +207,7 @@ namespace Org.BouncyCastle.Bcpg
             long keyId,
             PublicKeyAlgorithmTag keyAlgorithm,
             HashAlgorithmTag hashAlgorithm,
-            long creationTime,
+            DateTime creationTime,
             byte[] fingerprint,
             MPInteger[] signature)
             : this(version, signatureType, keyId, keyAlgorithm, hashAlgorithm, null, null, fingerprint, signature)
@@ -275,7 +275,7 @@ namespace Org.BouncyCastle.Bcpg
             {
                 trailer = new byte[5];
 
-                long time = creationTime;
+                long time = new DateTimeOffset(creationTime, TimeSpan.Zero).ToUnixTimeSeconds();
 
                 trailer[0] = (byte)signatureType;
                 trailer[1] = (byte)(time >> 24);
@@ -379,8 +379,7 @@ namespace Org.BouncyCastle.Bcpg
             return unhashedData;
         }
 
-        /// <summary>Return the creation time in milliseconds since 1 Jan., 1970 UTC.</summary>
-        public long CreationTime
+        public DateTime CreationTime
         {
             get { return creationTime; }
         }
@@ -399,7 +398,7 @@ namespace Org.BouncyCastle.Bcpg
                     5, // the length of the next block
                     (byte)signatureType);
 
-                pOut.WriteInt((int)(creationTime));
+                pOut.WriteInt((int)new DateTimeOffset(creationTime, TimeSpan.Zero).ToUnixTimeSeconds());
 
                 pOut.WriteLong(keyId);
 
@@ -464,7 +463,7 @@ namespace Org.BouncyCastle.Bcpg
             {
                 if (p is SignatureCreationTime)
                 {
-                    creationTime = new DateTimeOffset(((SignatureCreationTime)p).GetTime(), TimeSpan.Zero).ToUnixTimeSeconds();
+                    creationTime = ((SignatureCreationTime)p).Time;
                     break;
                 }
             }

@@ -3,9 +3,8 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg.Attr
 {
-    /// <remarks>Basic type for a image attribute packet.</remarks>
-    public class ImageAttrib
-        : UserAttributeSubpacket
+    /// <summary>Basic type for a image attribute packet.</summary>
+    public class ImageAttrib : UserAttributeSubpacket
     {
         public enum Format : byte
         {

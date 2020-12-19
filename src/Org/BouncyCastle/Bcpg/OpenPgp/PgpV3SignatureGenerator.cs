@@ -34,19 +34,20 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Return a V3 signature object containing the current signature state.</summary>
         public PgpSignature Generate()
         {
-            long creationTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var creationTime = DateTimeOffset.UtcNow;
+            long seconds = creationTime.ToUnixTimeSeconds();
 
             byte[] hData = new byte[]
             {
                 (byte) signatureType,
-                (byte)(creationTime >> 24),
-                (byte)(creationTime >> 16),
-                (byte)(creationTime >> 8),
-                (byte) creationTime
+                (byte)(seconds >> 24),
+                (byte)(seconds >> 16),
+                (byte)(seconds >> 8),
+                (byte)seconds
             };
 
             var signature = Sign(hData, privateKey.Key);
-            return new PgpSignature(new SignaturePacket(3, signatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm, hashAlgorithm, creationTime, sig.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
+            return new PgpSignature(new SignaturePacket(3, signatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm, hashAlgorithm, creationTime.UtcDateTime, sig.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
         }
     }
 }

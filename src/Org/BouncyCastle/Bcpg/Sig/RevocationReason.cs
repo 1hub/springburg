@@ -26,32 +26,22 @@ namespace Org.BouncyCastle.Bcpg
             RevocationReasonTag reason,
             string description)
         {
-            byte[] descriptionBytes = Encoding.UTF8.GetBytes(description);
-            byte[] data = new byte[1 + descriptionBytes.Length];
-
+            byte[] data = new byte[1 + Encoding.UTF8.GetByteCount(description)];
             data[0] = (byte)reason;
-            Array.Copy(descriptionBytes, 0, data, 1, descriptionBytes.Length);
-
+            Encoding.UTF8.GetBytes(description, data.AsSpan(1));
             return data;
         }
 
-        public virtual RevocationReasonTag GetRevocationReason()
-        {
-            return (RevocationReasonTag)GetData()[0];
-        }
+        public RevocationReasonTag Reason => (RevocationReasonTag)data[0];
 
-        public virtual string GetRevocationDescription()
+        public string Description
         {
-            byte[] data = GetData();
-            if (data.Length == 1)
+            get
             {
-                return string.Empty;
+                if (data.Length == 1)
+                    return string.Empty;
+                return Encoding.UTF8.GetString(data.AsSpan(1));
             }
-
-            byte[] description = new byte[data.Length - 1];
-            Array.Copy(data, 1, description, 0, description.Length);
-
-            return Encoding.UTF8.GetString(description);
         }
     }
 }

@@ -180,7 +180,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public long KeyId => sigPck.KeyId;
 
         /// <summary>The creation time of this signature.</summary>
-        public DateTime CreationTime => DateTimeOffset.FromUnixTimeSeconds(sigPck.CreationTime).DateTime;
+        public DateTime CreationTime => sigPck.CreationTime;
 
         public byte[] GetSignatureTrailer() => sigPck.GetSignatureTrailer();
 
