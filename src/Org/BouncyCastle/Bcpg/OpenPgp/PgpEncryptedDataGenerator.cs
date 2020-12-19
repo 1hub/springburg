@@ -11,7 +11,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     /// <summary>Generator for encrypted objects.</summary>
     public class PgpEncryptedDataGenerator : IStreamGenerator
     {
-        private BcpgOutputStream pOut;
+        private Stream pOut;
         private CryptoStream cOut;
         private SymmetricAlgorithm c;
         private bool withIntegrityPacket;
@@ -52,6 +52,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 using var encryptor = new ZeroPaddedCryptoTransformWrapper(symmetricAlgorithm.CreateEncryptor(key, new byte[(symmetricAlgorithm.BlockSize + 7) / 8]));
                 this.sessionInfo = encryptor.TransformFinalBlock(si, 0, si.Length - 2);
             }
+
+            public override PacketTag Tag => PacketTag.SymmetricKeyEncryptedSessionKey;
 
             public override void Encode(Stream pOut)
             {
@@ -122,6 +124,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 // TODO: ElGamal
                 throw new NotImplementedException();
             }
+
+            public override PacketTag Tag => PacketTag.PublicKeyEncryptedSession;
 
             public override void Encode(Stream pOut)
             {
@@ -250,16 +254,16 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// </p>
         /// </summary>
         private Stream Open(
-            Stream outStr,
+            PacketWriter writer,
             long length,
             byte[] buffer)
         {
+            if (writer == null)
+                throw new ArgumentNullException(nameof(writer));
             if (cOut != null)
                 throw new InvalidOperationException("generator already in open state");
             if (methods.Count == 0)
                 throw new InvalidOperationException("No encryption methods specified");
-            if (outStr == null)
-                throw new ArgumentNullException("outStr");
 
             c = PgpUtilities.GetSymmetricAlgorithm(defAlgorithm);
 
@@ -276,38 +280,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
                     byte[] sessionInfo = CreateSessionInfo(defAlgorithm, c.Key);
                     PubMethod m = (PubMethod)methods[0];
-
-                    try
-                    {
-                        m.AddSessionInfo(sessionInfo);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new PgpException("exception encrypting session key", e);
-                    }
+                    m.AddSessionInfo(sessionInfo);
                 }
 
-                methods[0].Encode(outStr);
+                writer.WritePacket(methods[0]);
             }
             else // multiple methods
             {
                 c.GenerateKey();
                 byte[] sessionInfo = CreateSessionInfo(defAlgorithm, c.Key);
 
-                for (int i = 0; i != methods.Count; i++)
+                foreach (EncMethod m in methods)
                 {
-                    EncMethod m = (EncMethod)methods[i];
-
-                    try
-                    {
-                        m.AddSessionInfo(sessionInfo);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new PgpException("exception encrypting session key", e);
-                    }
-
-                    m.Encode(outStr);
+                    m.AddSessionInfo(sessionInfo);
                 }
             }
 
@@ -323,24 +308,24 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     //
                     if (withIntegrityPacket)
                     {
-                        pOut = new BcpgOutputStream(outStr, PacketTag.SymmetricEncryptedIntegrityProtected, length + (c.BlockSize / 8) + 2 + 1 + 22);
+                        pOut = writer.GetPacketStream(PacketTag.SymmetricEncryptedIntegrityProtected, length + (c.BlockSize / 8) + 2 + 1 + 22);
                         pOut.WriteByte(1);        // version number
                     }
                     else
                     {
-                        pOut = new BcpgOutputStream(outStr, PacketTag.SymmetricKeyEncrypted, length + (c.BlockSize / 8) + 2, oldFormat);
+                        pOut = writer.GetPacketStream(PacketTag.SymmetricKeyEncrypted, length + (c.BlockSize / 8) + 2);
                     }
                 }
                 else
                 {
                     if (withIntegrityPacket)
                     {
-                        pOut = new BcpgOutputStream(outStr, PacketTag.SymmetricEncryptedIntegrityProtected, buffer);
+                        pOut = writer.GetPacketStream(PacketTag.SymmetricEncryptedIntegrityProtected, buffer);
                         pOut.WriteByte(1);        // version number
                     }
                     else
                     {
-                        pOut = new BcpgOutputStream(outStr, PacketTag.SymmetricKeyEncrypted, buffer);
+                        pOut = writer.GetPacketStream(PacketTag.SymmetricKeyEncrypted, buffer);
                     }
                 }
 
@@ -379,54 +364,36 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>
-        /// <p>
         /// Return an output stream which will encrypt the data as it is written to it.
-        /// </p>
-        /// <p>
-        /// The stream created can be closed off by either calling Close()
-        /// on the stream or Close() on the generator. Closing the returned
-        /// stream does not close off the Stream parameter <c>outStr</c>.
-        /// </p>
         /// </summary>
-        public Stream Open(
-            Stream outStr,
-            long length)
+        public Stream Open(Stream outputStream, long length)
         {
-            return Open(outStr, length, null);
+            return Open(new PacketWriter(outputStream, oldFormat), length, null);
+        }
+
+        public Stream Open(PacketWriter writer, long length)
+        {
+            return Open(writer, length, null);
         }
 
         /// <summary>
-        /// <p>
         /// Return an output stream which will encrypt the data as it is written to it.
         /// The stream will be written out in chunks according to the size of the passed in buffer.
-        /// </p>
-        /// <p>
-        /// The stream created can be closed off by either calling Close()
-        /// on the stream or Close() on the generator. Closing the returned
-        /// stream does not close off the Stream parameter <c>outStr</c>.
-        /// </p>
-        /// <p>
-        /// <b>Note</b>: if the buffer is not a power of 2 in length only the largest power of 2
-        /// bytes worth of the buffer will be used.
-        /// </p>
         /// </summary>
-        public Stream Open(
-            Stream outStr,
-            byte[] buffer)
+        /// <remarks>
+        /// If the buffer is not a power of 2 in length only the largest power of 2
+        /// bytes worth of the buffer will be used.
+        /// </remarks>
+        public Stream Open(Stream outputStream, byte[] buffer)
         {
-            return Open(outStr, 0, buffer);
+            return Open(new PacketWriter(outputStream, oldFormat), 0, buffer);
         }
 
-        /// <summary>
-        /// <p>
-        /// Close off the encrypted object - this is equivalent to calling Close() on the stream
-        /// returned by the Open() method.
-        /// </p>
-        /// <p>
-        /// <b>Note</b>: This does not close the underlying output stream, only the stream on top of
-        /// it created by the Open() method.
-        /// </p>
-        /// </summary>
+        public Stream Open(PacketWriter writer, byte[] buffer)
+        {
+            return Open(writer, 0, buffer);
+        }
+
         void IStreamGenerator.Close()
         {
             if (cOut != null)
@@ -434,15 +401,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 // TODO Should this all be under the try/catch block?
                 if (digestOut != null)
                 {
-                    //
                     // hand code a mod detection packet
-                    //
-                    BcpgOutputStream bOut = new BcpgOutputStream(
-                        digestOut, PacketTag.ModificationDetectionCode, 20);
-
-                    bOut.Flush();
+                    digestOut.Write(new byte[] { 0xd3, 0x14 });
                     digestOut.FlushFinalBlock();
-                    //digest.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
 
                     byte[] dig = digest.Hash;
                     cOut.Write(dig, 0, dig.Length);

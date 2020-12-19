@@ -2,9 +2,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Generic compressed data object.</remarks>
-    public class CompressedDataPacket
-        : InputStreamPacket
+    public class CompressedDataPacket : InputStreamPacket
     {
         private readonly CompressionAlgorithmTag algorithm;
 
@@ -19,5 +17,7 @@ namespace Org.BouncyCastle.Bcpg
         {
             get { return algorithm; }
         }
+
+        public override PacketTag Tag => PacketTag.CompressedData;
     }
 }

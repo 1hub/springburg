@@ -31,9 +31,6 @@ namespace Org.BouncyCastle.Bcpg
         {
         }
 
-        public override void Encode(Stream bcpgOut)
-        {
-            WritePacket(bcpgOut, PacketTag.SecretSubkey, GetEncodedContents(), useOldPacket: true);
-        }
+        public override PacketTag Tag => PacketTag.SecretSubkey;
     }
 }

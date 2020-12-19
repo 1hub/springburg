@@ -9,7 +9,7 @@ namespace Org.BouncyCastle.Bcpg
         private long time;
         private int validDays;
         private PublicKeyAlgorithmTag algorithm;
-        private BcpgObject key;
+        private BcpgKey key;
 
         internal PublicKeyPacket(Stream bcpgIn)
         {
@@ -55,7 +55,7 @@ namespace Org.BouncyCastle.Bcpg
         public PublicKeyPacket(
             PublicKeyAlgorithmTag algorithm,
             DateTime time,
-            BcpgObject key)
+            BcpgKey key)
         {
             this.version = 4;
             this.time = new DateTimeOffset(time, TimeSpan.Zero).ToUnixTimeSeconds();
@@ -71,30 +71,30 @@ namespace Org.BouncyCastle.Bcpg
 
         public virtual DateTime GetTime() => DateTimeOffset.FromUnixTimeSeconds(time).DateTime;
 
-        public virtual BcpgObject Key => key;
+        public virtual BcpgKey Key => key;
 
         public byte[] GetEncodedContents()
         {
             using MemoryStream bOut = new MemoryStream();
-
-            bOut.WriteByte((byte)version);
-            bOut.Write(new byte[] { (byte)(time >> 24), (byte)(time >> 16), (byte)(time >> 8), (byte)time });
-
-            if (version <= 3)
-            {
-                bOut.WriteByte((byte)(validDays >> 8));
-                bOut.WriteByte((byte)validDays);
-            }
-
-            bOut.WriteByte((byte)algorithm);
-            ((BcpgObject)key).Encode(bOut);
-
+            Encode(bOut);
             return bOut.ToArray();
         }
 
+        public override PacketTag Tag => PacketTag.PublicKey;
+
         public override void Encode(Stream bcpgOut)
         {
-            WritePacket(bcpgOut, PacketTag.PublicKey, GetEncodedContents(), useOldPacket: true);
+            bcpgOut.WriteByte((byte)version);
+            bcpgOut.Write(new byte[] { (byte)(time >> 24), (byte)(time >> 16), (byte)(time >> 8), (byte)time });
+
+            if (version <= 3)
+            {
+                bcpgOut.WriteByte((byte)(validDays >> 8));
+                bcpgOut.WriteByte((byte)validDays);
+            }
+
+            bcpgOut.WriteByte((byte)algorithm);
+            key.Encode(bcpgOut);
         }
     }
 }

@@ -699,7 +699,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 if (obj is PgpLiteralData)
                 {
                     Stream input = ((PgpLiteralData)obj).GetDataStream();
-                    Streams.Drain(input);
+                    input.CopyTo(Stream.Null);
                 }
             }
 

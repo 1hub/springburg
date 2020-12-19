@@ -132,33 +132,32 @@ namespace Org.BouncyCastle.Bcpg
         public byte[] GetEncodedContents()
         {
             using MemoryStream bOut = new MemoryStream();
+            Encode(bOut);
+            return bOut.ToArray();
+        }
 
-            bOut.Write(pubKeyPacket.GetEncodedContents());
+        public override PacketTag Tag => PacketTag.SecretKey;
 
-            bOut.WriteByte((byte)s2kUsage);
+        public override void Encode(Stream bcpgOut)
+        {
+            bcpgOut.Write(pubKeyPacket.GetEncodedContents());
+            bcpgOut.WriteByte((byte)s2kUsage);
 
             if (s2kUsage == UsageChecksum || s2kUsage == UsageSha1)
             {
-                bOut.WriteByte((byte)encAlgorithm);
-                s2k.Encode(bOut);
+                bcpgOut.WriteByte((byte)encAlgorithm);
+                s2k.Encode(bcpgOut);
             }
 
             if (iv != null)
             {
-                bOut.Write(iv);
+                bcpgOut.Write(iv);
             }
 
             if (secKeyData != null && secKeyData.Length > 0)
             {
-                bOut.Write(secKeyData);
+                bcpgOut.Write(secKeyData);
             }
-
-            return bOut.ToArray();
-        }
-
-        public override void Encode(Stream bcpgOut)
-        {
-            WritePacket(bcpgOut, PacketTag.SecretKey, GetEncodedContents(), useOldPacket: true);
         }
     }
 }

@@ -5,7 +5,7 @@ using System.IO;
 namespace Org.BouncyCastle.Bcpg
 {
     /// <summary>A multiple precision integer</summary>
-    public class MPInteger : BcpgObject
+    public class MPInteger
     {
         private readonly byte[] value;
 
@@ -45,7 +45,7 @@ namespace Org.BouncyCastle.Bcpg
             return encodedValue;
         }
 
-        public override void Encode(Stream bcpgOut)
+        public void Encode(Stream bcpgOut)
         {
             if (value.Length == 0)
             {

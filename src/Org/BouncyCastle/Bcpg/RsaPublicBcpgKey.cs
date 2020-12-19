@@ -3,7 +3,7 @@ using System.IO;
 namespace Org.BouncyCastle.Bcpg
 {
     /// <summary>Base class for an RSA public key.</summary>
-    public class RsaPublicBcpgKey : BcpgObject
+    public class RsaPublicBcpgKey : BcpgKey
     {
         private readonly MPInteger n, e;
 

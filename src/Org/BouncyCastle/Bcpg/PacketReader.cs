@@ -135,7 +135,7 @@ namespace Org.BouncyCastle.Bcpg
             switch (tag)
             {
                 case PacketTag.Reserved:
-                    return new InputStreamPacket(objStream);
+                    return new ReservedPacket(objStream);
                 case PacketTag.PublicKeyEncryptedSession:
                     return new PublicKeyEncSessionPacket(objStream);
                 case PacketTag.Signature:
@@ -184,18 +184,28 @@ namespace Org.BouncyCastle.Bcpg
         /// A stream that overlays our input stream, allowing the user to only read a segment of it.
         /// NB: dataLength will be negative if the segment length is in the upper range above 2**31.
         /// </summary>
-        private class PartialInputStream : BaseInputStream
+        private class PartialInputStream : Stream
         {
-            private Stream m_in;
+            private Stream inputStream;
             private bool partial;
             private int dataLength;
 
-            internal PartialInputStream(
-                Stream bcpgIn,
+            public override bool CanRead => true;
+
+            public override bool CanSeek => false;
+
+            public override bool CanWrite => false;
+
+            public override long Length => throw new System.NotSupportedException();
+
+            public override long Position { get => throw new System.NotSupportedException(); set => throw new System.NotSupportedException(); }
+
+            public PartialInputStream(
+                Stream inputStream,
                 bool partial,
                 int dataLength)
             {
-                this.m_in = bcpgIn;
+                this.inputStream = inputStream;
                 this.partial = partial;
                 this.dataLength = dataLength;
             }
@@ -206,7 +216,7 @@ namespace Org.BouncyCastle.Bcpg
                 {
                     if (dataLength != 0)
                     {
-                        int ch = m_in.ReadByte();
+                        int ch = inputStream.ReadByte();
                         if (ch < 0)
                         {
                             throw new EndOfStreamException("Premature end of stream in PartialInputStream");
@@ -227,7 +237,7 @@ namespace Org.BouncyCastle.Bcpg
                     if (dataLength != 0)
                     {
                         int readLen = (dataLength > count || dataLength < 0) ? count : dataLength;
-                        int len = m_in.Read(buffer, offset, readLen);
+                        int len = inputStream.Read(buffer, offset, readLen);
                         if (len < 1)
                         {
                             throw new EndOfStreamException("Premature end of stream in PartialInputStream");
@@ -243,7 +253,7 @@ namespace Org.BouncyCastle.Bcpg
 
             private int ReadPartialDataLength()
             {
-                int l = m_in.ReadByte();
+                int l = inputStream.ReadByte();
 
                 if (l < 0)
                 {
@@ -258,12 +268,12 @@ namespace Org.BouncyCastle.Bcpg
                 }
                 else if (l <= 223)
                 {
-                    dataLength = ((l - 192) << 8) + (m_in.ReadByte()) + 192;
+                    dataLength = ((l - 192) << 8) + (inputStream.ReadByte()) + 192;
                 }
                 else if (l == 255)
                 {
-                    dataLength = (m_in.ReadByte() << 24) | (m_in.ReadByte() << 16)
-                        | (m_in.ReadByte() << 8) | m_in.ReadByte();
+                    dataLength = (inputStream.ReadByte() << 24) | (inputStream.ReadByte() << 16)
+                        | (inputStream.ReadByte() << 8) | inputStream.ReadByte();
                 }
                 else
                 {
@@ -272,6 +282,26 @@ namespace Org.BouncyCastle.Bcpg
                 }
 
                 return 0;
+            }
+
+            public override void Flush()
+            {
+                throw new System.NotSupportedException();
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                throw new System.NotSupportedException();
+            }
+
+            public override void SetLength(long value)
+            {
+                throw new System.NotSupportedException();
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                throw new System.NotSupportedException();
             }
         }
     }

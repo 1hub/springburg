@@ -4,8 +4,7 @@ using System.IO;
 namespace Org.BouncyCastle.Bcpg
 {
     /// <summary>Basic type for a trust packet.</summary>
-    public class TrustPacket
-        : ContainedPacket
+    public class TrustPacket : ContainedPacket
     {
         private readonly byte[] levelAndTrustAmount;
  
@@ -24,9 +23,11 @@ namespace Org.BouncyCastle.Bcpg
             return (byte[])levelAndTrustAmount.Clone();
         }
 
+        public override PacketTag Tag => PacketTag.Trust;
+
         public override void Encode(Stream bcpgOut)
         {
-            WritePacket(bcpgOut, PacketTag.Trust, levelAndTrustAmount, useOldPacket: true);
+            bcpgOut.Write(levelAndTrustAmount);
         }
     }
 }

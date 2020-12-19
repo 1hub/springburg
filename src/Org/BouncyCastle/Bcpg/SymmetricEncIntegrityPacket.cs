@@ -3,8 +3,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public class SymmetricEncIntegrityPacket
-        : InputStreamPacket
+    public class SymmetricEncIntegrityPacket : InputStreamPacket
     {
         private readonly int version;
 
@@ -13,5 +12,7 @@ namespace Org.BouncyCastle.Bcpg
         {
             version = bcpgIn.ReadByte();
         }
+
+        public override PacketTag Tag => PacketTag.SymmetricEncryptedIntegrityProtected;
     }
 }

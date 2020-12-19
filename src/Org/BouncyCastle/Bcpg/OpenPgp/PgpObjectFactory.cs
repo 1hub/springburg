@@ -30,7 +30,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         /// <summary>Return the next object in the stream, or null if the end is reached.</summary>
         /// <exception cref="IOException">On a parse error</exception>
-        public PgpObject NextPgpObject()
+        public IPgpObject NextPgpObject()
         {
             PacketTag tag = packetReader.NextPacketTag();
 
@@ -111,10 +111,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// Return all available objects in a list.
         /// </summary>
         /// <returns>An <c>IList</c> containing all objects from this factory, in order.</returns>
-        public IList<PgpObject> AllPgpObjects()
+        public IList<IPgpObject> AllPgpObjects()
         {
-            IList<PgpObject> result = new List<PgpObject>();
-            PgpObject pgpObject;
+            IList<IPgpObject> result = new List<IPgpObject>();
+            IPgpObject pgpObject;
             while ((pgpObject = NextPgpObject()) != null)
             {
                 result.Add(pgpObject);
@@ -128,10 +128,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <param name="type">The type of objects to return. All other objects are ignored.</param>
         /// <returns>An <c>IList</c> containing the filtered objects from this factory, in order.</returns>
         public IList<T> FilterPgpObjects<T>()
-            where T : PgpObject
+            where T : IPgpObject
         {
             IList<T> result = new List<T>();
-            PgpObject pgpObject;
+            IPgpObject pgpObject;
             while ((pgpObject = NextPgpObject()) != null)
             {
                 if (pgpObject is T castedObject)

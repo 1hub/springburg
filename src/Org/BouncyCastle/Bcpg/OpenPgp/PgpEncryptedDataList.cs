@@ -5,7 +5,7 @@ using System.IO;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>A holder for a list of PGP encryption method packets.</summary>
-    public class PgpEncryptedDataList : PgpObject
+    public class PgpEncryptedDataList : IPgpObject
     {
         private readonly IList<PgpEncryptedData> list = new List<PgpEncryptedData>();
         private readonly InputStreamPacket data;

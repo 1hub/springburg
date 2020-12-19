@@ -36,21 +36,19 @@ namespace Org.BouncyCastle.Bcpg
 
         public int Version => version;
 
+        public override PacketTag Tag => PacketTag.SymmetricKeyEncryptedSessionKey;
+
         public override void Encode(Stream bcpgOut)
         {
-            using MemoryStream bOut = new MemoryStream();
+            bcpgOut.WriteByte((byte)version);
+            bcpgOut.WriteByte((byte)encAlgorithm);
 
-            bOut.WriteByte((byte)version);
-            bOut.WriteByte((byte)encAlgorithm);
-
-            s2k.Encode(bOut);
+            s2k.Encode(bcpgOut);
 
             if (secKeyData != null && secKeyData.Length > 0)
             {
-                bOut.Write(secKeyData);
+                bcpgOut.Write(secKeyData);
             }
-
-            WritePacket(bcpgOut, PacketTag.SymmetricKeyEncryptedSessionKey, bOut.ToArray(), useOldPacket: true);
         }
     }
 }

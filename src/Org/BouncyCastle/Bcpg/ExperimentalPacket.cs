@@ -17,19 +17,16 @@ namespace Org.BouncyCastle.Bcpg
             this.contents = Streams.ReadAll(bcpgIn);
         }
 
-        public PacketTag Tag
-        {
-            get { return tag; }
-        }
-
         public byte[] GetContents()
         {
             return (byte[])contents.Clone();
         }
 
+        public override PacketTag Tag => tag;
+
         public override void Encode(Stream bcpgOut)
         {
-            WritePacket(bcpgOut, tag, contents, useOldPacket: true);
+            bcpgOut.Write(contents);
         }
     }
 }

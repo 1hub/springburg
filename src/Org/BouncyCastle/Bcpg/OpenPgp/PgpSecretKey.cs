@@ -10,7 +10,7 @@ using Ed25519Dsa = InflatablePalace.Cryptography.Algorithms.Ed25519;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>General class to handle a PGP secret key object.</summary>
-    public class PgpSecretKey : IPgpKey
+    public class PgpSecretKey : PgpEncodable, IPgpKey
     {
         private readonly SecretKeyPacket secret;
         private readonly PgpPublicKey pub;
@@ -32,7 +32,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             bool useSha1,
             bool isMasterKey)
         {
-            BcpgObject secKey;
+            BcpgKey secKey;
 
             this.pub = pubKey;
 
@@ -762,19 +762,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        public byte[] GetEncoded()
+        public override void Encode(PacketWriter outStr)
         {
-            MemoryStream bOut = new MemoryStream();
-            Encode(bOut);
-            return bOut.ToArray();
-        }
+            outStr.WritePacket(secret);
 
-        public void Encode(Stream outStr)
-        {
-            secret.Encode(outStr);
             if (pub.trustPk != null)
             {
-                pub.trustPk.Encode(outStr);
+                outStr.WritePacket(pub.trustPk);
             }
 
             if (pub.subSigs == null) // is not a sub key
@@ -790,17 +784,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     if (pubID is string)
                     {
                         string id = (string)pubID;
-                        new UserIdPacket(id).Encode(outStr);
+                        outStr.WritePacket(new UserIdPacket(id));
                     }
                     else
                     {
                         PgpUserAttributeSubpacketVector v = (PgpUserAttributeSubpacketVector)pubID;
-                        new UserAttributePacket(v.ToSubpacketArray()).Encode(outStr);
+                        outStr.WritePacket(new UserAttributePacket(v.ToSubpacketArray()));
                     }
 
                     if (pub.idTrusts[i] != null)
                     {
-                        pub.idTrusts[i].Encode(outStr);
+                        outStr.WritePacket(pub.idTrusts[i]);
                     }
 
                     foreach (PgpSignature sig in (IList)pub.idSigs[i])

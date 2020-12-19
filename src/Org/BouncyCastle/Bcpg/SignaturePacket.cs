@@ -374,55 +374,53 @@ namespace Org.BouncyCastle.Bcpg
             get { return creationTime; }
         }
 
+        public override PacketTag Tag => PacketTag.Signature;
+
         public override void Encode(Stream bcpgOut)
         {
-            using MemoryStream bOut = new MemoryStream();
-
-            bOut.WriteByte((byte)version);
+            bcpgOut.WriteByte((byte)version);
 
             if (version == 3 || version == 2)
             {
-                bOut.WriteByte(5); // the length of the next block
-                bOut.WriteByte((byte)signatureType);
+                bcpgOut.WriteByte(5); // the length of the next block
+                bcpgOut.WriteByte((byte)signatureType);
 
                 long time = new DateTimeOffset(creationTime, TimeSpan.Zero).ToUnixTimeSeconds();
-                bOut.Write(new byte[] { (byte)(time >> 24), (byte)(time >> 16), (byte)(time >> 8), (byte)time });
+                bcpgOut.Write(new byte[] { (byte)(time >> 24), (byte)(time >> 16), (byte)(time >> 8), (byte)time });
 
-                bOut.Write(OpenPgp.PgpUtilities.KeyIdToBytes(keyId));
+                bcpgOut.Write(OpenPgp.PgpUtilities.KeyIdToBytes(keyId));
 
-                bOut.WriteByte((byte)keyAlgorithm);
-                bOut.WriteByte((byte)hashAlgorithm);
+                bcpgOut.WriteByte((byte)keyAlgorithm);
+                bcpgOut.WriteByte((byte)hashAlgorithm);
             }
             else if (version == 4)
             {
-                bOut.Write(new[] {
+                bcpgOut.Write(new[] {
                     (byte)signatureType,
                     (byte)keyAlgorithm,
                     (byte)hashAlgorithm });
 
-                EncodeLengthAndData(bOut, GetEncodedSubpackets(hashedData));
-                EncodeLengthAndData(bOut, GetEncodedSubpackets(unhashedData));
+                EncodeLengthAndData(bcpgOut, GetEncodedSubpackets(hashedData));
+                EncodeLengthAndData(bcpgOut, GetEncodedSubpackets(unhashedData));
             }
             else
             {
                 throw new IOException("unknown version: " + version);
             }
 
-            bOut.Write(fingerprint);
+            bcpgOut.Write(fingerprint);
 
             if (signature != null)
             {
-                foreach (BcpgObject o in signature)
+                foreach (var o in signature)
                 {
-                    o.Encode(bOut);
+                    o.Encode(bcpgOut);
                 }
             }
             else
             {
-                bOut.Write(signatureEncoding);
+                bcpgOut.Write(signatureEncoding);
             }
-
-            WritePacket(bcpgOut, PacketTag.Signature, bOut.ToArray(), useOldPacket: true);
         }
 
         private static void EncodeLengthAndData(Stream pOut, byte[] data)

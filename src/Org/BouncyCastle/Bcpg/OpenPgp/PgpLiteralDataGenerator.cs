@@ -15,7 +15,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>The special name indicating a "for your eyes only" packet.</summary>
         public const string Console = PgpLiteralData.Console;
 
-        private BcpgOutputStream pkOut;
+        private Stream pkOut;
         private bool oldFormat;
 
         /// <summary>
@@ -29,22 +29,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         private void WriteHeader(
-            BcpgOutputStream outStr,
+            Stream outStr,
             char format,
             byte[] encName,
             long modificationTime)
         {
-            outStr.Write(
+            outStr.Write(new[] {
                 (byte)format,
-                (byte)encName.Length);
+                (byte)encName.Length });
 
             outStr.Write(encName);
 
-            outStr.Write(
+            outStr.Write(new[] {
                 (byte)(modificationTime >> 24),
                 (byte)(modificationTime >> 16),
                 (byte)(modificationTime >> 8),
-                (byte)modificationTime);
+                (byte)modificationTime });
         }
 
         /// <summary>
@@ -57,30 +57,42 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// stream does not close off the Stream parameter <c>outStr</c>.
         /// </p>
         /// </summary>
-        /// <param name="outStr">The stream we want the packet in.</param>
+        /// <param name="outputStream">The stream we want the packet in.</param>
         /// <param name="format">The format we are using.</param>
         /// <param name="name">The name of the 'file'.</param>
         /// <param name="length">The length of the data we will write.</param>
         /// <param name="modificationTime">The time of last modification we want stored.</param>
         public Stream Open(
-            Stream outStr,
+            Stream outputStream,
             char format,
             string name,
             long length,
             DateTime modificationTime)
         {
+            if (outputStream == null)
+                throw new ArgumentNullException(nameof(outputStream));
+
+            return Open(new PacketWriter(outputStream, oldFormat), format, name, length, modificationTime);
+        }
+
+        public Stream Open(
+            PacketWriter writer,
+            char format,
+            string name,
+            long length,
+            DateTime modificationTime)
+        {
+            if (writer == null)
+                throw new ArgumentNullException(nameof(writer));
             if (pkOut != null)
                 throw new InvalidOperationException("generator already in open state");
-            if (outStr == null)
-                throw new ArgumentNullException("outStr");
 
             // Do this first, since it might throw an exception
             long unixS = new DateTimeOffset(modificationTime, TimeSpan.Zero).ToUnixTimeSeconds();
 
             byte[] encName = Encoding.UTF8.GetBytes(name);
 
-            pkOut = new BcpgOutputStream(outStr, PacketTag.LiteralData,
-                length + 2 + encName.Length + 4, oldFormat);
+            pkOut = writer.GetPacketStream(PacketTag.LiteralData, length + 2 + encName.Length + 4);
 
             WriteHeader(pkOut, format, encName, unixS);
 
@@ -102,29 +114,42 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <b>Note</b>: if the buffer is not a power of 2 in length only the largest power of 2
         /// bytes worth of the buffer will be used.</p>
         /// </summary>
-        /// <param name="outStr">The stream we want the packet in.</param>
+        /// <param name="outputStream">The stream we want the packet in.</param>
         /// <param name="format">The format we are using.</param>
         /// <param name="name">The name of the 'file'.</param>
         /// <param name="modificationTime">The time of last modification we want stored.</param>
         /// <param name="buffer">The buffer to use for collecting data to put into chunks.</param>
         public Stream Open(
-            Stream outStr,
+            Stream outputStream,
             char format,
             string name,
             DateTime modificationTime,
             byte[] buffer)
         {
+            if (outputStream == null)
+                throw new ArgumentNullException(nameof(outputStream));
+
+            return Open(new PacketWriter(outputStream, oldFormat), format, name, modificationTime, buffer);
+        }
+
+        public Stream Open(
+            PacketWriter writer,
+            char format,
+            string name,
+            DateTime modificationTime,
+            byte[] buffer)
+        {
+            if (writer == null)
+                throw new ArgumentNullException(nameof(writer));
             if (pkOut != null)
                 throw new InvalidOperationException("generator already in open state");
-            if (outStr == null)
-                throw new ArgumentNullException("outStr");
 
             // Do this first, since it might throw an exception
             long unixS = new DateTimeOffset(modificationTime, TimeSpan.Zero).ToUnixTimeSeconds();
 
             byte[] encName = Encoding.UTF8.GetBytes(name);
 
-            pkOut = new BcpgOutputStream(outStr, PacketTag.LiteralData, buffer);
+            pkOut = writer.GetPacketStream(PacketTag.LiteralData, buffer);
 
             WriteHeader(pkOut, format, encName, unixS);
 

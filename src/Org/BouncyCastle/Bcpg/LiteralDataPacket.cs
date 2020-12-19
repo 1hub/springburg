@@ -1,12 +1,9 @@
-using System;
 using System.IO;
 using System.Text;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Generic literal data packet.</remarks>
-    public class LiteralDataPacket
-        : InputStreamPacket
+    public class LiteralDataPacket : InputStreamPacket
     {
         private int format;
         private byte[] fileName;
@@ -43,5 +40,7 @@ namespace Org.BouncyCastle.Bcpg
         public string FileName => Encoding.UTF8.GetString(fileName);
 
         public byte[] GetRawFileName() => (byte[])fileName.Clone();
+
+        public override PacketTag Tag => PacketTag.LiteralData;
     }
 }

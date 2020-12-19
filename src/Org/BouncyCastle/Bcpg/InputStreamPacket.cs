@@ -2,7 +2,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public class InputStreamPacket : Packet
+    public abstract class InputStreamPacket : Packet
     {
         private readonly Stream bcpgIn;
 

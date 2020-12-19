@@ -7,7 +7,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     /// A PGP marker packet - in general these should be ignored other than where
     /// the idea is to preserve the original input stream.
     /// </summary>
-    public class PgpMarker : PgpObject
+    public class PgpMarker : IPgpObject
     {
         private readonly MarkerPacket data;
 

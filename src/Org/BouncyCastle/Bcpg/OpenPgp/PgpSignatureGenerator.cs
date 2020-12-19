@@ -1,13 +1,12 @@
 using System;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
 using Org.BouncyCastle.Bcpg.Sig;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>Generator for PGP signatures.</summary>
-    public class PgpSignatureGenerator : PgpSignatureBase
+    public class PgpSignatureGenerator
     {
         private static readonly SignatureSubpacket[] EmptySignatureSubpackets = new SignatureSubpacket[0];
 
@@ -16,9 +15,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private SignatureSubpacket[] unhashed = EmptySignatureSubpackets;
         private SignatureSubpacket[] hashed = EmptySignatureSubpackets;
 
+        private PgpSignatureHelper helper;
         private PgpPrivateKey privateKey;
-
-        public override HashAlgorithmTag HashAlgorithm => hashAlgorithm;
 
         /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
         public PgpSignatureGenerator(HashAlgorithmTag hashAlgorithm)
@@ -29,9 +27,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Initialise the generator for signing.</summary>
         public void InitSign(int signatureType, PgpPrivateKey privateKey)
         {
+            this.helper = new PgpSignatureHelper(signatureType, hashAlgorithm);
             this.privateKey = privateKey;
-            Init(signatureType);
         }
+
+        public void Update(byte b) => this.helper.Update(b);
+
+        public void Update(params byte[] bytes) => this.helper.Update(bytes);
+
+        public void Update(byte[] bytes, int off, int length) => this.helper.Update(bytes, off, length);
 
         public void SetHashedSubpackets(
             PgpSignatureSubpacketVector hashedPackets)
@@ -52,7 +56,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Return the one pass header associated with the current signature.</summary>
         public PgpOnePassSignature GenerateOnePassVersion(bool isNested)
         {
-            return new PgpOnePassSignature(new OnePassSignaturePacket(signatureType, hashAlgorithm, privateKey.PublicKeyPacket.Algorithm, privateKey.KeyId, isNested));
+            return new PgpOnePassSignature(new OnePassSignaturePacket(helper.SignatureType, hashAlgorithm, privateKey.PublicKeyPacket.Algorithm, privateKey.KeyId, isNested));
         }
 
         /// <summary>Return a signature object containing the current signature state.</summary>
@@ -87,7 +91,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
                 MemoryStream sOut = new MemoryStream(data.Length + 6);
                 sOut.WriteByte((byte)version);
-                sOut.WriteByte((byte)signatureType);
+                sOut.WriteByte((byte)helper.SignatureType);
                 sOut.WriteByte((byte)privateKey.PublicKeyPacket.Algorithm);
                 sOut.WriteByte((byte)hashAlgorithm);
                 sOut.WriteByte((byte)(data.Length >> 8));
@@ -109,10 +113,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 throw new PgpException("exception encoding hashed data.", e);
             }
 
-            var signature = Sign(hData, privateKey.Key);
+            var signature = helper.Sign(hData, privateKey.Key);
 
             return new PgpSignature(
-                new SignaturePacket(signatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
+                new SignaturePacket(helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
                     hashAlgorithm, hPkts, unhPkts, signature.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
         }
 

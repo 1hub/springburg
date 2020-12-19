@@ -7,7 +7,7 @@ using System.Text;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>A PGP signature object.</summary>
-    public class PgpSignature : PgpSignatureBase
+    public class PgpSignature : PgpEncodable
     {
         public const int BinaryDocument = 0x00;
         public const int CanonicalTextDocument = 0x01;
@@ -29,6 +29,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private readonly SignaturePacket sigPck;
         private readonly TrustPacket trustPck;
 
+        private PgpSignatureHelper helper;
         private PgpPublicKey publicKey;
 
         internal PgpSignature(SignaturePacket sigPacket)
@@ -52,18 +53,24 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public PublicKeyAlgorithmTag KeyAlgorithm => sigPck.KeyAlgorithm;
 
         /// <summary>The hash algorithm associated with this signature.</summary>
-        public override HashAlgorithmTag HashAlgorithm => sigPck.HashAlgorithm;
+        public HashAlgorithmTag HashAlgorithm => sigPck.HashAlgorithm;
 
         /// <summary>Return true if this signature represents a certification.</summary>
         public bool IsCertification() => IsCertification(SignatureType);
 
         public void InitVerify(PgpPublicKey publicKey)
         {
+            this.helper = new PgpSignatureHelper(SignatureType, HashAlgorithm);
             this.publicKey = publicKey;
-            Init(sigPck.SignatureType);
         }
 
-        public bool Verify() => Verify(sigPck.GetSignature(), GetSignatureTrailer(), this.publicKey.GetKey());
+        public void Update(byte b) => this.helper.Update(b);
+
+        public void Update(params byte[] bytes) => this.helper.Update(bytes);
+
+        public void Update(byte[] bytes, int off, int length) => this.helper.Update(bytes, off, length);
+
+        public bool Verify() => helper.Verify(sigPck.GetSignature(), GetSignatureTrailer(), this.publicKey.GetKey());
 
         private void UpdateWithIdData(
             int header,
@@ -215,23 +222,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public byte[] GetSignature() => sigPck.GetSignatureBytes();
 
-        // TODO Handle the encoding stuff by subclassing BcpgObject?
-        public byte[] GetEncoded()
+        public override void Encode(PacketWriter outStream)
         {
-            MemoryStream bOut = new MemoryStream();
-
-            Encode(bOut);
-
-            return bOut.ToArray();
-        }
-
-        public void Encode(Stream outStream)
-        {
-            sigPck.Encode(outStream);
+            outStream.WritePacket(sigPck);
 
             if (trustPck != null)
             {
-                trustPck.Encode(outStream);
+                outStream.WritePacket(trustPck);
             }
         }
 

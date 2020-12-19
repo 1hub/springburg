@@ -2,7 +2,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public class RsaSecretBcpgKey : BcpgObject
+    public class RsaSecretBcpgKey : BcpgKey
     {
         private readonly MPInteger d, p, q, u;
 

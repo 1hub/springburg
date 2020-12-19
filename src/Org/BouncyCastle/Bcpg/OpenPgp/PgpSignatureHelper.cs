@@ -1,21 +1,26 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Reflection.Metadata;
 using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    public abstract class PgpSignatureBase
+    class PgpSignatureHelper
     {
-        protected HashAlgorithm sig;
+        private HashAlgorithm sig;
         private byte lastb; // Initial value anything but '\r'
-        protected int signatureType;
+        private int signatureType;
+        private HashAlgorithmTag hashAlgorithm;
 
-        protected void Init(int signatureType)
+        public PgpSignatureHelper(int signatureType, HashAlgorithmTag hashAlgorithm)
         {
             this.signatureType = signatureType;
+            this.hashAlgorithm = hashAlgorithm;
             this.lastb = 0;
-            this.sig = PgpUtilities.GetHashAlgorithm(HashAlgorithm);
+            this.sig = PgpUtilities.GetHashAlgorithm(hashAlgorithm);
         }
+
+        public int SignatureType => signatureType;
 
         public void Update(byte b)
         {
@@ -80,12 +85,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        protected bool Verify(MPInteger[] signature, byte[] trailer, AsymmetricAlgorithm key)
+        public bool Verify(MPInteger[] signature, byte[] trailer, AsymmetricAlgorithm key)
         {
             sig.TransformFinalBlock(trailer, 0, trailer.Length);
             var hash = sig.Hash;
             if (key is RSA rsa)
-                return rsa.VerifyHash(hash, signature[0].Value, PgpUtilities.GetHashAlgorithmName(HashAlgorithm), RSASignaturePadding.Pkcs1);
+                return rsa.VerifyHash(hash, signature[0].Value, PgpUtilities.GetHashAlgorithmName(hashAlgorithm), RSASignaturePadding.Pkcs1);
 
             Debug.Assert(signature.Length == 2);
             int rsLength = Math.Max(signature[0].Value.Length, signature[1].Value.Length);
@@ -101,13 +106,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             throw new NotImplementedException();
         }
 
-        protected (MPInteger[] SigValues, byte[] Hash) Sign(byte[] trailer, AsymmetricAlgorithm privateKey)
+        public (MPInteger[] SigValues, byte[] Hash) Sign(byte[] trailer, AsymmetricAlgorithm privateKey)
         {
             sig.TransformFinalBlock(trailer, 0, trailer.Length);
 
             byte[] sigBytes;
             if (privateKey is RSA rsa)
-                sigBytes = rsa.SignHash(sig.Hash, PgpUtilities.GetHashAlgorithmName(HashAlgorithm), RSASignaturePadding.Pkcs1);
+                sigBytes = rsa.SignHash(sig.Hash, PgpUtilities.GetHashAlgorithmName(hashAlgorithm), RSASignaturePadding.Pkcs1);
             else if (privateKey is DSA dsa)
                 sigBytes = dsa.CreateSignature(sig.Hash, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
             else if (privateKey is ECDsa ecdsa)
@@ -130,7 +135,5 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             return (sigValues, sig.Hash);
         }
-
-        public abstract HashAlgorithmTag HashAlgorithm { get; }
     }
 }

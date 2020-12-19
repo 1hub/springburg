@@ -3,8 +3,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public class UserAttributePacket
-        : ContainedPacket
+    public class UserAttributePacket : ContainedPacket
     {
         private readonly UserAttributeSubpacket[] subpackets;
 
@@ -38,16 +37,14 @@ namespace Org.BouncyCastle.Bcpg
             return subpackets;
         }
 
+        public override PacketTag Tag => PacketTag.UserAttribute;
+
         public override void Encode(Stream bcpgOut)
         {
-            MemoryStream bOut = new MemoryStream();
-
             for (int i = 0; i != subpackets.Length; i++)
             {
-                subpackets[i].Encode(bOut);
+                subpackets[i].Encode(bcpgOut);
             }
-
-            WritePacket(bcpgOut, PacketTag.UserAttribute, bOut.ToArray());
         }
     }
 }

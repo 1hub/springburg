@@ -4,9 +4,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Basic packet for a modification detection code packet.</remarks>
-    public class ModDetectionCodePacket
-        : ContainedPacket
+    public class ModDetectionCodePacket : ContainedPacket
     {
         private readonly byte[] digest;
 
@@ -32,9 +30,11 @@ namespace Org.BouncyCastle.Bcpg
             return (byte[])digest.Clone();
         }
 
+        public override PacketTag Tag => PacketTag.ModificationDetectionCode;
+
         public override void Encode(Stream bcpgOut)
         {
-            WritePacket(bcpgOut, PacketTag.ModificationDetectionCode, digest);
+            bcpgOut.Write(digest);
         }
     }
 }

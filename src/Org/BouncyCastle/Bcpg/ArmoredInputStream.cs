@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -11,8 +12,7 @@ namespace Org.BouncyCastle.Bcpg
     * bytes when the data is reached. An IOException is thrown if the CRC check
     * fails.
     */
-    public class ArmoredInputStream
-        : BaseInputStream
+    public class ArmoredInputStream : Stream
     {
         /*
         * set up the decoding table.
@@ -98,6 +98,16 @@ namespace Org.BouncyCastle.Bcpg
         IList<string> headerList = new List<string>();
         int lastC = 0;
         bool isEndOfStream;
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
         /**
         * Create a stream for reading a PGP armoured message, parsing up to a header
@@ -509,6 +519,26 @@ namespace Org.BouncyCastle.Bcpg
                 input.Close();
             }
             base.Dispose(disposing);
+        }
+
+        public override void Flush()
+        {
+            throw new NotSupportedException();
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException();
         }
     }
 }

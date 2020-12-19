@@ -11,14 +11,11 @@ namespace Org.BouncyCastle.Bcpg
         }
 
         /// <summary>Construct a version 4 public subkey packet.</summary>
-        public PublicSubkeyPacket(PublicKeyAlgorithmTag algorithm, DateTime time, BcpgObject key)
+        public PublicSubkeyPacket(PublicKeyAlgorithmTag algorithm, DateTime time, BcpgKey key)
             : base(algorithm, time, key)
         {
         }
 
-        public override void Encode(Stream bcpgOut)
-        {
-            WritePacket(bcpgOut, PacketTag.PublicSubkey, GetEncodedContents(), useOldPacket: true);
-        }
+        public override PacketTag Tag => PacketTag.PublicSubkey;
     }
 }

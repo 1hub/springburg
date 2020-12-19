@@ -9,7 +9,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     /// Often a PGP key ring file is made up of a succession of master/sub-key key rings.
     /// If you want to read an entire public key file in one hit this is the class for you.
     /// </summary>
-    public class PgpPublicKeyRingBundle
+    public class PgpPublicKeyRingBundle : PgpEncodable
     {
         private readonly IDictionary<long, PgpPublicKeyRing> pubRings;
         private readonly IList<long> order;
@@ -140,14 +140,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return GetPublicKey(keyID) != null;
         }
 
-        public byte[] GetEncoded()
-        {
-            MemoryStream bOut = new MemoryStream();
-            Encode(bOut);
-            return bOut.ToArray();
-        }
-
-        public void Encode(Stream outStr)
+        public override void Encode(PacketWriter outStr)
         {
             foreach (long key in order)
             {

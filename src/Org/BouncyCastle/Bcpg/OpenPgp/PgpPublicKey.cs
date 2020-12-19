@@ -10,11 +10,11 @@ using Ed25519Dsa = InflatablePalace.Cryptography.Algorithms.Ed25519;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>General class to handle a PGP public key object.</summary>
-    public class PgpPublicKey : IPgpKey
+    public class PgpPublicKey : PgpEncodable, IPgpKey
     {
         public static byte[] CalculateFingerprint(PublicKeyPacket publicPk)
         {
-            BcpgObject key = publicPk.Key;
+            BcpgKey key = publicPk.Key;
             HashAlgorithm digest;
 
             if (publicPk.Version <= 3)
@@ -67,7 +67,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         private void Init()
         {
-            BcpgObject key = publicPk.Key;
+            BcpgKey key = publicPk.Key;
 
             this.fingerprint = CalculateFingerprint(publicPk);
 
@@ -134,7 +134,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             AsymmetricAlgorithm pubKey,
             DateTime time)
         {
-            BcpgObject bcpgKey;
+            BcpgKey bcpgKey;
             PublicKeyAlgorithmTag algorithm;
             if (pubKey is RSA rK)
             {
@@ -624,20 +624,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             get { return publicPk; }
         }
 
-        public byte[] GetEncoded()
+        public override void Encode(PacketWriter outStr)
         {
-            MemoryStream bOut = new MemoryStream();
-            Encode(bOut);
-            return bOut.ToArray();
-        }
-
-        public void Encode(Stream outStr)
-        {
-            publicPk.Encode(outStr);
+            outStr.WritePacket(publicPk);
 
             if (trustPk != null)
             {
-                trustPk.Encode(outStr);
+                outStr.WritePacket(trustPk);
             }
 
             if (subSigs == null)    // not a sub-key
@@ -652,17 +645,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     if (ids[i] is string)
                     {
                         string id = (string)ids[i];
-                        new UserIdPacket(id).Encode(outStr);
+                        outStr.WritePacket(new UserIdPacket(id));
                     }
                     else
                     {
                         PgpUserAttributeSubpacketVector v = (PgpUserAttributeSubpacketVector)ids[i];
-                        new UserAttributePacket(v.ToSubpacketArray()).Encode(outStr);
+                        outStr.WritePacket(new UserAttributePacket(v.ToSubpacketArray()));
                     }
 
                     if (idTrusts[i] != null)
                     {
-                        idTrusts[i].Encode(outStr);
+                        outStr.WritePacket(idTrusts[i]);
                     }
 
                     foreach (PgpSignature sig in (IList)idSigs[i])

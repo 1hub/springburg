@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>Compressed data objects</summary>
-    public class PgpCompressedData : PgpObject
+    public class PgpCompressedData : IPgpObject
     {
         private readonly CompressedDataPacket data;
 

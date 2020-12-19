@@ -2,7 +2,7 @@ using System;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    public class PgpExperimental : PgpObject
+    public class PgpExperimental : IPgpObject
     {
         private readonly ExperimentalPacket data;
 

@@ -6,7 +6,7 @@ using Org.BouncyCastle.Utilities.IO;
 namespace Org.BouncyCastle.Bcpg
 {
     /// <summary>The string to key specifier class.</summary>
-    public class S2k : BcpgObject
+    public class S2k
     {
         private const int ExpBias = 6;
 
@@ -117,7 +117,7 @@ namespace Org.BouncyCastle.Bcpg
             get { return protectionMode; }
         }
 
-        public override void Encode(Stream bcpgOut)
+        public void Encode(Stream bcpgOut)
         {
             bcpgOut.WriteByte((byte)type);
             bcpgOut.WriteByte((byte)algorithm);

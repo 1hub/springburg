@@ -15,7 +15,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private readonly CompressionLevel compression;
 
         private Stream dOut;
-        private BcpgOutputStream pkOut;
+        private Stream pkOut;
         private Adler32 checksum;
 
         public PgpCompressedDataGenerator(
@@ -54,19 +54,27 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// stream does not close off the Stream parameter <c>outStr</c>.
         /// </p>
         /// </summary>
-        /// <param name="outStr">Stream to be used for output.</param>
+        /// <param name="outputStream">Stream to be used for output.</param>
         /// <returns>A Stream for output of the compressed data.</returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="IOException"></exception>
-        public Stream Open(Stream outStr)
+        public Stream Open(Stream outputStream)
         {
+            if (outputStream == null)
+                throw new ArgumentNullException(nameof(outputStream));
+
+            return Open(new PacketWriter(outputStream));
+        }
+
+        public Stream Open(PacketWriter writer)
+        {
+            if (writer == null)
+                throw new ArgumentNullException(nameof(writer));
             if (dOut != null)
                 throw new InvalidOperationException("generator already in open state");
-            if (outStr == null)
-                throw new ArgumentNullException("outStr");
 
-            this.pkOut = new BcpgOutputStream(outStr, PacketTag.CompressedData);
+            this.pkOut = writer.GetPacketStream(PacketTag.CompressedData);
 
             doOpen();
 
@@ -92,23 +100,31 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// Only recent OpenPGP implementations are capable of accepting these streams.
         /// </p>
         /// </summary>
-        /// <param name="outStr">Stream to be used for output.</param>
+        /// <param name="outputStream">Stream to be used for output.</param>
         /// <param name="buffer">The buffer to use.</param>
         /// <returns>A Stream for output of the compressed data.</returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="IOException"></exception>
         /// <exception cref="PgpException"></exception>
-        public Stream Open(Stream outStr, byte[] buffer)
+        public Stream Open(Stream outputStream, byte[] buffer)
         {
+            if (outputStream == null)
+                throw new ArgumentNullException(nameof(outputStream));
+
+            return Open(new PacketWriter(outputStream), buffer);
+        }
+
+        public Stream Open(PacketWriter writer, byte[] buffer)
+        {
+            if (writer == null)
+                throw new ArgumentNullException(nameof(writer));
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
             if (dOut != null)
                 throw new InvalidOperationException("generator already in open state");
-            if (outStr == null)
-                throw new ArgumentNullException("outStr");
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
 
-            this.pkOut = new BcpgOutputStream(outStr, PacketTag.CompressedData, buffer);
+            this.pkOut = writer.GetPacketStream(PacketTag.CompressedData, buffer);
 
             doOpen();
 

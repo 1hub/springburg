@@ -3,9 +3,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Generic signature object</remarks>
-    public class OnePassSignaturePacket
-        : ContainedPacket
+    public class OnePassSignaturePacket : ContainedPacket
     {
         private int version;
         private int sigType;
@@ -54,21 +52,19 @@ namespace Org.BouncyCastle.Bcpg
 
         public HashAlgorithmTag HashAlgorithm => hashAlgorithm;
 
-        public long KeyId => keyId; 
+        public long KeyId => keyId;
+
+        public override PacketTag Tag => PacketTag.OnePassSignature;
 
         public override void Encode(Stream bcpgOut)
         {
-            MemoryStream bOut = new MemoryStream();
-
-            bOut.Write(new[] {
+            bcpgOut.Write(new[] {
                 (byte)version,
                 (byte)sigType,
                 (byte)hashAlgorithm,
                 (byte)keyAlgorithm });
-            bOut.Write(OpenPgp.PgpUtilities.KeyIdToBytes(keyId));
-            bOut.WriteByte((byte)nested);
-
-            WritePacket(bcpgOut, PacketTag.OnePassSignature, bOut.ToArray(), useOldPacket: true);
+            bcpgOut.Write(OpenPgp.PgpUtilities.KeyIdToBytes(keyId));
+            bcpgOut.WriteByte((byte)nested);
         }
     }
 }

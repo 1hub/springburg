@@ -3,7 +3,7 @@ using System;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>A list of PGP signatures - normally in the signature block after literal data.</summary>
-    public class PgpSignatureList : PgpObject
+    public class PgpSignatureList : IPgpObject
     {
         private PgpSignature[] sigs;
 

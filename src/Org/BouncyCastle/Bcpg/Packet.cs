@@ -1,7 +1,7 @@
 namespace Org.BouncyCastle.Bcpg
 {
-    public class Packet
-    //: PacketTag
+    public abstract class Packet
     {
+        public abstract PacketTag Tag { get; }
     }
 }

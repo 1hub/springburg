@@ -8,27 +8,21 @@ namespace Org.BouncyCastle.Utilities.IO
         {
             this.s = s;
         }
-        public override bool CanRead
-        {
-            get { return s.CanRead; }
-        }
-        public override bool CanSeek
-        {
-            get { return s.CanSeek; }
-        }
-        public override bool CanWrite
-        {
-            get { return s.CanWrite; }
-        }
-        public override long Length
-        {
-            get { return s.Length; }
-        }
+
+        public override bool CanRead => s.CanRead;
+
+        public override bool CanSeek => s.CanSeek;
+
+        public override bool CanWrite => s.CanWrite;
+
+        public override long Length => s.Length;
+
         public override long Position
         {
             get { return s.Position; }
             set { s.Position = value; }
         }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -37,18 +31,22 @@ namespace Org.BouncyCastle.Utilities.IO
             }
             base.Dispose(disposing);
         }
+
         public override void Flush()
         {
             s.Flush();
         }
+
         public override long Seek(long offset, SeekOrigin origin)
         {
             return s.Seek(offset, origin);
         }
+
         public override void SetLength(long value)
         {
             s.SetLength(value);
         }
+        
         public override int Read(byte[] buffer, int offset, int count)
         {
             return s.Read(buffer, offset, count);
@@ -57,6 +55,7 @@ namespace Org.BouncyCastle.Utilities.IO
         {
             return s.ReadByte();
         }
+        
         public override void Write(byte[] buffer, int offset, int count)
         {
             s.Write(buffer, offset, count);
@@ -65,6 +64,7 @@ namespace Org.BouncyCastle.Utilities.IO
         {
             s.WriteByte(value);
         }
+        
         protected readonly Stream s;
     }
 }

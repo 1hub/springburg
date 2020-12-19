@@ -6,7 +6,7 @@ using Org.BouncyCastle.Utilities.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public abstract class ECPublicBcpgKey : BcpgObject
+    public abstract class ECPublicBcpgKey : BcpgKey
     {
         internal Oid oid;
         internal MPInteger point;

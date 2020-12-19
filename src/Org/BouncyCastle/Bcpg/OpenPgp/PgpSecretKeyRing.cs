@@ -91,14 +91,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <returns>An <c>IEnumerable</c> of unattached, or extra, public keys.</returns>
         public IEnumerable<PgpPublicKey> GetExtraPublicKeys() => extraPubKeys;
 
-        public byte[] GetEncoded()
-        {
-            MemoryStream bOut = new MemoryStream();
-            Encode(bOut);
-            return bOut.ToArray();
-        }
-
-        public void Encode(Stream outputStream)
+        public override void Encode(PacketWriter outputStream)
         {
             if (outputStream == null)
                 throw new ArgumentNullException(nameof(outputStream));

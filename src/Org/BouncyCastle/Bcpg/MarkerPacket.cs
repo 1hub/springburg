@@ -13,9 +13,11 @@ namespace Org.BouncyCastle.Bcpg
             Streams.ReadFully(bcpgIn, marker);
         }
 
+        public override PacketTag Tag => PacketTag.Marker;
+
         public override void Encode(Stream bcpgOut)
         {
-            WritePacket(bcpgOut, PacketTag.Marker, marker, useOldPacket: true);
+            bcpgOut.Write(marker);
         }
     }
 }

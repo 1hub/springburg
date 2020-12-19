@@ -7,6 +7,7 @@ namespace Org.BouncyCastle.Bcpg
     public class UserIdPacket : ContainedPacket
     {
         private readonly byte[] idData;
+
         internal UserIdPacket(Stream bcpgIn)
         {
             this.idData = Streams.ReadAll(bcpgIn);
@@ -22,9 +23,11 @@ namespace Org.BouncyCastle.Bcpg
             return Encoding.UTF8.GetString(idData, 0, idData.Length);
         }
 
+        public override PacketTag Tag => PacketTag.UserId;
+
         public override void Encode(Stream bcpgOut)
         {
-            WritePacket(bcpgOut, PacketTag.UserId, idData, useOldPacket: true);
+            bcpgOut.Write(idData);
         }
     }
 }

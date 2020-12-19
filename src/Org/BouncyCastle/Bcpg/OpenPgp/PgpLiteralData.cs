@@ -4,7 +4,7 @@ using System.IO;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>Class for processing literal data objects.</summary>
-    public class PgpLiteralData : PgpObject
+    public class PgpLiteralData : IPgpObject
     {
         public const char Binary = 'b';
         public const char Text = 't';
