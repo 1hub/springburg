@@ -78,8 +78,7 @@ namespace InflatablePalace.Cryptography.Algorithms
             int halfLength = data.Length / 2;
             BigInteger gamma = new BigInteger(data.Slice(0, halfLength), isUnsigned: true, isBigEndian: true);
             BigInteger phi = new BigInteger(data.Slice(halfLength), isUnsigned: true, isBigEndian: true);
-            gamma = BigInteger.ModPow(gamma, X, P);
-            gamma = gamma.ModInverse(P);
+            gamma = BigInteger.ModPow(gamma, P - BigInteger.One - X, P);
             var paddedMessage = (gamma * phi % P).ToByteArray(isUnsigned: true, isBigEndian: true);
 
             if (paddedMessage[0] != 2)

@@ -34,33 +34,6 @@ namespace Aprismatic
         1823, 1831, 1847, 1861, 1867, 1871, 1873, 1877, 1879, 1889, 1901, 1907, 1913, 1931, 1933, 1949, 1951, 1973, 1979, 1987,
         1993, 1997, 1999 };
 
-
-        /// <summary>
-        /// Calculates the modulo inverse of this.
-        /// </summary>
-        /// <param name="mod">Modulo</param>
-        /// <returns>Modulo inverse of this; or 1 if mod.inv. does not exist.</returns>
-        public static BigInteger ModInverse(this BigInteger T, BigInteger mod)
-        {
-            BigInteger i = mod, v = 0, d = 1, t, x;
-
-            while (T.Sign > 0)
-            {
-                x = T;
-                t = BigInteger.DivRem(i, T, out T);
-                i = x;
-                x = d;
-                d = v - t * x;
-                v = x;
-            }
-
-            v %= mod;
-            if (v.Sign < 0)
-                v = (v + mod) % mod;
-
-            return v;
-        }
-
         /// <summary>
         /// Returns the specified amount of random bits
         /// </summary>
