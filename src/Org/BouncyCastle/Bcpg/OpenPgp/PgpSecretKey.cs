@@ -611,7 +611,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             try
             {
                 byte[] data = ExtractKeyData(rawPassPhrase, clearPassPhrase);
-                BcpgInputStream bcpgIn = BcpgInputStream.Wrap(new MemoryStream(data, false));
+                var bcpgIn = new MemoryStream(data, false);
                 AsymmetricAlgorithm privateKey;
                 switch (pubPk.Algorithm)
                 {

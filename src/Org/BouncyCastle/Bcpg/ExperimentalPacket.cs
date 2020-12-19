@@ -1,3 +1,4 @@
+using Org.BouncyCastle.Utilities.IO;
 using System;
 using System.IO;
 
@@ -10,11 +11,10 @@ namespace Org.BouncyCastle.Bcpg
 
         internal ExperimentalPacket(
             PacketTag tag,
-            BcpgInputStream bcpgIn)
+            Stream bcpgIn)
         {
             this.tag = tag;
-
-            this.contents = bcpgIn.ReadAll();
+            this.contents = Streams.ReadAll(bcpgIn);
         }
 
         public PacketTag Tag

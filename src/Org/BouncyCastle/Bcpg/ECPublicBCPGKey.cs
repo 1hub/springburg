@@ -2,18 +2,17 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Formats.Asn1;
+using Org.BouncyCastle.Utilities.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public abstract class ECPublicBcpgKey
-        : BcpgObject, IBcpgKey
+    public abstract class ECPublicBcpgKey : BcpgObject
     {
         internal Oid oid;
         internal MPInteger point;
 
         /// <param name="bcpgIn">The stream to read the packet from.</param>
-        protected ECPublicBcpgKey(
-            BcpgInputStream bcpgIn)
+        protected ECPublicBcpgKey(Stream bcpgIn)
         {
             this.oid = new Oid(AsnDecoder.ReadObjectIdentifier(ReadBytesOfEncodedLength(bcpgIn), AsnEncodingRules.DER, out _));
             this.point = new MPInteger(bcpgIn);
@@ -27,12 +26,6 @@ namespace Org.BouncyCastle.Bcpg
             this.oid = oid;
         }
 
-        /// <summary>The format, as a string, always "PGP".</summary>
-        public string Format
-        {
-            get { return "PGP"; }
-        }
-
         public override void Encode(Stream bcpgOut)
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -42,18 +35,11 @@ namespace Org.BouncyCastle.Bcpg
             this.point.Encode(bcpgOut);
         }
 
-        public virtual MPInteger EncodedPoint
-        {
-            get { return point; }
-        }
+        public virtual MPInteger EncodedPoint => point;
 
-        public virtual Oid CurveOid
-        {
-            get { return oid; }
-        }
+        public virtual Oid CurveOid => oid;
 
-        protected static byte[] ReadBytesOfEncodedLength(
-            BcpgInputStream bcpgIn)
+        protected static byte[] ReadBytesOfEncodedLength(Stream bcpgIn)
         {
             int length = bcpgIn.ReadByte();
             if (length < 0)
@@ -64,7 +50,7 @@ namespace Org.BouncyCastle.Bcpg
                 throw new IOException("unsupported OID");
 
             byte[] buffer = new byte[length + 2];
-            bcpgIn.ReadFully(buffer, 2, buffer.Length - 2);
+            Streams.ReadFully(bcpgIn, buffer, 2, buffer.Length - 2);
             buffer[0] = (byte)0x06;
             buffer[1] = (byte)length;
 

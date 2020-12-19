@@ -12,8 +12,7 @@ namespace Org.BouncyCastle.Bcpg
         private byte[] fileName;
         private long modDate;
 
-        internal LiteralDataPacket(
-            BcpgInputStream bcpgIn)
+        internal LiteralDataPacket(Stream bcpgIn)
             : base(bcpgIn)
         {
             format = bcpgIn.ReadByte();
@@ -36,25 +35,13 @@ namespace Org.BouncyCastle.Bcpg
         }
 
         /// <summary>The format tag value.</summary>
-        public int Format
-        {
-            get { return format; }
-        }
+        public int Format => format;
 
         /// <summary>The modification time of the file in milli-seconds (since Jan 1, 1970 UTC)</summary>
-        public long ModificationTime
-        {
-            get { return modDate; }
-        }
+        public long ModificationTime => modDate;
 
-        public string FileName
-        {
-            get { return Encoding.UTF8.GetString(fileName); }
-        }
+        public string FileName => Encoding.UTF8.GetString(fileName);
 
-        public byte[] GetRawFileName()
-        {
-            return (byte[])fileName.Clone();
-        }
+        public byte[] GetRawFileName() => (byte[])fileName.Clone();
     }
 }

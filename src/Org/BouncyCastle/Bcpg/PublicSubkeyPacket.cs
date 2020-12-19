@@ -5,13 +5,13 @@ namespace Org.BouncyCastle.Bcpg
 {
     public class PublicSubkeyPacket : PublicKeyPacket
     {
-        internal PublicSubkeyPacket(BcpgInputStream bcpgIn)
+        internal PublicSubkeyPacket(Stream bcpgIn)
             : base(bcpgIn)
         {
         }
 
         /// <summary>Construct a version 4 public subkey packet.</summary>
-        public PublicSubkeyPacket(PublicKeyAlgorithmTag algorithm, DateTime time, IBcpgKey key)
+        public PublicSubkeyPacket(PublicKeyAlgorithmTag algorithm, DateTime time, BcpgObject key)
             : base(algorithm, time, key)
         {
         }

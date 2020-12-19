@@ -1,3 +1,4 @@
+using Org.BouncyCastle.Utilities.IO;
 using System;
 using System.IO;
 
@@ -8,7 +9,7 @@ namespace Org.BouncyCastle.Bcpg
     {
         private readonly byte[] value;
 
-        public MPInteger(BcpgInputStream bcpgIn)
+        public MPInteger(Stream bcpgIn)
         {
             if (bcpgIn == null)
                 throw new ArgumentNullException(nameof(bcpgIn));
@@ -16,7 +17,7 @@ namespace Org.BouncyCastle.Bcpg
             int bitLength = (bcpgIn.ReadByte() << 8) | bcpgIn.ReadByte();
             byte[] bytes = new byte[(bitLength + 7) / 8];
 
-            bcpgIn.ReadFully(bytes);
+            Streams.ReadFully(bcpgIn, bytes);
 
             this.value = bytes;
         }

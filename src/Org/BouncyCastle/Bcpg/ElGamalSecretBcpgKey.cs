@@ -2,12 +2,11 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <summary>Base class for an ElGamal secret key.</summary>
-    public class ElGamalSecretBcpgKey : BcpgObject, IBcpgKey
+    public class ElGamalSecretBcpgKey : BcpgObject
     {
         private MPInteger x;
 
-        public ElGamalSecretBcpgKey(BcpgInputStream bcpgIn)
+        public ElGamalSecretBcpgKey(Stream bcpgIn)
         {
             this.x = new MPInteger(bcpgIn);
         }
@@ -15,12 +14,6 @@ namespace Org.BouncyCastle.Bcpg
         public ElGamalSecretBcpgKey(MPInteger x)
         {
             this.x = x;
-        }
-
-        /// <summary>The format, as a string, always "PGP".</summary>
-        public string Format
-        {
-            get { return "PGP"; }
         }
 
         public MPInteger X => x;

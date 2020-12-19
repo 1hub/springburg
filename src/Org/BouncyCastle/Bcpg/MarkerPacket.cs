@@ -1,17 +1,16 @@
+using Org.BouncyCastle.Utilities.IO;
 using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Basic type for a marker packet.</remarks>
-    public class MarkerPacket
-        : ContainedPacket
+    public class MarkerPacket : ContainedPacket
     {
         // "PGP"
         byte[] marker = { (byte)0x50, (byte)0x47, (byte)0x50 };
 
-        public MarkerPacket(BcpgInputStream bcpgIn)
+        internal MarkerPacket(Stream bcpgIn)
         {
-            bcpgIn.ReadFully(marker);
+            Streams.ReadFully(bcpgIn, marker);
         }
 
         public override void Encode(Stream bcpgOut)

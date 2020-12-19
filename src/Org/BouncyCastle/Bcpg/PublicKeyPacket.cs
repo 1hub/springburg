@@ -9,10 +9,9 @@ namespace Org.BouncyCastle.Bcpg
         private long time;
         private int validDays;
         private PublicKeyAlgorithmTag algorithm;
-        private IBcpgKey key;
+        private BcpgObject key;
 
-        internal PublicKeyPacket(
-            BcpgInputStream bcpgIn)
+        internal PublicKeyPacket(Stream bcpgIn)
         {
             version = bcpgIn.ReadByte();
 
@@ -56,7 +55,7 @@ namespace Org.BouncyCastle.Bcpg
         public PublicKeyPacket(
             PublicKeyAlgorithmTag algorithm,
             DateTime time,
-            IBcpgKey key)
+            BcpgObject key)
         {
             this.version = 4;
             this.time = new DateTimeOffset(time, TimeSpan.Zero).ToUnixTimeSeconds();
@@ -72,7 +71,7 @@ namespace Org.BouncyCastle.Bcpg
 
         public virtual DateTime GetTime() => DateTimeOffset.FromUnixTimeSeconds(time).DateTime;
 
-        public virtual IBcpgKey Key => key;
+        public virtual BcpgObject Key => key;
 
         public byte[] GetEncodedContents()
         {

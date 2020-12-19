@@ -2,15 +2,12 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Base class for a DSA public key.</remarks>
-    public class DsaPublicBcpgKey
-        : BcpgObject, IBcpgKey
+    public class DsaPublicBcpgKey : BcpgObject
     {
         private readonly MPInteger p, q, g, y;
 
         /// <param name="bcpgIn">The stream to read the packet from.</param>
-        public DsaPublicBcpgKey(
-            BcpgInputStream bcpgIn)
+        public DsaPublicBcpgKey(Stream bcpgIn)
         {
             this.p = new MPInteger(bcpgIn);
             this.q = new MPInteger(bcpgIn);
@@ -28,12 +25,6 @@ namespace Org.BouncyCastle.Bcpg
             this.q = q;
             this.g = g;
             this.y = y;
-        }
-
-        /// <summary>The format, as a string, always "PGP".</summary>
-        public string Format
-        {
-            get { return "PGP"; }
         }
 
         public override void Encode(Stream bcpgOut)

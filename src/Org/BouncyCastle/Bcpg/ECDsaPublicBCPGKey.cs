@@ -1,10 +1,11 @@
-﻿using System.Security.Cryptography;
+﻿using System.IO;
+using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg
 {
     public class ECDsaPublicBcpgKey : ECPublicBcpgKey
     {
-        protected internal ECDsaPublicBcpgKey(BcpgInputStream bcpgIn)
+        protected internal ECDsaPublicBcpgKey(Stream bcpgIn)
             : base(bcpgIn)
         {
         }

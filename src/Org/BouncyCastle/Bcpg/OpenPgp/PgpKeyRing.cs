@@ -6,21 +6,21 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     public abstract class PgpKeyRing : PgpObject
     {
-        private static TrustPacket ReadOptionalTrustPacket(BcpgInputStream bcpgInput)
+        private static TrustPacket ReadOptionalTrustPacket(PacketReader packetReader)
         {
-            return bcpgInput.NextPacketTag() == PacketTag.Trust ? (TrustPacket)bcpgInput.ReadPacket() : null;
+            return packetReader.NextPacketTag() == PacketTag.Trust ? (TrustPacket)packetReader.ReadPacket() : null;
         }
 
-        private static IList<PgpSignature> ReadSignaturesAndTrust(BcpgInputStream bcpgInput)
+        private static IList<PgpSignature> ReadSignaturesAndTrust(PacketReader packetReader)
         {
             try
             {
                 IList<PgpSignature> sigList = new List<PgpSignature>();
 
-                while (bcpgInput.NextPacketTag() == PacketTag.Signature)
+                while (packetReader.NextPacketTag() == PacketTag.Signature)
                 {
-                    SignaturePacket signaturePacket = (SignaturePacket)bcpgInput.ReadPacket();
-                    TrustPacket trustPacket = ReadOptionalTrustPacket(bcpgInput);
+                    SignaturePacket signaturePacket = (SignaturePacket)packetReader.ReadPacket();
+                    TrustPacket trustPacket = ReadOptionalTrustPacket(packetReader);
                     sigList.Add(new PgpSignature(signaturePacket, trustPacket));
                 }
 
@@ -33,18 +33,18 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         protected static PgpPublicKey ReadPublicKey(
-            BcpgInputStream bcpgInput,
+            PacketReader packetReader,
             PublicKeyPacket publicKeyPacket,
             bool subKey = false)
         {
             // Ignore GPG comment packets if found.
-            while (bcpgInput.NextPacketTag() == PacketTag.Experimental2)
+            while (packetReader.NextPacketTag() == PacketTag.Experimental2)
             {
-                bcpgInput.ReadPacket();
+                packetReader.ReadPacket();
             }
 
-            TrustPacket trust = ReadOptionalTrustPacket(bcpgInput);
-            var keySigs = ReadSignaturesAndTrust(bcpgInput); // Revocation and direct signatures
+            TrustPacket trust = ReadOptionalTrustPacket(packetReader);
+            var keySigs = ReadSignaturesAndTrust(packetReader); // Revocation and direct signatures
 
             if (subKey)
             {
@@ -55,10 +55,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             var idTrusts = new List<TrustPacket>();
             var idSigs = new List<IList<PgpSignature>>();
 
-            while (bcpgInput.NextPacketTag() == PacketTag.UserId
-                || bcpgInput.NextPacketTag() == PacketTag.UserAttribute)
+            while (packetReader.NextPacketTag() == PacketTag.UserId
+                || packetReader.NextPacketTag() == PacketTag.UserAttribute)
             {
-                Packet obj = bcpgInput.ReadPacket();
+                Packet obj = packetReader.ReadPacket();
                 if (obj is UserIdPacket)
                 {
                     UserIdPacket id = (UserIdPacket)obj;
@@ -70,8 +70,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     ids.Add(new PgpUserAttributeSubpacketVector(user.GetSubpackets()));
                 }
 
-                idTrusts.Add(ReadOptionalTrustPacket(bcpgInput));
-                idSigs.Add(ReadSignaturesAndTrust(bcpgInput));
+                idTrusts.Add(ReadOptionalTrustPacket(packetReader));
+                idSigs.Add(ReadSignaturesAndTrust(packetReader));
             }
 
             return new PgpPublicKey(publicKeyPacket, trust, keySigs, ids, idTrusts, idSigs);

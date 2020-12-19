@@ -1,4 +1,4 @@
-using System;
+using Org.BouncyCastle.Utilities.IO;
 using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
@@ -10,14 +10,14 @@ namespace Org.BouncyCastle.Bcpg
         private S2k s2k;
         private readonly byte[] secKeyData;
 
-        public SymmetricKeyEncSessionPacket(BcpgInputStream bcpgIn)
+        internal SymmetricKeyEncSessionPacket(Stream bcpgIn)
         {
             version = bcpgIn.ReadByte();
             encAlgorithm = (SymmetricKeyAlgorithmTag)bcpgIn.ReadByte();
 
             s2k = new S2k(bcpgIn);
 
-            secKeyData = bcpgIn.ReadAll();
+            secKeyData = Streams.ReadAll(bcpgIn);
         }
 
         public SymmetricKeyEncSessionPacket(SymmetricKeyAlgorithmTag encAlgorithm, S2k s2k, byte[] secKeyData)

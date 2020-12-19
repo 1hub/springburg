@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-
 using Org.BouncyCastle.Utilities.IO;
 
 namespace Org.BouncyCastle.Bcpg
@@ -13,8 +12,7 @@ namespace Org.BouncyCastle.Bcpg
         private PublicKeyAlgorithmTag algorithm;
         private byte[] sessionKey;
 
-        internal PublicKeyEncSessionPacket(
-            BcpgInputStream bcpgIn)
+        internal PublicKeyEncSessionPacket(Stream bcpgIn)
         {
             version = bcpgIn.ReadByte();
 

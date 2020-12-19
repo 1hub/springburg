@@ -1,3 +1,4 @@
+using Org.BouncyCastle.Utilities.IO;
 using System.IO;
 using System.Text;
 
@@ -6,10 +7,9 @@ namespace Org.BouncyCastle.Bcpg
     public class UserIdPacket : ContainedPacket
     {
         private readonly byte[] idData;
-
-        public UserIdPacket(BcpgInputStream bcpgIn)
+        internal UserIdPacket(Stream bcpgIn)
         {
-            this.idData = bcpgIn.ReadAll();
+            this.idData = Streams.ReadAll(bcpgIn);
         }
 
         public UserIdPacket(string id)

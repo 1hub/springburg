@@ -1,4 +1,4 @@
-using System;
+using Org.BouncyCastle.Utilities.IO;
 using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
@@ -8,23 +8,13 @@ namespace Org.BouncyCastle.Bcpg
         : ContainedPacket
     {
         private readonly byte[] levelAndTrustAmount;
-
-        public TrustPacket(
-            BcpgInputStream bcpgIn)
+ 
+        internal TrustPacket(Stream bcpgIn)
         {
-            MemoryStream bOut = new MemoryStream();
-
-            int ch;
-            while ((ch = bcpgIn.ReadByte()) >= 0)
-            {
-                bOut.WriteByte((byte)ch);
-            }
-
-            levelAndTrustAmount = bOut.ToArray();
+            levelAndTrustAmount = Streams.ReadAll(bcpgIn);
         }
 
-        public TrustPacket(
-            int trustCode)
+        public TrustPacket(int trustCode)
         {
             this.levelAndTrustAmount = new byte[] { (byte)trustCode };
         }

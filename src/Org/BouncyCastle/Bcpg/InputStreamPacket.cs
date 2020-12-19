@@ -1,18 +1,18 @@
+using System.IO;
+
 namespace Org.BouncyCastle.Bcpg
 {
-    public class InputStreamPacket
-        : Packet
+    public class InputStreamPacket : Packet
     {
-        private readonly BcpgInputStream bcpgIn;
+        private readonly Stream bcpgIn;
 
-        public InputStreamPacket(
-            BcpgInputStream bcpgIn)
+        internal InputStreamPacket(Stream bcpgIn)
         {
             this.bcpgIn = bcpgIn;
         }
 
         /// <summary>Note: you can only read from this once...</summary>
-        public BcpgInputStream GetInputStream()
+        public Stream GetInputStream()
         {
             return bcpgIn;
         }

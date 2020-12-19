@@ -6,10 +6,9 @@ namespace Org.BouncyCastle.Bcpg
     public class SymmetricEncIntegrityPacket
         : InputStreamPacket
     {
-        internal readonly int version;
+        private readonly int version;
 
-        internal SymmetricEncIntegrityPacket(
-            BcpgInputStream bcpgIn)
+        internal SymmetricEncIntegrityPacket(Stream bcpgIn)
             : base(bcpgIn)
         {
             version = bcpgIn.ReadByte();

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Org.BouncyCastle.Bcpg.Sig;
+using Org.BouncyCastle.Utilities.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
@@ -19,8 +20,7 @@ namespace Org.BouncyCastle.Bcpg
         private SignatureSubpacket[] unhashedData;
         private byte[] signatureEncoding;
 
-        internal SignaturePacket(
-            BcpgInputStream bcpgIn)
+        internal SignaturePacket(Stream bcpgIn)
         {
             version = bcpgIn.ReadByte();
 
@@ -54,7 +54,7 @@ namespace Org.BouncyCastle.Bcpg
                 int hashedLength = (bcpgIn.ReadByte() << 8) | bcpgIn.ReadByte();
                 byte[] hashed = new byte[hashedLength];
 
-                bcpgIn.ReadFully(hashed);
+                Streams.ReadFully(bcpgIn, hashed);
 
                 //
                 // read the signature sub packet data.
@@ -89,7 +89,7 @@ namespace Org.BouncyCastle.Bcpg
                 int unhashedLength = (bcpgIn.ReadByte() << 8) | bcpgIn.ReadByte();
                 byte[] unhashed = new byte[unhashedLength];
 
-                bcpgIn.ReadFully(unhashed);
+                Streams.ReadFully(bcpgIn, unhashed);
 
                 sIn = new SignatureSubpacketsParser(new MemoryStream(unhashed, false));
 
@@ -119,7 +119,7 @@ namespace Org.BouncyCastle.Bcpg
             }
 
             fingerprint = new byte[2];
-            bcpgIn.ReadFully(fingerprint);
+            Streams.ReadFully(bcpgIn, fingerprint);
 
             switch (keyAlgorithm)
             {

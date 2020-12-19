@@ -3,12 +3,9 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Basic packet for a PGP secret key.</remarks>
-    public class SecretSubkeyPacket
-        : SecretKeyPacket
+    public class SecretSubkeyPacket : SecretKeyPacket
     {
-        internal SecretSubkeyPacket(
-            BcpgInputStream bcpgIn)
+        internal SecretSubkeyPacket(Stream bcpgIn)
             : base(bcpgIn)
         {
         }

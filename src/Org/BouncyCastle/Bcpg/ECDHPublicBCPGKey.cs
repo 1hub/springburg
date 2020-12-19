@@ -12,8 +12,7 @@ namespace Org.BouncyCastle.Bcpg
         private SymmetricKeyAlgorithmTag symAlgorithmId;
 
         /// <param name="bcpgIn">The stream to read the packet from.</param>
-        public ECDHPublicBcpgKey(
-            BcpgInputStream bcpgIn)
+        public ECDHPublicBcpgKey(Stream bcpgIn)
             : base(bcpgIn)
         {
             int length = bcpgIn.ReadByte();
@@ -21,7 +20,7 @@ namespace Org.BouncyCastle.Bcpg
             if (kdfParameters.Length != 3)
                 throw new InvalidOperationException("kdf parameters size of 3 expected.");
 
-            bcpgIn.ReadFully(kdfParameters);
+            Streams.ReadFully(bcpgIn, kdfParameters);
 
             reserved = kdfParameters[0];
             hashFunctionId = (HashAlgorithmTag)kdfParameters[1];

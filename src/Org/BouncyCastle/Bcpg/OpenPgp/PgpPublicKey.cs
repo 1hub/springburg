@@ -14,7 +14,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     {
         public static byte[] CalculateFingerprint(PublicKeyPacket publicPk)
         {
-            IBcpgKey key = publicPk.Key;
+            BcpgObject key = publicPk.Key;
             HashAlgorithm digest;
 
             if (publicPk.Version <= 3)
@@ -67,7 +67,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         private void Init()
         {
-            IBcpgKey key = publicPk.Key;
+            BcpgObject key = publicPk.Key;
 
             this.fingerprint = CalculateFingerprint(publicPk);
 
@@ -134,7 +134,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             AsymmetricAlgorithm pubKey,
             DateTime time)
         {
-            IBcpgKey bcpgKey;
+            BcpgObject bcpgKey;
             PublicKeyAlgorithmTag algorithm;
             if (pubKey is RSA rK)
             {

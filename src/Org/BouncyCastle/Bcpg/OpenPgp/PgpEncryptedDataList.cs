@@ -10,17 +10,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private readonly IList<PgpEncryptedData> list = new List<PgpEncryptedData>();
         private readonly InputStreamPacket data;
 
-        internal PgpEncryptedDataList(BcpgInputStream bcpgInput)
+        internal PgpEncryptedDataList(PacketReader packetReader)
         {
             var packets = new List<Packet>();
 
-            while (bcpgInput.NextPacketTag() == PacketTag.PublicKeyEncryptedSession
-                || bcpgInput.NextPacketTag() == PacketTag.SymmetricKeyEncryptedSessionKey)
+            while (packetReader.NextPacketTag() == PacketTag.PublicKeyEncryptedSession
+                || packetReader.NextPacketTag() == PacketTag.SymmetricKeyEncryptedSessionKey)
             {
-                packets.Add(bcpgInput.ReadPacket());
+                packets.Add(packetReader.ReadPacket());
             }
 
-            Packet packet = bcpgInput.ReadPacket();
+            Packet packet = packetReader.ReadPacket();
             if (!(packet is InputStreamPacket))
                 throw new IOException("unexpected packet in stream: " + packet);
 

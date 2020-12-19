@@ -27,26 +27,29 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         public PgpPublicKeyRing(Stream inputStream)
+            : this(new PacketReader(inputStream))
+        {
+        }
+
+        internal PgpPublicKeyRing(PacketReader packetReader)
         {
             this.keys = new List<PgpPublicKey>();
 
-            BcpgInputStream bcpgInput = BcpgInputStream.Wrap(inputStream);
-
-            PacketTag initialTag = bcpgInput.NextPacketTag();
+            PacketTag initialTag = packetReader.NextPacketTag();
             if (initialTag != PacketTag.PublicKey && initialTag != PacketTag.PublicSubkey)
             {
                 throw new IOException("public key ring doesn't start with public key tag: "
                     + "tag 0x" + ((int)initialTag).ToString("X"));
             }
 
-            PublicKeyPacket pubPk = (PublicKeyPacket)bcpgInput.ReadPacket();
-            keys.Add(ReadPublicKey(bcpgInput, pubPk));
+            PublicKeyPacket pubPk = (PublicKeyPacket)packetReader.ReadPacket();
+            keys.Add(ReadPublicKey(packetReader, pubPk));
 
             // Read subkeys
-            while (bcpgInput.NextPacketTag() == PacketTag.PublicSubkey)
+            while (packetReader.NextPacketTag() == PacketTag.PublicSubkey)
             {
-                pubPk = (PublicSubkeyPacket)bcpgInput.ReadPacket();
-                keys.Add(ReadPublicKey(bcpgInput, pubPk, subKey: true));
+                pubPk = (PublicSubkeyPacket)packetReader.ReadPacket();
+                keys.Add(ReadPublicKey(packetReader, pubPk, subKey: true));
             }
         }
 

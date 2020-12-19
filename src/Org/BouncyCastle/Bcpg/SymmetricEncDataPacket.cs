@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
@@ -6,8 +7,7 @@ namespace Org.BouncyCastle.Bcpg
     public class SymmetricEncDataPacket
         : InputStreamPacket
     {
-        public SymmetricEncDataPacket(
-            BcpgInputStream bcpgIn)
+        internal SymmetricEncDataPacket(Stream bcpgIn)
             : base(bcpgIn)
         {
         }

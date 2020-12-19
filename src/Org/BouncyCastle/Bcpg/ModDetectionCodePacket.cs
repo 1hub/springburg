@@ -1,3 +1,4 @@
+using Org.BouncyCastle.Utilities.IO;
 using System;
 using System.IO;
 
@@ -9,18 +10,16 @@ namespace Org.BouncyCastle.Bcpg
     {
         private readonly byte[] digest;
 
-        internal ModDetectionCodePacket(
-            BcpgInputStream bcpgIn)
+        internal ModDetectionCodePacket(Stream bcpgIn)
         {
             if (bcpgIn == null)
                 throw new ArgumentNullException("bcpgIn");
 
             this.digest = new byte[20];
-            bcpgIn.ReadFully(this.digest);
+            Streams.ReadFully(bcpgIn, this.digest);
         }
 
-        public ModDetectionCodePacket(
-            byte[] digest)
+        public ModDetectionCodePacket(byte[] digest)
         {
             if (digest == null)
                 throw new ArgumentNullException("digest");

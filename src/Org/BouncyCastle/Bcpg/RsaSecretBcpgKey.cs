@@ -2,12 +2,11 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <summary>Base class for an RSA secret (or priate) key.</summary>
-    public class RsaSecretBcpgKey : BcpgObject, IBcpgKey
+    public class RsaSecretBcpgKey : BcpgObject
     {
         private readonly MPInteger d, p, q, u;
 
-        public RsaSecretBcpgKey(BcpgInputStream bcpgIn)
+        public RsaSecretBcpgKey(Stream bcpgIn)
         {
             this.d = new MPInteger(bcpgIn);
             this.p = new MPInteger(bcpgIn);
@@ -46,12 +45,6 @@ namespace Org.BouncyCastle.Bcpg
         public MPInteger PrimeQ => q;
 
         public MPInteger InverseQ => u;
-
-        /// <summary>The format, as a string, always "PGP".</summary>
-        public string Format
-        {
-            get { return "PGP"; }
-        }
 
         public override void Encode(Stream bcpgOut)
         {

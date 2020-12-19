@@ -8,8 +8,7 @@ namespace Org.BouncyCastle.Bcpg
     {
         private readonly UserAttributeSubpacket[] subpackets;
 
-        public UserAttributePacket(
-            BcpgInputStream bcpgIn)
+        public UserAttributePacket(Stream bcpgIn)
         {
             UserAttributeSubpacketsParser sIn = new UserAttributeSubpacketsParser(bcpgIn);
             UserAttributeSubpacket sub;

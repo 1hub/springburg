@@ -14,8 +14,7 @@ namespace Org.BouncyCastle.Bcpg
         private long keyId;
         private int nested;
 
-        internal OnePassSignaturePacket(
-            BcpgInputStream bcpgIn)
+        internal OnePassSignaturePacket(Stream bcpgIn)
         {
             version = bcpgIn.ReadByte();
             sigType = bcpgIn.ReadByte();

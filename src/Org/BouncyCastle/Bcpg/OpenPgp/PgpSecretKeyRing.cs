@@ -36,34 +36,37 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         public PgpSecretKeyRing(Stream inputStream)
+            : this(new PacketReader(inputStream))
+        {
+        }
+
+        internal PgpSecretKeyRing(PacketReader packetReader)
         {
             this.keys = new List<PgpSecretKey>();
             this.extraPubKeys = new List<PgpPublicKey>();
 
-            BcpgInputStream bcpgInput = BcpgInputStream.Wrap(inputStream);
-
-            PacketTag initialTag = bcpgInput.NextPacketTag();
+            PacketTag initialTag = packetReader.NextPacketTag();
             if (initialTag != PacketTag.SecretKey && initialTag != PacketTag.SecretSubkey)
             {
                 throw new IOException("secret key ring doesn't start with secret key tag: "
                     + "tag 0x" + ((int)initialTag).ToString("X"));
             }
 
-            SecretKeyPacket secret = (SecretKeyPacket)bcpgInput.ReadPacket();
-            keys.Add(new PgpSecretKey(secret, ReadPublicKey(bcpgInput, secret.PublicKeyPacket)));
+            SecretKeyPacket secret = (SecretKeyPacket)packetReader.ReadPacket();
+            keys.Add(new PgpSecretKey(secret, ReadPublicKey(packetReader, secret.PublicKeyPacket)));
 
             // Read subkeys
-            while (bcpgInput.NextPacketTag() == PacketTag.SecretSubkey || bcpgInput.NextPacketTag() == PacketTag.PublicSubkey)
+            while (packetReader.NextPacketTag() == PacketTag.SecretSubkey || packetReader.NextPacketTag() == PacketTag.PublicSubkey)
             {
-                if (bcpgInput.NextPacketTag() == PacketTag.SecretSubkey)
+                if (packetReader.NextPacketTag() == PacketTag.SecretSubkey)
                 {
-                    SecretSubkeyPacket sub = (SecretSubkeyPacket)bcpgInput.ReadPacket();
-                    keys.Add(new PgpSecretKey(sub, ReadPublicKey(bcpgInput, sub.PublicKeyPacket, subKey: true)));
+                    SecretSubkeyPacket sub = (SecretSubkeyPacket)packetReader.ReadPacket();
+                    keys.Add(new PgpSecretKey(sub, ReadPublicKey(packetReader, sub.PublicKeyPacket, subKey: true)));
                 }
                 else
                 {
-                    PublicSubkeyPacket sub = (PublicSubkeyPacket)bcpgInput.ReadPacket();
-                    extraPubKeys.Add(ReadPublicKey(bcpgInput, sub, subKey: true));
+                    PublicSubkeyPacket sub = (PublicSubkeyPacket)packetReader.ReadPacket();
+                    extraPubKeys.Add(ReadPublicKey(packetReader, sub, subKey: true));
                 }
             }
         }

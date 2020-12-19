@@ -1,3 +1,4 @@
+using Org.BouncyCastle.Utilities.IO;
 using System;
 using System.IO;
 
@@ -16,8 +17,7 @@ namespace Org.BouncyCastle.Bcpg
         private S2k s2k;
         private byte[] iv;
 
-        internal SecretKeyPacket(
-            BcpgInputStream bcpgIn)
+        internal SecretKeyPacket(Stream bcpgIn)
         {
             if (this is SecretSubkeyPacket)
             {
@@ -52,11 +52,11 @@ namespace Org.BouncyCastle.Bcpg
                     {
                         iv = new byte[16];
                     }
-                    bcpgIn.ReadFully(iv);
+                    Streams.ReadFully(bcpgIn, iv);
                 }
             }
 
-            secKeyData = bcpgIn.ReadAll();
+            secKeyData = Streams.ReadAll(bcpgIn);
         }
 
         public SecretKeyPacket(

@@ -3,13 +3,12 @@ using System.IO;
 namespace Org.BouncyCastle.Bcpg
 {
     /// <summary>Base class for an RSA public key.</summary>
-    public class RsaPublicBcpgKey : BcpgObject, IBcpgKey
+    public class RsaPublicBcpgKey : BcpgObject
     {
         private readonly MPInteger n, e;
 
         /// <summary>Construct an RSA public key from the passed in stream.</summary>
-        public RsaPublicBcpgKey(
-            BcpgInputStream bcpgIn)
+        public RsaPublicBcpgKey(Stream bcpgIn)
         {
             this.n = new MPInteger(bcpgIn);
             this.e = new MPInteger(bcpgIn);
@@ -28,12 +27,6 @@ namespace Org.BouncyCastle.Bcpg
         public MPInteger PublicExponent => e;
 
         public MPInteger Modulus => n;
-
-        /// <summary>The format, as a string, always "PGP".</summary>
-        public string Format
-        {
-            get { return "PGP"; }
-        }
 
         public override void Encode(Stream bcpgOut)
         {
