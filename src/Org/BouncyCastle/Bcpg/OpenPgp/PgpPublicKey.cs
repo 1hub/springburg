@@ -509,7 +509,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     case PublicKeyAlgorithmTag.EdDsa:
                         ecK = (ECPublicBcpgKey)publicPk.Key;
                         if (ecK.CurveOid.Value == "1.3.6.1.4.1.11591.15.1")
-                            return new Ed25519Dsa(ecK.EncodedPoint.GetEncoded().AsSpan(3).ToArray());
+                        {
+                            // FIXME: Check first byte for 0x40
+                            return new Ed25519Dsa(ecK.EncodedPoint.Value.AsSpan(1).ToArray());
+                        }
                         goto default;
 
                     case PublicKeyAlgorithmTag.ElGamalEncrypt:

@@ -20,18 +20,28 @@ namespace Org.BouncyCastle.Bcpg
             this.value = bytes;
         }
 
-        public MPInteger(byte[] value)
+        public MPInteger(ReadOnlySpan<byte> value)
         {
             int leadingZeros;
             for (leadingZeros = 0; leadingZeros < value.Length && value[leadingZeros] == 0; leadingZeros++)
                 ;
-            if (leadingZeros == 0)
-                this.value = value;
-            else
-                this.value = value.AsSpan(leadingZeros).ToArray();
+            this.value = value.Slice(leadingZeros).ToArray();
         }
 
         public byte[] Value => value;
+
+
+        public byte[] GetEncoded()
+        {
+            byte[] encodedValue = new byte[2 + value.Length];
+            int length = value.Length * 8;
+            for (int mask = 0x80; mask >= 0 && (value[0] & mask) == 0; mask >>= 1)
+                length--;
+            encodedValue[0] = (byte)(length >> 8);
+            encodedValue[1] = (byte)length;
+            Value.CopyTo(encodedValue, 2);
+            return encodedValue;
+        }
 
         public override void Encode(BcpgOutputStream bcpgOut)
         {

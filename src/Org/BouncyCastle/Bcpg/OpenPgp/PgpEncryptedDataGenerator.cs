@@ -64,7 +64,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             internal PgpPublicKey pubKey;
             internal bool sessionKeyObfuscation;
-            internal byte[][] data;
+            internal byte[] data;
 
             internal PubMethod(PgpPublicKey pubKey, bool sessionKeyObfuscation)
             {
@@ -74,8 +74,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             public override void AddSessionInfo(byte[] sessionInfo)
             {
-                byte[] encryptedSessionInfo = EncryptSessionInfo(sessionInfo);
-                this.data = ProcessSessionInfo(encryptedSessionInfo);
+                this.data = EncryptSessionInfo(sessionInfo);
             }
 
             private byte[] EncryptSessionInfo(byte[] sessionInfo)
@@ -124,56 +123,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 throw new NotImplementedException();
             }
 
-            private byte[][] ProcessSessionInfo(byte[] encryptedSessionInfo)
-            {
-                byte[][] data;
-
-                switch (pubKey.Algorithm)
-                {
-                    case PublicKeyAlgorithmTag.RsaEncrypt:
-                    case PublicKeyAlgorithmTag.RsaGeneral:
-                        data = new byte[][] { ConvertToEncodedMpi(encryptedSessionInfo) };
-                        break;
-                    case PublicKeyAlgorithmTag.ElGamalEncrypt:
-                    case PublicKeyAlgorithmTag.ElGamalGeneral:
-                        int halfLength = encryptedSessionInfo.Length / 2;
-                        byte[] b1 = new byte[halfLength];
-                        byte[] b2 = new byte[halfLength];
-
-                        Array.Copy(encryptedSessionInfo, 0, b1, 0, halfLength);
-                        Array.Copy(encryptedSessionInfo, halfLength, b2, 0, halfLength);
-
-                        data = new byte[][] {
-                            ConvertToEncodedMpi(b1),
-                            ConvertToEncodedMpi(b2),
-                        };
-                        break;
-                    case PublicKeyAlgorithmTag.ECDH:
-                        data = new byte[][] { encryptedSessionInfo };
-                        break;
-                    default:
-                        throw new PgpException("unknown asymmetric algorithm: " + pubKey.Algorithm);
-                }
-
-                return data;
-            }
-
-            private byte[] ConvertToEncodedMpi(byte[] encryptedSessionInfo)
-            {
-                try
-                {
-                    return new MPInteger(encryptedSessionInfo).GetEncoded();
-                }
-                catch (IOException e)
-                {
-                    throw new PgpException("Invalid MPI encoding: " + e.Message, e);
-                }
-            }
-
             public override void Encode(BcpgOutputStream pOut)
             {
                 PublicKeyEncSessionPacket pk = new PublicKeyEncSessionPacket(pubKey.KeyId, pubKey.Algorithm, data);
-
                 pOut.WritePacket(pk);
             }
         }

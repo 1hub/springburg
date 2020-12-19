@@ -75,20 +75,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         private byte[] RecoverSessionData(PgpPrivateKey privKey)
         {
-            byte[][] secKeyData = keyData.GetEncSessionKey();
+            var secKeyData = keyData.SessionKey;
             var asymmetricAlgorithm = privKey.Key;
 
             if (asymmetricAlgorithm is RSA rsa)
             {
-                byte[] bi = secKeyData[0];
-                return rsa.Decrypt(bi.AsSpan(2).ToArray(), RSAEncryptionPadding.Pkcs1);
+                return rsa.Decrypt(secKeyData, RSAEncryptionPadding.Pkcs1);
             }
 
             if (asymmetricAlgorithm is ECDiffieHellman ecdh)
             {
                 ECDHPublicBcpgKey ecKey = (ECDHPublicBcpgKey)privKey.PublicKeyPacket.Key;
 
-                byte[] enc = secKeyData[0];
+                byte[] enc = secKeyData;
 
                 int pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
                 if ((2 + pLen + 1) > enc.Length)
@@ -121,14 +120,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             if (asymmetricAlgorithm is ElGamal elGamal)
             {
-                int halfLength = Math.Max(secKeyData[0].Length, secKeyData[1].Length) - 2;
-                var keyData = new byte[halfLength * 2];
-                secKeyData[0].AsSpan(2).CopyTo(keyData.AsSpan(halfLength - (secKeyData[0].Length - 2)));
-                secKeyData[1].AsSpan(2).CopyTo(keyData.AsSpan(halfLength + halfLength - (secKeyData[1].Length - 2)));
-                return elGamal.Decrypt(keyData, RSAEncryptionPadding.Pkcs1).ToArray();
+                return elGamal.Decrypt(secKeyData, RSAEncryptionPadding.Pkcs1).ToArray();
             }
 
-            // TODO: ElGamal
             throw new NotImplementedException();
         }
     }

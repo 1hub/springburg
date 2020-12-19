@@ -673,7 +673,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                         ECSecretBcpgKey eddsaPriv = new ECSecretBcpgKey(bcpgIn);
                         privateKey = new Ed25519Dsa(
                             eddsaPriv.X.Value,
-                            eddsaPub.EncodedPoint.GetEncoded().AsSpan(3).ToArray());
+                            eddsaPub.EncodedPoint.Value.AsSpan(1).ToArray());
                         break;
                     case PublicKeyAlgorithmTag.ElGamalEncrypt:
                     case PublicKeyAlgorithmTag.ElGamalGeneral:
@@ -1220,7 +1220,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 byte[] dValue = GetDValue(reader, pubKey.PublicKeyPacket, rawPassPhrase, clearPassPhrase, curveName);
 
                 return new PgpSecretKey(new SecretKeyPacket(pubKey.PublicKeyPacket, SymmetricKeyAlgorithmTag.Null, null, null,
-                    new ECSecretBcpgKey(new MPInteger(dValue)).GetEncoded()), pubKey);
+                    new MPInteger(dValue).GetEncoded()), pubKey);
             }
 
             throw new PgpException("unknown key type found");
