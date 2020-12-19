@@ -34,10 +34,9 @@ namespace Org.BouncyCastle.Bcpg
             return (byte[])levelAndTrustAmount.Clone();
         }
 
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            bcpgOut.WritePacket(PacketTag.Trust, levelAndTrustAmount, true);
+            WritePacket(bcpgOut, PacketTag.Trust, levelAndTrustAmount, useOldPacket: true);
         }
     }
 }

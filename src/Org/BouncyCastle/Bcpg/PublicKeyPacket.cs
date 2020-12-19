@@ -3,9 +3,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Basic packet for a PGP public key.</remarks>
-    public class PublicKeyPacket
-        : ContainedPacket //, PublicKeyAlgorithmTag
+    public class PublicKeyPacket : ContainedPacket
     {
         private int version;
         private long time;
@@ -28,7 +26,7 @@ namespace Org.BouncyCastle.Bcpg
 
             algorithm = (PublicKeyAlgorithmTag)bcpgIn.ReadByte();
 
-            switch ((PublicKeyAlgorithmTag)algorithm)
+            switch (algorithm)
             {
                 case PublicKeyAlgorithmTag.RsaEncrypt:
                 case PublicKeyAlgorithmTag.RsaGeneral:
@@ -66,55 +64,38 @@ namespace Org.BouncyCastle.Bcpg
             this.key = key;
         }
 
-        public virtual int Version
-        {
-            get { return version; }
-        }
+        public int Version => version;
 
-        public virtual PublicKeyAlgorithmTag Algorithm
-        {
-            get { return algorithm; }
-        }
+        public PublicKeyAlgorithmTag Algorithm => algorithm;
 
-        public virtual int ValidDays
-        {
-            get { return validDays; }
-        }
+        public int ValidDays => validDays;
 
-        public virtual DateTime GetTime()
-        {
-            return DateTimeOffset.FromUnixTimeSeconds(time).DateTime;
-        }
+        public virtual DateTime GetTime() => DateTimeOffset.FromUnixTimeSeconds(time).DateTime;
 
-        public virtual IBcpgKey Key
-        {
-            get { return key; }
-        }
+        public virtual IBcpgKey Key => key;
 
-        public virtual byte[] GetEncodedContents()
+        public byte[] GetEncodedContents()
         {
-            MemoryStream bOut = new MemoryStream();
-            BcpgOutputStream pOut = new BcpgOutputStream(bOut);
+            using MemoryStream bOut = new MemoryStream();
 
-            pOut.WriteByte((byte)version);
-            pOut.WriteInt((int)time);
+            bOut.WriteByte((byte)version);
+            bOut.Write(new byte[] { (byte)(time >> 24), (byte)(time >> 16), (byte)(time >> 8), (byte)time });
 
             if (version <= 3)
             {
-                pOut.WriteShort((short)validDays);
+                bOut.WriteByte((byte)(validDays >> 8));
+                bOut.WriteByte((byte)validDays);
             }
 
-            pOut.WriteByte((byte)algorithm);
-
-            pOut.WriteObject((BcpgObject)key);
+            bOut.WriteByte((byte)algorithm);
+            ((BcpgObject)key).Encode(bOut);
 
             return bOut.ToArray();
         }
 
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            bcpgOut.WritePacket(PacketTag.PublicKey, GetEncodedContents(), true);
+            WritePacket(bcpgOut, PacketTag.PublicKey, GetEncodedContents(), useOldPacket: true);
         }
     }
 }

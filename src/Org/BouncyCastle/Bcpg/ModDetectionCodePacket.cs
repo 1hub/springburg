@@ -33,10 +33,9 @@ namespace Org.BouncyCastle.Bcpg
             return (byte[])digest.Clone();
         }
 
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            bcpgOut.WritePacket(PacketTag.ModificationDetectionCode, digest, false);
+            WritePacket(bcpgOut, PacketTag.ModificationDetectionCode, digest);
         }
     }
 }

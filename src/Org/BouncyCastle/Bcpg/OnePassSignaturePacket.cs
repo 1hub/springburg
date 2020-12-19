@@ -49,45 +49,27 @@ namespace Org.BouncyCastle.Bcpg
             this.nested = (isNested) ? 0 : 1;
         }
 
-        public int SignatureType
-        {
-            get { return sigType; }
-        }
+        public int SignatureType => sigType;
 
-        /// <summary>The encryption algorithm tag.</summary>
-        public PublicKeyAlgorithmTag KeyAlgorithm
-        {
-            get { return keyAlgorithm; }
-        }
+        public PublicKeyAlgorithmTag KeyAlgorithm => keyAlgorithm;
 
-        /// <summary>The hash algorithm tag.</summary>
-        public HashAlgorithmTag HashAlgorithm
-        {
-            get { return hashAlgorithm; }
-        }
+        public HashAlgorithmTag HashAlgorithm => hashAlgorithm;
 
-        public long KeyId
-        {
-            get { return keyId; }
-        }
+        public long KeyId => keyId; 
 
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
             MemoryStream bOut = new MemoryStream();
-            BcpgOutputStream pOut = new BcpgOutputStream(bOut);
 
-            pOut.Write(
+            bOut.Write(new[] {
                 (byte)version,
                 (byte)sigType,
                 (byte)hashAlgorithm,
-                (byte)keyAlgorithm);
+                (byte)keyAlgorithm });
+            bOut.Write(OpenPgp.PgpUtilities.KeyIdToBytes(keyId));
+            bOut.WriteByte((byte)nested);
 
-            pOut.WriteLong(keyId);
-
-            pOut.WriteByte((byte)nested);
-
-            bcpgOut.WritePacket(PacketTag.OnePassSignature, bOut.ToArray(), true);
+            WritePacket(bcpgOut, PacketTag.OnePassSignature, bOut.ToArray(), useOldPacket: true);
         }
     }
 }

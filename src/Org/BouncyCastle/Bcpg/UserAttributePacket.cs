@@ -1,15 +1,8 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
-using Org.BouncyCastle.Utilities;
-
 namespace Org.BouncyCastle.Bcpg
 {
-    /**
-    * Basic type for a user attribute packet.
-    */
     public class UserAttributePacket
         : ContainedPacket
     {
@@ -46,8 +39,7 @@ namespace Org.BouncyCastle.Bcpg
             return subpackets;
         }
 
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
             MemoryStream bOut = new MemoryStream();
 
@@ -56,7 +48,7 @@ namespace Org.BouncyCastle.Bcpg
                 subpackets[i].Encode(bOut);
             }
 
-            bcpgOut.WritePacket(PacketTag.UserAttribute, bOut.ToArray(), false);
+            WritePacket(bcpgOut, PacketTag.UserAttribute, bOut.ToArray());
         }
     }
 }

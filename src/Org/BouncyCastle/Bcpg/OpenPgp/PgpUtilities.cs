@@ -9,6 +9,21 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     /// <summary>Basic utility class.</summary>
     public static class PgpUtilities
     {
+        internal static byte[] KeyIdToBytes(long keyId)
+        {
+            return new[]
+            {
+                (byte)(keyId >> 56),
+                (byte)(keyId >> 48),
+                (byte)(keyId >> 40),
+                (byte)(keyId >> 32),
+                (byte)(keyId >> 24),
+                (byte)(keyId >> 16),
+                (byte)(keyId >> 8),
+                (byte)keyId
+            };
+        }
+
         public static string GetDigestName(HashAlgorithmTag hashAlgorithm)
         {
             switch (hashAlgorithm)

@@ -227,13 +227,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public void Encode(Stream outStream)
         {
-            BcpgOutputStream bcpgOut = BcpgOutputStream.Wrap(outStream);
-
-            bcpgOut.WritePacket(sigPck);
+            sigPck.Encode(outStream);
 
             if (trustPck != null)
             {
-                bcpgOut.WritePacket(trustPck);
+                trustPck.Encode(outStream);
             }
         }
 

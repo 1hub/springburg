@@ -5,9 +5,7 @@ using Org.BouncyCastle.Bcpg.Sig;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Generic signature packet.</remarks>
-    public class SignaturePacket
-        : ContainedPacket //, PublicKeyAlgorithmTag
+    public class SignaturePacket : ContainedPacket
     {
         private int version;
         private int signatureType;
@@ -351,19 +349,11 @@ namespace Org.BouncyCastle.Bcpg
                 return (byte[])signatureEncoding.Clone();
             }
 
-            MemoryStream bOut = new MemoryStream();
-            BcpgOutputStream bcOut = new BcpgOutputStream(bOut);
+            using MemoryStream bOut = new MemoryStream();
 
             foreach (MPInteger sigObj in signature)
             {
-                try
-                {
-                    bcOut.WriteObject(sigObj);
-                }
-                catch (IOException e)
-                {
-                    throw new Exception("internal error: " + e);
-                }
+                sigObj.Encode(bOut);
             }
 
             return bOut.ToArray();
@@ -384,68 +374,65 @@ namespace Org.BouncyCastle.Bcpg
             get { return creationTime; }
         }
 
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            MemoryStream bOut = new MemoryStream();
-            BcpgOutputStream pOut = new BcpgOutputStream(bOut);
+            using MemoryStream bOut = new MemoryStream();
 
-            pOut.WriteByte((byte)version);
+            bOut.WriteByte((byte)version);
 
             if (version == 3 || version == 2)
             {
-                pOut.Write(
-                    5, // the length of the next block
-                    (byte)signatureType);
+                bOut.WriteByte(5); // the length of the next block
+                bOut.WriteByte((byte)signatureType);
 
-                pOut.WriteInt((int)new DateTimeOffset(creationTime, TimeSpan.Zero).ToUnixTimeSeconds());
+                long time = new DateTimeOffset(creationTime, TimeSpan.Zero).ToUnixTimeSeconds();
+                bOut.Write(new byte[] { (byte)(time >> 24), (byte)(time >> 16), (byte)(time >> 8), (byte)time });
 
-                pOut.WriteLong(keyId);
+                bOut.Write(OpenPgp.PgpUtilities.KeyIdToBytes(keyId));
 
-                pOut.Write(
-                    (byte)keyAlgorithm,
-                    (byte)hashAlgorithm);
+                bOut.WriteByte((byte)keyAlgorithm);
+                bOut.WriteByte((byte)hashAlgorithm);
             }
             else if (version == 4)
             {
-                pOut.Write(
+                bOut.Write(new[] {
                     (byte)signatureType,
                     (byte)keyAlgorithm,
-                    (byte)hashAlgorithm);
+                    (byte)hashAlgorithm });
 
-                EncodeLengthAndData(pOut, GetEncodedSubpackets(hashedData));
-
-                EncodeLengthAndData(pOut, GetEncodedSubpackets(unhashedData));
+                EncodeLengthAndData(bOut, GetEncodedSubpackets(hashedData));
+                EncodeLengthAndData(bOut, GetEncodedSubpackets(unhashedData));
             }
             else
             {
                 throw new IOException("unknown version: " + version);
             }
 
-            pOut.Write(fingerprint);
+            bOut.Write(fingerprint);
 
             if (signature != null)
             {
-                pOut.WriteObjects(signature);
+                foreach (BcpgObject o in signature)
+                {
+                    o.Encode(bOut);
+                }
             }
             else
             {
-                pOut.Write(signatureEncoding);
+                bOut.Write(signatureEncoding);
             }
 
-            bcpgOut.WritePacket(PacketTag.Signature, bOut.ToArray(), true);
+            WritePacket(bcpgOut, PacketTag.Signature, bOut.ToArray(), useOldPacket: true);
         }
 
-        private static void EncodeLengthAndData(
-            BcpgOutputStream pOut,
-            byte[] data)
+        private static void EncodeLengthAndData(Stream pOut, byte[] data)
         {
-            pOut.WriteShort((short)data.Length);
+            pOut.WriteByte((byte)(data.Length >> 8));
+            pOut.WriteByte((byte)data.Length);
             pOut.Write(data);
         }
 
-        private static byte[] GetEncodedSubpackets(
-            SignatureSubpacket[] ps)
+        private static byte[] GetEncodedSubpackets(SignatureSubpacket[] ps)
         {
             MemoryStream sOut = new MemoryStream();
 

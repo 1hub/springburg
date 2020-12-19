@@ -168,8 +168,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     checksum = null;
                 }
 
-                pkOut.Finish();
-                pkOut.Flush();
+                pkOut.Close();
                 pkOut = null;
             }
         }

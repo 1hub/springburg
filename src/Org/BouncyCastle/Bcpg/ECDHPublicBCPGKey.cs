@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Org.BouncyCastle.Utilities.IO;
+using System;
+using System.IO;
 using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Base class for an ECDH Public Key.</remarks>
-    public class ECDHPublicBcpgKey
-        : ECPublicBcpgKey
+    public class ECDHPublicBcpgKey : ECPublicBcpgKey
     {
         private byte reserved;
         private HashAlgorithmTag hashFunctionId;
@@ -46,22 +46,13 @@ namespace Org.BouncyCastle.Bcpg
             VerifySymmetricKeyAlgorithm();
         }
 
-        public virtual byte Reserved
-        {
-            get { return reserved; }
-        }
+        public byte Reserved => reserved;
 
-        public virtual HashAlgorithmTag HashAlgorithm
-        {
-            get { return hashFunctionId; }
-        }
+        public HashAlgorithmTag HashAlgorithm => hashFunctionId;
 
-        public virtual SymmetricKeyAlgorithmTag SymmetricKeyAlgorithm
-        {
-            get { return symAlgorithmId; }
-        }
+        public SymmetricKeyAlgorithmTag SymmetricKeyAlgorithm => symAlgorithmId;
 
-        public override void Encode(BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
             base.Encode(bcpgOut);
             bcpgOut.WriteByte(0x3);

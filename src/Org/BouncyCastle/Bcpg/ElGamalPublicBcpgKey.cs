@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace Org.BouncyCastle.Bcpg
 {
     /// <summary>Base class for an ElGamal public key.</summary>
@@ -34,9 +36,11 @@ namespace Org.BouncyCastle.Bcpg
 
         public MPInteger Y => y;
 
-        public override void Encode(BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            bcpgOut.WriteObjects(p, g, y);
+            p.Encode(bcpgOut);
+            g.Encode(bcpgOut);
+            y.Encode(bcpgOut);
         }
     }
 }

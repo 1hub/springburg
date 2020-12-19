@@ -53,10 +53,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 this.sessionInfo = encryptor.TransformFinalBlock(si, 0, si.Length - 2);
             }
 
-            public override void Encode(BcpgOutputStream pOut)
+            public override void Encode(Stream pOut)
             {
                 SymmetricKeyEncSessionPacket pk = new SymmetricKeyEncSessionPacket(encAlgorithm, s2k, sessionInfo);
-                pOut.WritePacket(pk);
+                pk.Encode(pOut);
             }
         }
 
@@ -123,10 +123,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 throw new NotImplementedException();
             }
 
-            public override void Encode(BcpgOutputStream pOut)
+            public override void Encode(Stream pOut)
             {
                 PublicKeyEncSessionPacket pk = new PublicKeyEncSessionPacket(pubKey.KeyId, pubKey.Algorithm, data);
-                pOut.WritePacket(pk);
+                pk.Encode(pOut);
             }
         }
 
@@ -261,8 +261,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             if (outStr == null)
                 throw new ArgumentNullException("outStr");
 
-            pOut = new BcpgOutputStream(outStr);
-
             c = PgpUtilities.GetSymmetricAlgorithm(defAlgorithm);
 
             if (methods.Count == 1)
@@ -289,7 +287,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     }
                 }
 
-                pOut.WritePacket((ContainedPacket)methods[0]);
+                methods[0].Encode(outStr);
             }
             else // multiple methods
             {
@@ -309,7 +307,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                         throw new PgpException("exception encrypting session key", e);
                     }
 
-                    pOut.WritePacket(m);
+                    m.Encode(outStr);
                 }
             }
 
@@ -451,9 +449,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 }
 
                 cOut.FlushFinalBlock();
-                pOut.Finish();
-
                 cOut = null;
+
+                pOut.Close();
                 pOut = null;
             }
         }

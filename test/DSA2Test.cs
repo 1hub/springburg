@@ -120,9 +120,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
 			sGen.InitSign(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test".ToCharArray()));
 
-			BcpgOutputStream bcOut = new BcpgOutputStream(bOut);
-
-			sGen.GenerateOnePassVersion(false).Encode(bcOut);
+			sGen.GenerateOnePassVersion(false).Encode(bOut);
 
 			PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
 
@@ -131,7 +129,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 				(DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond) * TimeSpan.TicksPerSecond);
 
 			Stream lOut = lGen.Open(
-				new UncloseableStream(bcOut),
+				new UncloseableStream(bOut),
 				PgpLiteralData.Binary,
 				"_CONSOLE",
 				dataBytes.Length,
@@ -146,7 +144,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
 			lOut.Close();
 
-			sGen.Generate().Encode(bcOut);
+			sGen.Generate().Encode(bOut);
 
 			PgpObjectFactory        pgpFact = new PgpObjectFactory(bOut.ToArray());
 			PgpOnePassSignatureList p1 = (PgpOnePassSignatureList)pgpFact.NextPgpObject();

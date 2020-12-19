@@ -631,22 +631,20 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return bOut.ToArray();
         }
 
-        public void Encode(
-            Stream outStr)
+        public void Encode(Stream outStr)
         {
-            BcpgOutputStream bcpgOut = BcpgOutputStream.Wrap(outStr);
+            publicPk.Encode(outStr);
 
-            bcpgOut.WritePacket(publicPk);
             if (trustPk != null)
             {
-                bcpgOut.WritePacket(trustPk);
+                trustPk.Encode(outStr);
             }
 
             if (subSigs == null)    // not a sub-key
             {
                 foreach (PgpSignature keySig in keySigs)
                 {
-                    keySig.Encode(bcpgOut);
+                    keySig.Encode(outStr);
                 }
 
                 for (int i = 0; i != ids.Count; i++)
@@ -654,23 +652,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     if (ids[i] is string)
                     {
                         string id = (string)ids[i];
-
-                        bcpgOut.WritePacket(new UserIdPacket(id));
+                        new UserIdPacket(id).Encode(outStr);
                     }
                     else
                     {
                         PgpUserAttributeSubpacketVector v = (PgpUserAttributeSubpacketVector)ids[i];
-                        bcpgOut.WritePacket(new UserAttributePacket(v.ToSubpacketArray()));
+                        new UserAttributePacket(v.ToSubpacketArray()).Encode(outStr);
                     }
 
                     if (idTrusts[i] != null)
                     {
-                        bcpgOut.WritePacket(idTrusts[i]);
+                        idTrusts[i].Encode(outStr);
                     }
 
                     foreach (PgpSignature sig in (IList)idSigs[i])
                     {
-                        sig.Encode(bcpgOut);
+                        sig.Encode(outStr);
                     }
                 }
             }
@@ -678,7 +675,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             {
                 foreach (PgpSignature subSig in subSigs)
                 {
-                    subSig.Encode(bcpgOut);
+                    subSig.Encode(outStr);
                 }
             }
         }

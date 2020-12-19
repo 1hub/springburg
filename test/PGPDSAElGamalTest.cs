@@ -125,8 +125,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(
                 CompressionAlgorithmTag.Zip);
 
-            BcpgOutputStream bcOut = new BcpgOutputStream(
-                cGen.Open(new UncloseableStream(bOut)));
+            Stream bcOut = cGen.Open(new UncloseableStream(bOut));
 
             sGen.GenerateOnePassVersion(false).Encode(bcOut);
 

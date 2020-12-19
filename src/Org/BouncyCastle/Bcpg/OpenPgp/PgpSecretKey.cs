@@ -83,9 +83,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             try
             {
                 MemoryStream bOut = new MemoryStream();
-                BcpgOutputStream pOut = new BcpgOutputStream(bOut);
 
-                pOut.WriteObject(secKey);
+                secKey.Encode(bOut);
 
                 byte[] keyData = bOut.ToArray();
                 byte[] checksumData = Checksum(useSha1, keyData, keyData.Length);
@@ -770,22 +769,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return bOut.ToArray();
         }
 
-        public void Encode(
-            Stream outStr)
+        public void Encode(Stream outStr)
         {
-            BcpgOutputStream bcpgOut = BcpgOutputStream.Wrap(outStr);
-
-            bcpgOut.WritePacket(secret);
+            secret.Encode(outStr);
             if (pub.trustPk != null)
             {
-                bcpgOut.WritePacket(pub.trustPk);
+                pub.trustPk.Encode(outStr);
             }
 
             if (pub.subSigs == null) // is not a sub key
             {
                 foreach (PgpSignature keySig in pub.keySigs)
                 {
-                    keySig.Encode(bcpgOut);
+                    keySig.Encode(outStr);
                 }
 
                 for (int i = 0; i != pub.ids.Count; i++)
@@ -794,22 +790,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     if (pubID is string)
                     {
                         string id = (string)pubID;
-                        bcpgOut.WritePacket(new UserIdPacket(id));
+                        new UserIdPacket(id).Encode(outStr);
                     }
                     else
                     {
                         PgpUserAttributeSubpacketVector v = (PgpUserAttributeSubpacketVector)pubID;
-                        bcpgOut.WritePacket(new UserAttributePacket(v.ToSubpacketArray()));
+                        new UserAttributePacket(v.ToSubpacketArray()).Encode(outStr);
                     }
 
                     if (pub.idTrusts[i] != null)
                     {
-                        bcpgOut.WritePacket((ContainedPacket)pub.idTrusts[i]);
+                        pub.idTrusts[i].Encode(outStr);
                     }
 
                     foreach (PgpSignature sig in (IList)pub.idSigs[i])
                     {
-                        sig.Encode(bcpgOut);
+                        sig.Encode(outStr);
                     }
                 }
             }
@@ -817,12 +813,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             {
                 foreach (PgpSignature subSig in pub.subSigs)
                 {
-                    subSig.Encode(bcpgOut);
+                    subSig.Encode(outStr);
                 }
             }
-
-            // TODO Check that this is right/necessary
-            //bcpgOut.Finish();
         }
 
         /// <summary>

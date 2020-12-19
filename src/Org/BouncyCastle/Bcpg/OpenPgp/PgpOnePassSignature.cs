@@ -39,7 +39,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public void Encode(Stream outStr)
         {
-            BcpgOutputStream.Wrap(outStr).WritePacket(sigPack);
+            sigPack.Encode(outStr);
         }
     }
 }

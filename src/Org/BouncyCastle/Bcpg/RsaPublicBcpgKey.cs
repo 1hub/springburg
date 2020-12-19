@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace Org.BouncyCastle.Bcpg
 {
     /// <summary>Base class for an RSA public key.</summary>
@@ -33,9 +35,10 @@ namespace Org.BouncyCastle.Bcpg
             get { return "PGP"; }
         }
 
-        public override void Encode(BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            bcpgOut.WriteObjects(n, e);
+            n.Encode(bcpgOut);
+            e.Encode(bcpgOut);
         }
     }
 }

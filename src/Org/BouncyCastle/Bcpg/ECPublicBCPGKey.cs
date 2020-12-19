@@ -1,12 +1,10 @@
 ﻿using System;
 using System.IO;
-using System.Numerics;
 using System.Security.Cryptography;
 using System.Formats.Asn1;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Base class for an EC Public Key.</remarks>
     public abstract class ECPublicBcpgKey
         : BcpgObject, IBcpgKey
     {
@@ -17,18 +15,9 @@ namespace Org.BouncyCastle.Bcpg
         protected ECPublicBcpgKey(
             BcpgInputStream bcpgIn)
         {
-            // FIXME: THIS IS WRONG
             this.oid = new Oid(AsnDecoder.ReadObjectIdentifier(ReadBytesOfEncodedLength(bcpgIn), AsnEncodingRules.DER, out _));
             this.point = new MPInteger(bcpgIn);
         }
-
-        /*protected ECPublicBcpgKey(
-            Oid oid,
-            ECPoint point)
-        {
-            this.point = new BigInteger(1, point.GetEncoded(false));
-            this.oid = oid;
-        }*/
 
         protected ECPublicBcpgKey(
             Oid oid,
@@ -44,15 +33,13 @@ namespace Org.BouncyCastle.Bcpg
             get { return "PGP"; }
         }
 
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
             writer.WriteObjectIdentifier(this.oid.Value);
             byte[] oid = writer.Encode();
             bcpgOut.Write(oid, 1, oid.Length - 1);
-
-            bcpgOut.WriteObject(this.point);
+            this.point.Encode(bcpgOut);
         }
 
         public virtual MPInteger EncodedPoint

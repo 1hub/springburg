@@ -161,8 +161,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             if (pkOut != null)
             {
-                pkOut.Finish();
-                pkOut.Flush();
+                pkOut.Close();
                 pkOut = null;
             }
         }

@@ -3,9 +3,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Basic packet for an experimental packet.</remarks>
-    public class ExperimentalPacket
-        : ContainedPacket //, PublicKeyAlgorithmTag
+    public class ExperimentalPacket : ContainedPacket
     {
         private readonly PacketTag tag;
         private readonly byte[] contents;
@@ -29,10 +27,9 @@ namespace Org.BouncyCastle.Bcpg
             return (byte[])contents.Clone();
         }
 
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            bcpgOut.WritePacket(tag, contents, true);
+            WritePacket(bcpgOut, tag, contents, useOldPacket: true);
         }
     }
 }

@@ -149,12 +149,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public void Encode(Stream outStr)
         {
-            BcpgOutputStream bcpgOut = BcpgOutputStream.Wrap(outStr);
-
             foreach (long key in order)
             {
-                PgpPublicKeyRing sec = (PgpPublicKeyRing)pubRings[key];
-                sec.Encode(bcpgOut);
+                PgpPublicKeyRing sec = pubRings[key];
+                sec.Encode(outStr);
             }
         }
 

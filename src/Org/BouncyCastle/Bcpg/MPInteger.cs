@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
@@ -43,18 +44,20 @@ namespace Org.BouncyCastle.Bcpg
             return encodedValue;
         }
 
-        public override void Encode(BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
             if (value.Length == 0)
             {
-                bcpgOut.WriteShort(0);
+                bcpgOut.WriteByte(0);
+                bcpgOut.WriteByte(0);
             }
             else
             {
                 int length = value.Length * 8;
                 for (int mask = 0x80; mask >= 0 && (value[0] & mask) == 0; mask >>= 1)
                     length--;
-                bcpgOut.WriteShort((short)length);
+                bcpgOut.WriteByte((byte)(length >> 8));
+                bcpgOut.WriteByte((byte)length);
                 bcpgOut.Write(value);
             }
         }

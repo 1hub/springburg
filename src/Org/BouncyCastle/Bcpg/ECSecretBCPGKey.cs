@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Numerics;
 
 namespace Org.BouncyCastle.Bcpg
@@ -24,9 +25,9 @@ namespace Org.BouncyCastle.Bcpg
             get { return "PGP"; }
         }
 
-        public override void Encode(BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            bcpgOut.WriteObject(x);
+            x.Encode(bcpgOut);
         }
 
         public virtual MPInteger X

@@ -3,9 +3,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Basic packet for a PGP secret key.</remarks>
-    public class SecretKeyPacket
-        : ContainedPacket //, PublicKeyAlgorithmTag
+    public class SecretKeyPacket : ContainedPacket
     {
         public const int UsageNone = 0x00;
         public const int UsageChecksum = 0xff;
@@ -133,36 +131,34 @@ namespace Org.BouncyCastle.Bcpg
 
         public byte[] GetEncodedContents()
         {
-            MemoryStream bOut = new MemoryStream();
-            BcpgOutputStream pOut = new BcpgOutputStream(bOut);
+            using MemoryStream bOut = new MemoryStream();
 
-            pOut.Write(pubKeyPacket.GetEncodedContents());
+            bOut.Write(pubKeyPacket.GetEncodedContents());
 
-            pOut.WriteByte((byte)s2kUsage);
+            bOut.WriteByte((byte)s2kUsage);
 
             if (s2kUsage == UsageChecksum || s2kUsage == UsageSha1)
             {
-                pOut.WriteByte((byte)encAlgorithm);
-                pOut.WriteObject(s2k);
+                bOut.WriteByte((byte)encAlgorithm);
+                s2k.Encode(bOut);
             }
 
             if (iv != null)
             {
-                pOut.Write(iv);
+                bOut.Write(iv);
             }
 
             if (secKeyData != null && secKeyData.Length > 0)
             {
-                pOut.Write(secKeyData);
+                bOut.Write(secKeyData);
             }
 
             return bOut.ToArray();
         }
 
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            bcpgOut.WritePacket(PacketTag.SecretKey, GetEncodedContents(), true);
+            WritePacket(bcpgOut, PacketTag.SecretKey, GetEncodedContents(), useOldPacket: true);
         }
     }
 }

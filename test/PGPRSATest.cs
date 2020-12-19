@@ -557,9 +557,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // write a public key
             //
             MemoryStream bOut = new UncloseableMemoryStream();
-            BcpgOutputStream pOut = new BcpgOutputStream(bOut);
 
-            pgpPub.Encode(pOut);
+            pgpPub.Encode(bOut);
 
             if (!AreEqual(bOut.ToArray(), testPubKey))
             {
@@ -576,9 +575,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // write a V3 public key
             //
             bOut = new UncloseableMemoryStream();
-            pOut = new BcpgOutputStream(bOut);
 
-            pgpPubV3.Encode(pOut);
+            pgpPubV3.Encode(bOut);
 
             //
             // Read a v3 private key
@@ -594,9 +592,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 // write a v3 private key
                 //
                 bOut = new UncloseableMemoryStream();
-                pOut = new BcpgOutputStream(bOut);
-
-                pgpPriv2.Encode(pOut);
+                
+                pgpPriv2.Encode(bOut);
 
                 byte[] result = bOut.ToArray();
                 if (!AreEqual(result, testPrivKeyV3))
@@ -615,9 +612,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // write a private key
             //
             bOut = new UncloseableMemoryStream();
-            pOut = new BcpgOutputStream(bOut);
 
-            pgpPriv.Encode(pOut);
+            pgpPriv.Encode(bOut);
 
             if (!AreEqual(bOut.ToArray(), testPrivKey))
             {
@@ -965,7 +961,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(
                 CompressionAlgorithmTag.Zip);
 
-            BcpgOutputStream bcOut = new BcpgOutputStream(cGen.Open(new UncloseableStream(bOut)));
+            Stream bcOut = cGen.Open(new UncloseableStream(bOut));
 
             sGen.GenerateOnePassVersion(false).Encode(bcOut);
 
@@ -1046,7 +1042,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
 
-            bcOut = new BcpgOutputStream(cGen.Open(new UncloseableStream(bOut)));
+            bcOut = cGen.Open(new UncloseableStream(bOut));
 
             sGen.GenerateOnePassVersion(false).Encode(bcOut);
 
@@ -1153,7 +1149,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
 
-            BcpgOutputStream bcOut = new BcpgOutputStream(cGen.Open(new UncloseableStream(bOut)));
+            Stream bcOut = cGen.Open(new UncloseableStream(bOut));
 
             sGen.GenerateOnePassVersion(false).Encode(bcOut);
 

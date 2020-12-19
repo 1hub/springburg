@@ -3,19 +3,14 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /**
-    * Basic type for a symmetric encrypted session key packet
-    */
-    public class SymmetricKeyEncSessionPacket
-        : ContainedPacket
+    public class SymmetricKeyEncSessionPacket : ContainedPacket
     {
         private int version;
         private SymmetricKeyAlgorithmTag encAlgorithm;
         private S2k s2k;
         private readonly byte[] secKeyData;
 
-        public SymmetricKeyEncSessionPacket(
-            BcpgInputStream bcpgIn)
+        public SymmetricKeyEncSessionPacket(BcpgInputStream bcpgIn)
         {
             version = bcpgIn.ReadByte();
             encAlgorithm = (SymmetricKeyAlgorithmTag)bcpgIn.ReadByte();
@@ -25,10 +20,7 @@ namespace Org.BouncyCastle.Bcpg
             secKeyData = bcpgIn.ReadAll();
         }
 
-        public SymmetricKeyEncSessionPacket(
-            SymmetricKeyAlgorithmTag encAlgorithm,
-            S2k s2k,
-            byte[] secKeyData)
+        public SymmetricKeyEncSessionPacket(SymmetricKeyAlgorithmTag encAlgorithm, S2k s2k, byte[] secKeyData)
         {
             this.version = 4;
             this.encAlgorithm = encAlgorithm;
@@ -36,56 +28,29 @@ namespace Org.BouncyCastle.Bcpg
             this.secKeyData = secKeyData;
         }
 
-        /**
-        * @return int
-        */
-        public SymmetricKeyAlgorithmTag EncAlgorithm
+        public SymmetricKeyAlgorithmTag EncAlgorithm => encAlgorithm;
+
+        public S2k S2k => s2k;
+
+        public byte[] SecKeyData => secKeyData;
+
+        public int Version => version;
+
+        public override void Encode(Stream bcpgOut)
         {
-            get { return encAlgorithm; }
-        }
+            using MemoryStream bOut = new MemoryStream();
 
-        /**
-        * @return S2k
-        */
-        public S2k S2k
-        {
-            get { return s2k; }
-        }
+            bOut.WriteByte((byte)version);
+            bOut.WriteByte((byte)encAlgorithm);
 
-        /**
-        * @return byte[]
-        */
-        public byte[] GetSecKeyData()
-        {
-            return secKeyData;
-        }
-
-        /**
-        * @return int
-        */
-        public int Version
-        {
-            get { return version; }
-        }
-
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
-        {
-            MemoryStream bOut = new MemoryStream();
-            BcpgOutputStream pOut = new BcpgOutputStream(bOut);
-
-            pOut.Write(
-                (byte)version,
-                (byte)encAlgorithm);
-
-            pOut.WriteObject(s2k);
+            s2k.Encode(bOut);
 
             if (secKeyData != null && secKeyData.Length > 0)
             {
-                pOut.Write(secKeyData);
+                bOut.Write(secKeyData);
             }
 
-            bcpgOut.WritePacket(PacketTag.SymmetricKeyEncryptedSessionKey, bOut.ToArray(), true);
+            WritePacket(bcpgOut, PacketTag.SymmetricKeyEncryptedSessionKey, bOut.ToArray(), useOldPacket: true);
         }
     }
 }

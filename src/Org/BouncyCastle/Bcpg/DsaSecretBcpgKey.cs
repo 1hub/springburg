@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace Org.BouncyCastle.Bcpg
 {
     /// <summary>Base class for a DSA secret key.</summary>
@@ -21,9 +23,9 @@ namespace Org.BouncyCastle.Bcpg
             get { return "PGP"; }
         }
 
-        public override void Encode(BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            bcpgOut.WriteObject(x);
+            x.Encode(bcpgOut);
         }
 
         public MPInteger X => x;

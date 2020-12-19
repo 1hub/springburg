@@ -3,20 +3,12 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Basic output stream.</remarks>
-    public class BcpgOutputStream : Stream
+    /// <summary>
+    /// Stream that pipes the output as OpenPGP packets, either partial ones
+    /// or one with a preset length.
+    /// </summary>
+    class BcpgOutputStream : Stream
     {
-        internal static BcpgOutputStream Wrap(
-            Stream outStr)
-        {
-            if (outStr is BcpgOutputStream)
-            {
-                return (BcpgOutputStream)outStr;
-            }
-
-            return new BcpgOutputStream(outStr);
-        }
-
         private Stream outStr;
         private byte[] partialBuffer;
         private int partialBufferLength;
@@ -33,17 +25,6 @@ namespace Org.BouncyCastle.Bcpg
         public override long Length => throw new NotSupportedException();
 
         public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-
-        /// <summary>Create a stream representing a general packet.</summary>
-        /// <param name="outStr">Output stream to write to.</param>
-        public BcpgOutputStream(
-            Stream outStr)
-        {
-            if (outStr == null)
-                throw new ArgumentNullException("outStr");
-
-            this.outStr = outStr;
-        }
 
         /// <summary>Create a stream representing an old style partial object.</summary>
         /// <param name="outStr">Output stream to write to.</param>
@@ -323,75 +304,22 @@ namespace Org.BouncyCastle.Bcpg
             Write(buffer.AsSpan());
         }
 
-        // Additional helper methods to write primitive types
-        internal virtual void WriteShort(short n)
-        {
-            this.Write(new byte[] { (byte)(n >> 8), (byte)n });
-        }
-
-        internal virtual void WriteInt(int n)
-        {
-            this.Write(new byte[] { (byte)(n >> 24), (byte)(n >> 16), (byte)(n >> 8), (byte)n });
-        }
-
-        internal virtual void WriteLong(long n)
-        {
-            this.Write(new byte[] {
-                (byte)(n >> 56), (byte)(n >> 48), (byte)(n >> 40), (byte)(n >> 32),
-                (byte)(n >> 24), (byte)(n >> 16), (byte)(n >> 8), (byte)n });
-        }
-
-        public void WritePacket(ContainedPacket p)
-        {
-            p.Encode(this);
-        }
-
-        internal void WritePacket(
-            PacketTag tag,
-            byte[] body,
-            bool oldFormat)
-        {
-            this.WriteHeader(tag, oldFormat, false, body.Length);
-            this.Write(body);
-        }
-
-        public void WriteObject(BcpgObject bcpgObject)
-        {
-            bcpgObject.Encode(this);
-        }
-
-        public void WriteObjects(params BcpgObject[] v)
-        {
-            foreach (BcpgObject o in v)
-            {
-                o.Encode(this);
-            }
-        }
-
         /// <summary>Flush the underlying stream.</summary>
         public override void Flush()
         {
             outStr.Flush();
         }
 
-        /// <summary>Finish writing out the current packet without closing the underlying stream.</summary>
-        public void Finish()
-        {
-            if (partialBuffer != null)
-            {
-                PartialFlush(true);
-                Array.Clear(partialBuffer, 0, partialBuffer.Length);
-                partialBuffer = null;
-            }
-        }
-
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                this.Finish();
-                outStr.Flush();
-                outStr.Close();
+                if (partialBuffer != null)
+                {
+                    PartialFlush(true);
+                    Array.Clear(partialBuffer, 0, partialBuffer.Length);
+                    partialBuffer = null;
+                }
             }
             base.Dispose(disposing);
         }

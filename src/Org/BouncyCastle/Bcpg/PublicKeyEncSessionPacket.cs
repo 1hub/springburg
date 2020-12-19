@@ -71,38 +71,36 @@ namespace Org.BouncyCastle.Bcpg
 
         public byte[] SessionKey => sessionKey;
 
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
             using MemoryStream bOut = new MemoryStream();
-            using BcpgOutputStream pOut = new BcpgOutputStream(bOut);
 
-            pOut.WriteByte((byte)version);
+            bOut.WriteByte((byte)version);
 
-            pOut.WriteLong(keyId);
+            bOut.Write(OpenPgp.PgpUtilities.KeyIdToBytes(keyId));
 
-            pOut.WriteByte((byte)algorithm);
+            bOut.WriteByte((byte)algorithm);
 
             switch (algorithm)
             {
                 case PublicKeyAlgorithmTag.RsaEncrypt:
                 case PublicKeyAlgorithmTag.RsaGeneral:
-                    new MPInteger(sessionKey).Encode(pOut);
+                    new MPInteger(sessionKey).Encode(bOut);
                     break;
                 case PublicKeyAlgorithmTag.ElGamalEncrypt:
                 case PublicKeyAlgorithmTag.ElGamalGeneral:
                     int halfLength = sessionKey.Length / 2;
-                    new MPInteger(sessionKey.AsSpan(0, halfLength)).Encode(pOut);
-                    new MPInteger(sessionKey.AsSpan(halfLength)).Encode(pOut);
+                    new MPInteger(sessionKey.AsSpan(0, halfLength)).Encode(bOut);
+                    new MPInteger(sessionKey.AsSpan(halfLength)).Encode(bOut);
                     break;
                 case PublicKeyAlgorithmTag.ECDH:
-                    pOut.Write(sessionKey);
+                    bOut.Write(sessionKey);
                     break;
                 default:
                     throw new IOException("unknown PGP public key algorithm encountered");
             }
 
-            bcpgOut.WritePacket(PacketTag.PublicKeyEncryptedSession, bOut.ToArray(), true);
+            WritePacket(bcpgOut, PacketTag.PublicKeyEncryptedSession, bOut.ToArray(), useOldPacket: true);
         }
     }
 }

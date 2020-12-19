@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Security.Cryptography;
+using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
@@ -41,11 +39,6 @@ namespace Org.BouncyCastle.Bcpg
             this.u = u;
         }
 
-        /*public BigInteger Modulus
-        {
-            get { return p.Value * q.Value; }
-        }*/
-
         public MPInteger PrivateExponent => d;
 
         public MPInteger PrimeP => p;
@@ -60,9 +53,12 @@ namespace Org.BouncyCastle.Bcpg
             get { return "PGP"; }
         }
 
-        public override void Encode(BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            bcpgOut.WriteObjects(d, p, q, u);
+            d.Encode(bcpgOut);
+            p.Encode(bcpgOut);
+            q.Encode(bcpgOut);
+            u.Encode(bcpgOut);
         }
     }
 }

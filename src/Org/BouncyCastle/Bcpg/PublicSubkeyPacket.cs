@@ -1,29 +1,24 @@
 using System;
+using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <summary>Basic packet for a PGP public subkey</summary>
     public class PublicSubkeyPacket : PublicKeyPacket
     {
-        internal PublicSubkeyPacket(
-            BcpgInputStream bcpgIn)
+        internal PublicSubkeyPacket(BcpgInputStream bcpgIn)
             : base(bcpgIn)
         {
         }
 
         /// <summary>Construct a version 4 public subkey packet.</summary>
-        public PublicSubkeyPacket(
-            PublicKeyAlgorithmTag algorithm,
-            DateTime time,
-            IBcpgKey key)
+        public PublicSubkeyPacket(PublicKeyAlgorithmTag algorithm, DateTime time, IBcpgKey key)
             : base(algorithm, time, key)
         {
         }
 
-        public override void Encode(
-            BcpgOutputStream bcpgOut)
+        public override void Encode(Stream bcpgOut)
         {
-            bcpgOut.WritePacket(PacketTag.PublicSubkey, GetEncodedContents(), true);
+            WritePacket(bcpgOut, PacketTag.PublicSubkey, GetEncodedContents(), useOldPacket: true);
         }
     }
 }

@@ -300,9 +300,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
 			aOut.EndClearText();
 
-			BcpgOutputStream bcpgOut = new BcpgOutputStream(aOut);
-
-			sGen.Generate().Encode(bcpgOut);
+			sGen.Generate().Encode(aOut);
 
 			aOut.Close();
 
