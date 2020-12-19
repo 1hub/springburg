@@ -8,13 +8,37 @@ namespace Org.BouncyCastle.Bcpg
         private Stream stream;
         private bool preferOldFormat;
 
-        public PacketWriter(Stream stream, bool preferOldFormat = false)
+        public PacketWriter(Stream stream, bool preferOldFormat = true)
         {
             this.stream = stream;
             this.preferOldFormat = preferOldFormat;
         }
 
-        private static void WriteHeader(Stream stream, PacketTag tag, long bodyLen, bool useOldPacket = false)
+        private static void WriteNewPacketLength(
+            Stream outputStream,
+            long bodyLen)
+        {
+            if (bodyLen < 192)
+            {
+                outputStream.WriteByte((byte)bodyLen);
+            }
+            else if (bodyLen <= 8383)
+            {
+                bodyLen -= 192;
+
+                outputStream.WriteByte((byte)(((bodyLen >> 8) & 0xff) + 192));
+                outputStream.WriteByte((byte)bodyLen);
+            }
+            else
+            {
+                outputStream.WriteByte(0xff);
+                outputStream.WriteByte((byte)(bodyLen >> 24));
+                outputStream.WriteByte((byte)(bodyLen >> 16));
+                outputStream.WriteByte((byte)(bodyLen >> 8));
+                outputStream.WriteByte((byte)bodyLen);
+            }
+        }
+        private static void WriteHeader(Stream outputStream, PacketTag tag, long bodyLen, bool partial = false, bool useOldPacket = false)
         {
             int hdr = 0x80;
 
@@ -22,48 +46,37 @@ namespace Org.BouncyCastle.Bcpg
             {
                 hdr |= ((int)tag) << 2;
 
-                if (bodyLen <= 0xff)
+                if (partial)
                 {
-                    stream.WriteByte((byte)hdr);
-                    stream.WriteByte((byte)bodyLen);
+                    outputStream.WriteByte((byte)(hdr | 0x03));
+                }
+                else if (bodyLen <= 0xff)
+                {
+                    outputStream.WriteByte((byte)hdr);
+                    outputStream.WriteByte((byte)bodyLen);
                 }
                 else if (bodyLen <= 0xffff)
                 {
-                    stream.WriteByte((byte)(hdr | 0x01));
-                    stream.WriteByte((byte)(bodyLen >> 8));
-                    stream.WriteByte((byte)(bodyLen));
+                    outputStream.WriteByte((byte)(hdr | 0x01));
+                    outputStream.WriteByte((byte)(bodyLen >> 8));
+                    outputStream.WriteByte((byte)(bodyLen));
                 }
                 else
                 {
-                    stream.WriteByte((byte)(hdr | 0x02));
-                    stream.WriteByte((byte)(bodyLen >> 24));
-                    stream.WriteByte((byte)(bodyLen >> 16));
-                    stream.WriteByte((byte)(bodyLen >> 8));
-                    stream.WriteByte((byte)bodyLen);
+                    outputStream.WriteByte((byte)(hdr | 0x02));
+                    outputStream.WriteByte((byte)(bodyLen >> 24));
+                    outputStream.WriteByte((byte)(bodyLen >> 16));
+                    outputStream.WriteByte((byte)(bodyLen >> 8));
+                    outputStream.WriteByte((byte)bodyLen);
                 }
             }
             else
             {
                 hdr |= 0x40 | (int)tag;
-                stream.WriteByte((byte)hdr);
-
-                if (bodyLen < 192)
+                outputStream.WriteByte((byte)hdr);
+                if (!partial)
                 {
-                    stream.WriteByte((byte)bodyLen);
-                }
-                else if (bodyLen <= 8383)
-                {
-                    bodyLen -= 192;
-                    stream.WriteByte((byte)(((bodyLen >> 8) & 0xff) + 192));
-                    stream.WriteByte((byte)bodyLen);
-                }
-                else
-                {
-                    stream.WriteByte(0xff);
-                    stream.WriteByte((byte)(bodyLen >> 24));
-                    stream.WriteByte((byte)(bodyLen >> 16));
-                    stream.WriteByte((byte)(bodyLen >> 8));
-                    stream.WriteByte((byte)bodyLen);
+                    WriteNewPacketLength(outputStream, bodyLen);
                 }
             }
         }
@@ -72,7 +85,7 @@ namespace Org.BouncyCastle.Bcpg
         {
             using MemoryStream memoryStream = new MemoryStream();
             packet.Encode(memoryStream);
-            WriteHeader(stream, packet.Tag, memoryStream.Length, useOldPacket: preferOldFormat && (int)packet.Tag <= 16);
+            WriteHeader(stream, packet.Tag, memoryStream.Length, partial: false, useOldPacket: preferOldFormat && (int)packet.Tag <= 16);
             stream.Write(memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
         }
 
@@ -106,17 +119,17 @@ namespace Org.BouncyCastle.Bcpg
             public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
             /// <summary>Create a stream representing an old style partial object.</summary>
-            /// <param name="outStr">Output stream to write to.</param>
+            /// <param name="outputStream">Output stream to write to.</param>
             /// <param name="tag">The packet tag for the object.</param>
             public PacketOutputStream(
-                Stream outStr,
+                Stream outputStream,
                 PacketTag tag)
             {
-                if (outStr == null)
-                    throw new ArgumentNullException(nameof(outStr));
+                if (outputStream == null)
+                    throw new ArgumentNullException(nameof(outputStream));
 
-                this.outputStream = outStr;
-                this.WriteHeader(tag, true, true, 0);
+                this.outputStream = outputStream;
+                WriteHeader(outputStream, tag, 0, partial: true, useOldPacket: true);
             }
 
             /// <summary>Create a stream representing a general packet.</summary>
@@ -137,7 +150,7 @@ namespace Org.BouncyCastle.Bcpg
 
                 if (length > 0xFFFFFFFFL)
                 {
-                    this.WriteHeader(tag, false, true, 0);
+                    WriteHeader(outputStream, tag, 0, partial: true, useOldPacket: false);
                     this.partialBufferLength = 1 << BufferSizePower;
                     this.partialBuffer = new byte[partialBufferLength];
                     this.partialPower = BufferSizePower;
@@ -145,24 +158,24 @@ namespace Org.BouncyCastle.Bcpg
                 }
                 else
                 {
-                    this.WriteHeader(tag, oldFormat, false, length);
+                    WriteHeader(outputStream, tag, length, partial: false, useOldPacket: oldFormat);
                 }
             }
 
             /// <summary>Create a new style partial input stream buffered into chunks.</summary>
-            /// <param name="outStr">Output stream to write to.</param>
+            /// <param name="outputStream">Output stream to write to.</param>
             /// <param name="tag">Packet tag.</param>
             /// <param name="buffer">Buffer to use for collecting chunks.</param>
             public PacketOutputStream(
-                Stream outStr,
+                Stream outputStream,
                 PacketTag tag,
                 byte[] buffer)
             {
-                if (outStr == null)
-                    throw new ArgumentNullException(nameof(outStr));
+                if (outputStream == null)
+                    throw new ArgumentNullException(nameof(outputStream));
 
-                this.outputStream = outStr;
-                this.WriteHeader(tag, false, true, 0);
+                this.outputStream = outputStream;
+                WriteHeader(this.outputStream, tag, 0, useOldPacket: false, partial: true);
 
                 this.partialBuffer = buffer;
 
@@ -180,97 +193,11 @@ namespace Org.BouncyCastle.Bcpg
                 this.partialOffset = 0;
             }
 
-            private void WriteNewPacketLength(
-                long bodyLen)
-            {
-                if (bodyLen < 192)
-                {
-                    outputStream.WriteByte((byte)bodyLen);
-                }
-                else if (bodyLen <= 8383)
-                {
-                    bodyLen -= 192;
-
-                    outputStream.WriteByte((byte)(((bodyLen >> 8) & 0xff) + 192));
-                    outputStream.WriteByte((byte)bodyLen);
-                }
-                else
-                {
-                    outputStream.WriteByte(0xff);
-                    outputStream.WriteByte((byte)(bodyLen >> 24));
-                    outputStream.WriteByte((byte)(bodyLen >> 16));
-                    outputStream.WriteByte((byte)(bodyLen >> 8));
-                    outputStream.WriteByte((byte)bodyLen);
-                }
-            }
-
-            private void WriteHeader(
-                PacketTag tag,
-                bool oldPackets,
-                bool partial,
-                long bodyLen)
-            {
-                int hdr = 0x80;
-
-                if (partialBuffer != null)
-                {
-                    PartialFlush(true);
-                    partialBuffer = null;
-                }
-
-                if (oldPackets)
-                {
-                    hdr |= ((int)tag) << 2;
-
-                    if (partial)
-                    {
-                        this.WriteByte((byte)(hdr | 0x03));
-                    }
-                    else
-                    {
-                        if (bodyLen <= 0xff)
-                        {
-                            this.WriteByte((byte)hdr);
-                            this.WriteByte((byte)bodyLen);
-                        }
-                        else if (bodyLen <= 0xffff)
-                        {
-                            this.WriteByte((byte)(hdr | 0x01));
-                            this.WriteByte((byte)(bodyLen >> 8));
-                            this.WriteByte((byte)(bodyLen));
-                        }
-                        else
-                        {
-                            this.WriteByte((byte)(hdr | 0x02));
-                            this.WriteByte((byte)(bodyLen >> 24));
-                            this.WriteByte((byte)(bodyLen >> 16));
-                            this.WriteByte((byte)(bodyLen >> 8));
-                            this.WriteByte((byte)bodyLen);
-                        }
-                    }
-                }
-                else
-                {
-                    hdr |= 0x40 | (int)tag;
-                    this.WriteByte((byte)hdr);
-
-                    if (partial)
-                    {
-                        partialOffset = 0;
-                    }
-                    else
-                    {
-                        this.WriteNewPacketLength(bodyLen);
-                    }
-                }
-            }
-
-            private void PartialFlush(
-                bool isLast)
+            private void PartialFlush(bool isLast)
             {
                 if (isLast)
                 {
-                    WriteNewPacketLength(partialOffset);
+                    WriteNewPacketLength(outputStream, partialOffset);
                     outputStream.Write(partialBuffer, 0, partialOffset);
                 }
                 else
