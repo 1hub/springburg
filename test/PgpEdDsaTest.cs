@@ -1,18 +1,13 @@
 ﻿using System;
-using System.Collections;
-using System.IO;
-using System.Security.Cryptography;
+using System.Linq;
 using System.Text;
-using InflatablePalace.Cryptography.Algorithms;
 using NUnit.Framework;
-using Org.BouncyCastle.Utilities.Test;
 using Ed25519Dsa = InflatablePalace.Cryptography.Algorithms.Ed25519;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
     [TestFixture]
     public class PgpEdDsaTest
-        : SimpleTest
     {
         private static readonly byte[] testPubKey =
             Convert.FromBase64String(
@@ -58,56 +53,36 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 "iF4EABYIAAYFAlX5X5UACgkQjP3hIZeWWpr2IgEAVvkMypjiECY3vZg/2xbBMd/S" +
                 "ftgr9N3lYG4NdWrtM2YBANCcT6EVJ/A44PV/IgHYLy6iyQMyZfps60iehUuuYbQE");
 
-        private void ReferenceTest()
+        [Test]
+        public void ReferenceTest()
         {
             PgpPublicKeyRing pubKeyRing = new PgpPublicKeyRing(referencePubKey);
             PgpPublicKey publicKey = pubKeyRing.GetPublicKey();
-
             PgpObjectFactory pgpFact = new PgpObjectFactory(referenceSignature);
             PgpSignatureList signatureList = (PgpSignatureList)pgpFact.NextPgpObject();
             PgpSignature signature = signatureList[0];
             signature.InitVerify(publicKey);
             signature.Update(Encoding.ASCII.GetBytes(referenceMessage));
-            if (!signature.Verify())
-            {
-                Fail("signature failed to verify!");
-            }
+            Assert.IsTrue(signature.Verify(), "signature failed to verify!");
         }
 
-        private void GenerateAndSign()
+        [Test]
+        public void GenerateAndSign()
         {
-            /*SecureRandom random = SecureRandom.GetInstance("SHA1PRNG");
-
-            IAsymmetricCipherKeyPairGenerator keyGen = GeneratorUtilities.GetKeyPairGenerator("Ed25519");
-            keyGen.Init(new ECKeyGenerationParameters(GnuObjectIdentifiers.Ed25519, random));
-
-            AsymmetricCipherKeyPair kpSign = keyGen.GenerateKeyPair();*/
-
             PgpKeyPair eddsaKeyPair = new PgpKeyPair(new Ed25519Dsa(), DateTime.UtcNow);
-
             byte[] msg = Encoding.ASCII.GetBytes("hello world!");
 
-            //
-            // try a signature
-            //
             PgpSignatureGenerator signGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha256);
             signGen.InitSign(PgpSignature.BinaryDocument, eddsaKeyPair.PrivateKey);
-
             signGen.Update(msg);
 
             PgpSignature sig = signGen.Generate();
-
             sig.InitVerify(eddsaKeyPair.PublicKey);
             sig.Update(msg);
 
-            if (!sig.Verify())
-            {
-                Fail("signature failed to verify!");
-            }
+            Assert.IsTrue(sig.Verify(), "signature failed to verify!");
 
-            //
             // generate a key ring
-            //
             char[] passPhrase = "test".ToCharArray();
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, eddsaKeyPair,
                 "test@bouncycastle.org", SymmetricKeyAlgorithmTag.Aes256, passPhrase, true, null, null);
@@ -116,21 +91,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpSecretKeyRing secRing = keyRingGen.GenerateSecretKeyRing();
 
             PgpPublicKeyRing pubRingEnc = new PgpPublicKeyRing(pubRing.GetEncoded());
-            if (!AreEqual(pubRing.GetEncoded(), pubRingEnc.GetEncoded()))
-            {
-                Fail("public key ring encoding failed");
-            }
+            Assert.That(pubRing.GetEncoded(), Is.EqualTo(pubRingEnc.GetEncoded()), "public key ring encoding failed");
 
             PgpSecretKeyRing secRingEnc = new PgpSecretKeyRing(secRing.GetEncoded());
-            if (!AreEqual(secRing.GetEncoded(), secRingEnc.GetEncoded()))
-            {
-                Fail("secret key ring encoding failed");
-            }
+            Assert.That(secRing.GetEncoded(), Is.EqualTo(secRingEnc.GetEncoded()), "secret key ring encoding failed");
 
-
-            //
             // try a signature using encoded key
-            //
             signGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha256);
             signGen.InitSign(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey(passPhrase));
             signGen.Update(msg);
@@ -139,43 +105,25 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             sig.InitVerify(secRing.GetSecretKey().PublicKey);
             sig.Update(msg);
 
-            if (!sig.Verify())
-            {
-                Fail("re-encoded signature failed to verify!");
-            }
+            Assert.IsTrue(sig.Verify(), "re-encoded signature failed to verify!");
         }
 
-        public override void PerformTest()
+        [Test]
+        public void KeyDecode()
         {
-            ReferenceTest();
-
-            //
             // Read the public key
-            //
             PgpPublicKeyRing pubKeyRing = new PgpPublicKeyRing(testPubKey);
             foreach (PgpSignature certification in pubKeyRing.GetPublicKey().GetSignatures())
             {
                 certification.InitVerify(pubKeyRing.GetPublicKey());
-
-                if (!certification.VerifyCertification((string)First(pubKeyRing.GetPublicKey().GetUserIds()), pubKeyRing.GetPublicKey()))
-                {
-                    Fail("self certification does not verify");
-                }
+                var firstUserId = pubKeyRing.GetPublicKey().GetUserIds().FirstOrDefault() as string;
+                Assert.NotNull(firstUserId);
+                Assert.IsTrue(certification.VerifyCertification(firstUserId, pubKeyRing.GetPublicKey()));
             }
 
-            /*if (pubKeyRing.GetPublicKey().BitStrength != 256)
-            {
-                Fail("incorrect bit strength returned");
-            }*/
-
-            //
             // Read the private key
-            //
             PgpSecretKeyRing secretKeyRing = new PgpSecretKeyRing(testPrivKey);
-
             PgpPrivateKey privKey = secretKeyRing.GetSecretKey().ExtractPrivateKey(testPasswd);
-
-            GenerateAndSign();
 
             //
             // sExpr
@@ -197,26 +145,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 Fail("signature failed to verify!");
             }*/
-        }
-
-        private static object First(IEnumerable e)
-        {
-            IEnumerator n = e.GetEnumerator();
-            Assert.IsTrue(n.MoveNext());
-            return n.Current;
-        }
-
-        public override string Name
-        {
-            get { return "PgpEdDsaTest"; }
-        }
-
-        [Test]
-        public void TestFunction()
-        {
-            string resultText = Perform().ToString();
-
-            Assert.AreEqual(Name + ": Okay", resultText);
         }
     }
 }

@@ -139,7 +139,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // encryption step - convert to literal data, compress, encode.
             //
-            MemoryStream bOut = new UncloseableMemoryStream();
+            MemoryStream bOut = new MemoryStream();
 
             PgpCompressedDataGenerator comData = new PgpCompressedDataGenerator(
                 CompressionAlgorithmTag.Zip);
@@ -166,7 +166,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // encrypt - with stream close
             //
-            MemoryStream cbOut = new UncloseableMemoryStream();
+            MemoryStream cbOut = new MemoryStream();
             PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
 
             cPk.AddMethod(pass, HashAlgorithmTag.Sha1);
@@ -189,7 +189,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // encrypt - with generator close
             //
-            cbOut = new UncloseableMemoryStream();
+            cbOut = new MemoryStream();
             cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
 
             cPk.AddMethod(pass, HashAlgorithmTag.Sha1);
@@ -213,7 +213,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             RandomNumberGenerator.Fill(test);
 
-            bOut = new UncloseableMemoryStream();
+            bOut = new MemoryStream();
 
             comData = new PgpCompressedDataGenerator(
                 CompressionAlgorithmTag.Zip);
@@ -231,7 +231,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             ldOut.Close();
 
             comOut.Close();
-            cbOut = new UncloseableMemoryStream();
+            cbOut = new MemoryStream();
             cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityPacket: false);
 
             cPk.AddMethod(pass, HashAlgorithmTag.Sha1);
@@ -253,7 +253,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // with integrity packet
             //
-            cbOut = new UncloseableMemoryStream();
+            cbOut = new MemoryStream();
             cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityPacket: true);
 
             cPk.AddMethod(pass, HashAlgorithmTag.Sha1);
@@ -321,15 +321,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             ldOut.Write(msg, 0, msg.Length);
 
-#if PORTABLE
-            ldOut.Dispose();
-
-            comOut.Dispose();
-#else
             ldOut.Close();
-
             comOut.Close();
-#endif
 
             cbOut = new MemoryStream();
             cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, true);
@@ -341,11 +334,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             data = bOut.ToArray();
             cOut.Write(data, 0, data.Length);
 
-#if PORTABLE
-            cOut.Dispose();
-#else
             cOut.Close();
-#endif
 
             data = DecryptMessage(cbOut.ToArray());
             if (!AreEqual(data, msg))
@@ -361,22 +350,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 Fail("wrong plain text in buffer generated packet");
             }
-        }
-
-        private class UncloseableMemoryStream
-            : MemoryStream
-        {
-#if PORTABLE
-            protected override void Dispose(bool disposing)
-            {
-                throw new Exception("Dispose() called on underlying stream");
-            }
-#else
-            public override void Close()
-            {
-                throw new Exception("Close() called on underlying stream");
-            }
-#endif
         }
 
         public override string Name

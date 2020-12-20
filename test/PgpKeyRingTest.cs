@@ -10,7 +10,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
     [TestFixture]
     public class PgpKeyRingTest
-        : SimpleTest
     {
         private static readonly byte[] pub1 = Convert.FromBase64String(
             "mQGiBEA83v0RBADzKVLVCnpWQxX0LCsevw/3OLs0H7MOcLBQ4wMO9sYmzGYn"
@@ -1361,21 +1360,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
                     foreach (PgpSignature sig in pubKey.GetSignatures())
                     {
-                        if (sig == null)
-                            Fail("null signature found");
+                        Assert.NotNull(sig);
                     }
                 }
 
-                if (keyCount != 2)
-                {
-                    Fail("wrong number of public keys");
-                }
+                Assert.AreEqual(2, keyCount);
             }
 
-            if (count != 1)
-            {
-                Fail("wrong number of public keyrings");
-            }
+            Assert.AreEqual(1, count, "wrong number of public keyrings");
 
             //
             // exact match
@@ -1383,16 +1375,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             count = 0;
             foreach (PgpPublicKeyRing pgpPub3 in pubRings.GetKeyRings("test (Test key) <test@ubicall.com>"))
             {
-                if (pgpPub3 == null)
-                    Fail("null keyring found");
-
+                Assert.NotNull(pgpPub3);
                 count++;
             }
 
-            if (count != 1)
-            {
-                Fail("wrong number of public keyrings on exact match");
-            }
+            Assert.AreEqual(1, count, "wrong number of public keyrings on exact match");
 
             //
             // partial match 1 expected
@@ -1400,16 +1387,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             count = 0;
             foreach (PgpPublicKeyRing pgpPub4 in pubRings.GetKeyRings("test", true))
             {
-                if (pgpPub4 == null)
-                    Fail("null keyring found");
-
+                Assert.NotNull(pgpPub4);
                 count++;
             }
 
-            if (count != 1)
-            {
-                Fail("wrong number of public keyrings on partial match 1");
-            }
+            Assert.AreEqual(1, count, "wrong number of public keyrings on partial match 1");
 
             //
             // partial match 0 expected
@@ -1417,16 +1399,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             count = 0;
             foreach (PgpPublicKeyRing pgpPub5 in pubRings.GetKeyRings("XXX", true))
             {
-                if (pgpPub5 == null)
-                    Fail("null keyring found");
-
+                Assert.NotNull(pgpPub5);
                 count++;
             }
 
-            if (count != 0)
-            {
-                Fail("wrong number of public keyrings on partial match 0");
-            }
+            Assert.AreEqual(0, count, "wrong number of public keyrings on partial match 0");
 
             //
             // case-insensitive partial match
@@ -1434,16 +1411,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             count = 0;
             foreach (PgpPublicKeyRing pgpPub6 in pubRings.GetKeyRings("TEST@ubicall.com", true, true))
             {
-                if (pgpPub6 == null)
-                    Fail("null keyring found");
-
+                Assert.NotNull(pgpPub6);
                 count++;
             }
 
-            if (count != 1)
-            {
-                Fail("wrong number of public keyrings on case-insensitive partial match");
-            }
+            Assert.AreEqual(1, count, "wrong number of public keyrings on case-insensitive partial match");
 
             PgpSecretKeyRingBundle secretRings = new PgpSecretKeyRingBundle(sec1);
             count = 0;
@@ -2493,10 +2465,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     {
                         Fail("experimental signature not found");
                     }
-                    if (!AreEqual(sig.GetSignature(), new byte[] { 0, 1, 1 }))
-                    {
-                        Fail("experimental encoding check failed");
-                    }
+                    Assert.AreEqual(new byte[] { 0, 1, 1 }, sig.GetSignature(), "experimental encoding check failed");
                 }
                 else
                 {
@@ -2521,42 +2490,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     // this key has 2 self signatures on it - the most recent key validity is for 432495 seconds.
                     if (0x5afd53a9dbb2c40dL == pubKey.KeyId)
                     {
-                        IsTrue("wrong validity date", pubKey.GetValidity() == TimeSpan.FromSeconds(432495));
+                        Assert.AreEqual(TimeSpan.FromSeconds(432495), pubKey.GetValidity());
                     }
                     // this key has 3 self signatures on it - the most recent key validity is for 4320173 seconds.
                     else if (unchecked((long)0x89FCFA4B23363333L) == pubKey.KeyId)
                     {
-                        IsTrue("wrong validity date", pubKey.GetValidity() == TimeSpan.FromSeconds(4320173));
+                        Assert.AreEqual(TimeSpan.FromSeconds(4320173), pubKey.GetValidity());
                     }
                 }
             }
         }
 
-        public override void PerformTest()
-        {
-            TestExpiryDate();
-            PerformTest1();
-            PerformTest2();
-            PerformTest3();
-            PerformTest4();
-            PerformTest5();
-            PerformTest6();
-            TestRevocation();
-            PerformTest8();
-            PerformTest9();
-            PerformTest10();
-            PerformTest11();
-
-            //GenerateTest();
-            //GenerateSha1Test();
-            RewrapTest();
-            PublicKeyRingWithX509Test();
-            SecretKeyRingWithPersonalCertificateTest();
-            InsertMasterTest();
-            LongSubPacketsTest();
-        }
-
-        private void LongSubPacketsTest()
+        [Test]
+        public void LongSubPacketsTest()
         {
             Stream fIn = SimpleTest.GetTestDataAsStream("openpgp.longSigSubPack.asc");
             Stream bIn = new BufferedStream(fIn);
@@ -2589,9 +2535,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             return sig.VerifyCertification(uid, masterpk);
         }
 
-        public override string Name
-        {
-            get { return "PgpKeyRingTest"; }
-        }
+        private static void Fail(string f) => Assert.Fail(f);
     }
 }

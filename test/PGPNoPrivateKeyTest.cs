@@ -1,15 +1,10 @@
 ﻿using System;
-using System.IO;
-
 using NUnit.Framework;
-
-using Org.BouncyCastle.Utilities.Test;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
     [TestFixture]
     public class PgpNoPrivateKeyTest
-        : SimpleTest
     {
         private static string pgpOldPass = "test";
         private static string pgpNewPass = "newtest";
@@ -105,7 +100,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "Hz68DaCpyThIzOv7DnFhJi4iKGIvv6EI1Nds8KIDn80/9YT6Ruc7PhgRl+LKKwiu"
             + "utz7qL8AhKDa1pvu5yLX08HZxWrzbo+7OPm9yS3T");
 
-        public override void PerformTest()
+        [Test]
+        public void PerformTest()
         {
             PgpSecretKeyRing pgpSecRing = new PgpSecretKeyRing(pgpPrivateFull);
             PgpSecretKey pgpSecKey = pgpSecRing.GetSecretKey();
@@ -119,10 +115,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // Check isPrivateKeyEmpty() is public
             //
 
-            if (isFullEmpty || !isEmptyEmpty)
-            {
-                Fail("Empty private keys not detected correctly.");
-            }
+            Assert.IsFalse(isFullEmpty || !isEmptyEmpty, "Empty private keys not detected correctly.");
 
             //
             // Check copyWithNewPassword doesn't throw an exception for secret
@@ -138,22 +131,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 if (!e.Message.Equals("no private key in this SecretKey - public key present only."))
                 {
-                    Fail("wrong exception.");
+                    Assert.Fail("wrong exception.");
                 }
             }
-        }
-
-        public override string Name
-        {
-            get { return "PgpNoPrivateKeyTest"; }
-        }
-
-        [Test]
-        public void TestFunction()
-        {
-            string resultText = Perform().ToString();
-
-            Assert.AreEqual(Name + ": Okay", resultText);
         }
     }
 }

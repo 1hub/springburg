@@ -8,12 +8,8 @@ using Org.BouncyCastle.Utilities.Test;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
-	/**
-	* GPG compatability test vectors
-	*/
 	[TestFixture]
 	public class Dsa2Test
-		//extends TestCase
 	{
 		[Test]
 		public void TestK1024H160()

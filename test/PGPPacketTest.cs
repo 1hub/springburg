@@ -1,74 +1,39 @@
 using System;
 using System.IO;
-
 using NUnit.Framework;
-
-using Org.BouncyCastle.Utilities.Test;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
     [TestFixture]
     public class PgpPacketTest
-        : SimpleTest
     {
         private static int MAX = 32000;
 
-        private void ReadBackTest(
-            PgpLiteralDataGenerator generator)
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void ReadBackTest(bool oldFormat)
         {
+            var generator = new PgpLiteralDataGenerator(oldFormat);
             Random rand = new Random();
             byte[] buf = new byte[MAX];
+            byte[] buf2 = new byte[MAX];
 
             rand.NextBytes(buf);
 
             for (int i = 1; i != MAX; i++)
             {
-                MemoryStream bOut = new MemoryStream();
-
-                Stream outputStream = generator.Open(
-                    new UncloseableStream(bOut),
-                    PgpLiteralData.Binary,
-                    PgpLiteralData.Console,
-                    i,
-                    DateTime.UtcNow);
-
-                outputStream.Write(buf, 0, i);
-
-                outputStream.Close();
+                using MemoryStream bOut = new MemoryStream();
+                using (var outputStream = generator.Open(bOut, PgpLiteralData.Binary, PgpLiteralData.Console, i, DateTime.UtcNow))
+                    outputStream.Write(buf, 0, i);
 
                 PgpObjectFactory fact = new PgpObjectFactory(bOut.ToArray());
-
                 PgpLiteralData data = (PgpLiteralData)fact.NextPgpObject();
-
                 Stream inputStream = new BufferedStream(data.GetInputStream());
-
-                for (int count = 0; count != i; count++)
-                {
-                    if (inputStream.ReadByte() != (buf[count] & 0xff))
-                    {
-                        Fail("failed readback test - length = " + i);
-                    }
-                }
+                Array.Clear(buf2, 0, i);
+                inputStream.Read(buf2.AsSpan(0, i));
+                Assert.IsTrue(buf2.AsSpan(0, i).SequenceEqual(buf.AsSpan(0, i)), "failed readback test");
             }
-        }
-
-        public override void PerformTest()
-        {
-            ReadBackTest(new PgpLiteralDataGenerator(true));
-            ReadBackTest(new PgpLiteralDataGenerator(false));
-        }
-
-        public override string Name
-        {
-            get { return "PgpPacketTest"; }
-        }
-
-        [Test]
-        public void TestFunction()
-        {
-            string resultText = Perform().ToString();
-
-            Assert.AreEqual(Name + ": Okay", resultText);
         }
     }
 }

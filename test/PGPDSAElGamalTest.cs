@@ -370,19 +370,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // Test bug with ElGamal P size != 0 mod 8 (don't use these sizes at home!)
             for (int pSize = 257; pSize < 264; ++pSize)
             {
-                // Generate some parameters of the given size
-                /*ElGamalParametersGenerator epg = new ElGamalParametersGenerator();
-                epg.Init(pSize, 2, random);
-
-                elParams = epg.GenerateParameters();
-
-                kpg = GeneratorUtilities.GetKeyPairGenerator("ELGAMAL");
-                kpg.Init(new ElGamalKeyGenerationParameters(random, elParams));
-
-
-                // Run a short encrypt/decrypt test with random key for the given parameters
-                kp = kpg.GenerateKeyPair();*/
-
                 PgpKeyPair elGamalKeyPair = new PgpKeyPair(ElGamal.Create(pSize), DateTime.UtcNow);
 
                 cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);

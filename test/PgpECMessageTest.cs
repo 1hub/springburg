@@ -1,16 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-
 using NUnit.Framework;
-
-using Org.BouncyCastle.Utilities.Test;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
     [TestFixture]
     public class PgpECMessageTest
-        : SimpleTest
     {
         private static readonly byte[] testPubKey =
             Convert.FromBase64String(
@@ -63,7 +59,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 "0wWo53O6NCSeM/EpeFw8RRh8fe+m33qpA6T5sR3Alg4ZukiIxLa36k6Cv5KTHmB3\n" +
                 "6lKZcgQDHNIKStV1bW4Cva1aXXQ=");
 
-        private void DoTestMasterKey()
+        [Test]
+        public void DoTestMasterKey()
         {
             PgpSecretKey key = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeyMaster, false),
                 "test".ToCharArray());
@@ -79,13 +76,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             sig.InitVerify(publicKey);
             sig.Update(msg);
 
-            if (!sig.Verify())
-            {
-                Fail("signature failed to verify!");
-            }
+            Assert.IsTrue(sig.Verify(), "signature failed to verify!");
         }
 
-        private void DoTestEncMessage()
+        [Test]
+        public void DoTestEncMessage()
         {
             PgpObjectFactory pgpFact = new PgpObjectFactory(encMessage);
 
@@ -108,13 +103,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpLiteralData lData = (PgpLiteralData)compFact.NextPgpObject();
 
-            if (!"test.txt".Equals(lData.FileName))
-            {
-                Fail("wrong file name detected");
-            }
+            Assert.AreEqual("test.txt", lData.FileName);
         }
 
-        private void DoTestSignedEncMessage()
+        [Test]
+        public void DoTestSignedEncMessage()
         {
             PgpObjectFactory pgpFact = new PgpObjectFactory(signedEncMessage);
 
@@ -143,10 +136,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpLiteralData lData  = (PgpLiteralData)compFact.NextPgpObject();
 
-            if (!"test.txt".Equals(lData.FileName))
-            {
-                Fail("wrong file name detected");
-            }
+            Assert.AreEqual("test.txt", lData.FileName);
 
             Stream dIn = lData .GetInputStream();
 
@@ -160,30 +150,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpSignatureList p3 = (PgpSignatureList)compFact.NextPgpObject();
 
-            if (!ops.Verify(p3[0]))
-            {
-                Fail("Failed signature check");
-            }
-        }
-
-        public override void PerformTest()
-        {
-            DoTestMasterKey();
-            DoTestEncMessage();
-            DoTestSignedEncMessage();
-        }
-
-        public override string Name
-        {
-            get { return "PgpECMessageTest"; }
-        }
-
-        [Test]
-        public void TestFunction()
-        {
-            string resultText = Perform().ToString();
-
-            Assert.AreEqual(Name + ": Okay", resultText);
+            Assert.IsTrue(ops.Verify(p3[0]), "Failed signature check");
         }
     }
 }

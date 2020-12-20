@@ -1,10 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
-
 using NUnit.Framework;
-
-using Org.BouncyCastle.Utilities.IO;
 using Org.BouncyCastle.Utilities.Test;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests

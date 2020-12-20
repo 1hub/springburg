@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using InflatablePalace.Cryptography.Algorithms;
@@ -12,7 +12,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
     [TestFixture]
     public class PgpECDHTest
-        : SimpleTest
     {
         private static readonly byte[] testPubKey =
             Convert.FromBase64String(
@@ -81,35 +80,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 "0kcBKhFklH2LRbBNThtQr3jn2YEFbNnhiGfOpoHfCn0oFh5RbXDwm+P3Q3tksvpZ" +
                 "wEGe2VkxLLe7BWnv/sRINQ2YpuaYshe8hw==");
 
-        private void Generate()
+        [Test]
+        public void Generate()
         {
-            //SecureRandom random = SecureRandom.GetInstance("SHA1PRNG");
-
-            //
-            // Generate a master key
-            //
             ECDsa ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-            //IAsymmetricCipherKeyPairGenerator keyGen = GeneratorUtilities.GetKeyPairGenerator("ECDSA");
-            //keyGen.Init(new ECKeyGenerationParameters(SecObjectIdentifiers.SecP256r1, random));
-
-            //AsymmetricCipherKeyPair kpSign = keyGen.GenerateKeyPair();
-
             PgpKeyPair ecdsaKeyPair = new PgpKeyPair(ecdsa, DateTime.UtcNow);
 
-            //
             // Generate an encryption key
-            //
             ECDiffieHellman ecdh = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
-            //keyGen = GeneratorUtilities.GetKeyPairGenerator("ECDH");
-            //keyGen.Init(new ECKeyGenerationParameters(SecObjectIdentifiers.SecP256r1, random));
-
-            //AsymmetricCipherKeyPair kpEnc = keyGen.GenerateKeyPair();
-
             PgpKeyPair ecdhKeyPair = new PgpKeyPair(ecdh, DateTime.UtcNow);
 
-            //
             // Generate a key ring
-            //
             char[] passPhrase = "test".ToCharArray();
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, ecdsaKeyPair,
                 "test@bouncycastle.org", SymmetricKeyAlgorithmTag.Aes256, passPhrase, true, null, null);
@@ -123,50 +104,27 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpSecretKeyRing secRing = keyRingGen.GenerateSecretKeyRing();
 
             PgpPublicKeyRing pubRingEnc = new PgpPublicKeyRing(pubRing.GetEncoded());
-            if (!AreEqual(pubRing.GetEncoded(), pubRingEnc.GetEncoded()))
-            {
-                Fail("public key ring encoding failed");
-            }
+            Assert.That(pubRing.GetEncoded(), Is.EqualTo(pubRingEnc.GetEncoded()), "public key ring encoding failed");
 
             PgpSecretKeyRing secRingEnc = new PgpSecretKeyRing(secRing.GetEncoded());
-            if (!AreEqual(secRing.GetEncoded(), secRingEnc.GetEncoded()))
-            {
-                Fail("secret key ring encoding failed");
-            }
+            Assert.That(secRing.GetEncoded(), Is.EqualTo(secRingEnc.GetEncoded()), "secret key ring encoding failed");
 
             PgpPrivateKey pgpPrivKey = secRing.GetSecretKey().ExtractPrivateKey(passPhrase);
         }
 
-        /*private void Generate25519()
+        [Test]
+        public void Generate25519()
         {
-            SecureRandom random = SecureRandom.GetInstance("SHA1PRNG");
-
-            //
             // Generate a master key
-            //
-            IAsymmetricCipherKeyPairGenerator keyGen = GeneratorUtilities.GetKeyPairGenerator("Ed25519");
-            keyGen.Init(new ECKeyGenerationParameters(GnuObjectIdentifiers.Ed25519, random));
+            PgpKeyPair ecdsaKeyPair = new PgpKeyPair(new Ed25519(), DateTime.UtcNow);
 
-            AsymmetricCipherKeyPair kpSign = keyGen.GenerateKeyPair();
-
-            PgpKeyPair ecdsaKeyPair = new PgpKeyPair(PublicKeyAlgorithmTag.EdDsa, kpSign, DateTime.UtcNow);
-
-            //
             // Generate an encryption key
-            //
-            keyGen = GeneratorUtilities.GetKeyPairGenerator("X25519");
-            keyGen.Init(new ECKeyGenerationParameters(MiscObjectIdentifiers.Curve25519, random));
+            PgpKeyPair ecdhKeyPair = new PgpKeyPair(new X25519(), DateTime.UtcNow);
 
-            AsymmetricCipherKeyPair kpEnc = keyGen.GenerateKeyPair();
-
-            PgpKeyPair ecdhKeyPair = new PgpKeyPair(PublicKeyAlgorithmTag.ECDH, kpEnc, DateTime.UtcNow);
-
-            //
             // Generate a key ring
-            //
             char[] passPhrase = "test".ToCharArray();
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, ecdsaKeyPair,
-                "test@bouncycastle.org", SymmetricKeyAlgorithmTag.Aes256, passPhrase, true, null, null, random);
+                "test@bouncycastle.org", SymmetricKeyAlgorithmTag.Aes256, passPhrase, true, null, null);
             keyRingGen.AddSubKey(ecdhKeyPair);
 
             PgpPublicKeyRing pubRing = keyRingGen.GeneratePublicKeyRing();
@@ -177,30 +135,24 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpSecretKeyRing secRing = keyRingGen.GenerateSecretKeyRing();
 
             PgpPublicKeyRing pubRingEnc = new PgpPublicKeyRing(pubRing.GetEncoded());
-            if (!Arrays.AreEqual(pubRing.GetEncoded(), pubRingEnc.GetEncoded()))
-            {
-                Fail("public key ring encoding failed");
-            }
+            Assert.That(pubRing.GetEncoded(), Is.EqualTo(pubRingEnc.GetEncoded()), "public key ring encoding failed");
 
             PgpSecretKeyRing secRingEnc = new PgpSecretKeyRing(secRing.GetEncoded());
-            if (!Arrays.AreEqual(secRing.GetEncoded(), secRingEnc.GetEncoded()))
-            {
-                Fail("secret key ring encoding failed");
-            }
+            Assert.That(secRing.GetEncoded(), Is.EqualTo(secRingEnc.GetEncoded()), "secret key ring encoding failed");
 
             // Extract back the ECDH key and verify the encoded values to ensure correct endianness
             PgpSecretKey pgpSecretKey = secRing.GetSecretKey(ecdhKeyPair.KeyId);
             PgpPrivateKey pgpPrivKey = pgpSecretKey.ExtractPrivateKey(passPhrase);
 
-            if (!Arrays.AreEqual(((X25519PrivateKeyParameters)kpEnc.Private).GetEncoded(), ((X25519PrivateKeyParameters)pgpPrivKey.Key).GetEncoded()))
+            /*if (!Arrays.AreEqual(((X25519PrivateKeyParameters)kpEnc.Private).GetEncoded(), ((X25519PrivateKeyParameters)pgpPrivKey.Key).GetEncoded()))
             {
                 Fail("private key round trip failed");
             }
             if (!Arrays.AreEqual(((X25519PublicKeyParameters)kpEnc.Public).GetEncoded(), ((X25519PublicKeyParameters)pgpSecretKey.PublicKey.GetKey()).GetEncoded()))
             {
                 Fail("private key round trip failed");
-            }
-        }*/
+            }*/
+        }
 
         private void TestDecrypt(PgpSecretKeyRing secretKeyRing)
         {
@@ -233,195 +185,127 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private void EncryptDecryptTest(ECDiffieHellman ecdh)
         {
-            //SecureRandom random = SecureRandom.GetInstance("SHA1PRNG");
-
             byte[] text = Encoding.ASCII.GetBytes("hello world!");
-
-            //IAsymmetricCipherKeyPairGenerator keyGen = GeneratorUtilities.GetKeyPairGenerator("ECDH");
-            //keyGen.Init(new ECKeyGenerationParameters(SecObjectIdentifiers.SecP256r1, random));
-
-            //AsymmetricCipherKeyPair kpEnc = keyGen.GenerateKeyPair();
-            //ECDiffieHellman ecdh = ECDiffieHellman.Create(curve);
 
             PgpKeyPair ecdhKeyPair = new PgpKeyPair(ecdh, DateTime.UtcNow);
 
             PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
             MemoryStream ldOut = new MemoryStream();
-            Stream pOut = lData.Open(ldOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, text.Length, DateTime.UtcNow);
-
-            pOut.Write(text, 0, text.Length);
-
-            pOut.Close();
+            using (var pOut = lData.Open(ldOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, text.Length, DateTime.UtcNow))
+                pOut.Write(text, 0, text.Length);
 
             byte[] data = ldOut.ToArray();
-
             MemoryStream cbOut = new MemoryStream();
-
             PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
             cPk.AddMethod(ecdhKeyPair.PublicKey);
+            using (var cOut = cPk.Open(new UncloseableStream(cbOut), data.Length))
+                cOut.Write(data, 0, data.Length);
 
-            Stream cOut = cPk.Open(new UncloseableStream(cbOut), data.Length);
-
-            cOut.Write(data, 0, data.Length);
-
-            cOut.Close();
-
+            // Read it back
             PgpObjectFactory pgpF = new PgpObjectFactory(cbOut.ToArray());
-
             PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
             PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
-
             Stream clear = encP.GetDataStream(ecdhKeyPair.PrivateKey);
-
             pgpF = new PgpObjectFactory(clear);
-
             PgpLiteralData ld = (PgpLiteralData)pgpF.NextPgpObject();
-
-            clear = ld.GetInputStream();
             MemoryStream bOut = new MemoryStream();
-
-            int ch;
-            while ((ch = clear.ReadByte()) >= 0)
-            {
-                bOut.WriteByte((byte)ch);
-            }
-
-            byte[] output = bOut.ToArray();
-
-            if (!AreEqual(output, text))
-            {
-                Fail("wrong plain text in Generated packet");
-            }
+            ld.GetInputStream().CopyTo(bOut);
+            Assert.That(bOut.ToArray(), Is.EqualTo(text), "wrong plain text in Generated packet");
         }
 
-
-        private void EncryptDecryptX25519KeysTest()
+        [Test]
+        public void EncryptDecryptX25519KeysTest()
         {
-            /*IAsymmetricCipherKeyPairGenerator keyGen = GeneratorUtilities.GetKeyPairGenerator(algorithm);
-            keyGen.Init(new ECKeyGenerationParameters(curve, random));
-
-            AsymmetricCipherKeyPair kpEnc = keyGen.GenerateKeyPair();
-
-            PgpKeyPair ecdhKeyPair = new PgpKeyPair(PublicKeyAlgorithmTag.ECDH, kpEnc, DateTime.UtcNow);*/
             PgpPublicKeyRing publicKeyRing = new PgpPublicKeyRing(testX25519PubKey);
-
             PgpSecretKeyRing secretKeyRing = new PgpSecretKeyRing(testX25519PrivKey);
-
             PgpSecretKey secretKey = secretKeyRing.GetSecretKey(0x6c37367cd2f455c5);
-
             byte[] text = Encoding.ASCII.GetBytes("hello world!");
 
+            // Pre-encode literal data
             PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
             MemoryStream ldOut = new MemoryStream();
-            Stream pOut = lData.Open(ldOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, text.Length, DateTime.UtcNow);
-
-            pOut.Write(text, 0, text.Length);
-
-            pOut.Close();
-
+            using (var pOut = lData.Open(ldOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, text.Length, DateTime.UtcNow))
+                pOut.Write(text);
             byte[] data = ldOut.ToArray();
 
+            // Encrypt it
             MemoryStream cbOut = new MemoryStream();
-
             PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
             cPk.AddMethod(publicKeyRing.GetPublicKey(0x6c37367cd2f455c5));
+            using (var cOut = cPk.Open(new UncloseableStream(cbOut), data.Length))
+                cOut.Write(data);
 
-            Stream cOut = cPk.Open(new UncloseableStream(cbOut), data.Length);
-
-            cOut.Write(data, 0, data.Length);
-
-            cOut.Close();
-
+            // Read it back
             PgpObjectFactory pgpF = new PgpObjectFactory(cbOut.ToArray());
-
             PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
             PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
-
             Stream clear = encP.GetDataStream(secretKey.ExtractPrivateKey("test".ToCharArray()));
-
             pgpF = new PgpObjectFactory(clear);
-
             PgpLiteralData ld = (PgpLiteralData)pgpF.NextPgpObject();
-
-            clear = ld.GetInputStream();
             MemoryStream bOut = new MemoryStream();
-
-            int ch;
-            while ((ch = clear.ReadByte()) >= 0)
-            {
-                bOut.WriteByte((byte)ch);
-            }
-
-            byte[] output = bOut.ToArray();
-
-            if (!AreEqual(output, text))
-            {
-                Fail("wrong plain text in Generated packet");
-            }
+            ld.GetInputStream().CopyTo(bOut);
+            Assert.That(bOut.ToArray(), Is.EqualTo(text), "wrong plain text in Generated packet");
         }
 
-        private void GnuPGCrossCheck()
+        [Test]
+        public void GnuPGCrossCheck()
         {
             PgpSecretKeyRing secretKeyRing = new PgpSecretKeyRing(testX25519PrivKey);
-
             PgpObjectFactory pgpF = new PgpObjectFactory(testX25519Message);
-
             PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
             PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
-
             PgpSecretKey secretKey = secretKeyRing.GetSecretKey(0x6c37367cd2f455c5);
-
             PgpPrivateKey pgpPrivKey = secretKey.ExtractPrivateKey("test".ToCharArray());
-
             Stream clear = encP.GetDataStream(pgpPrivKey);
-
             pgpF = new PgpObjectFactory(clear);
-
             PgpCompressedData c1 = (PgpCompressedData)pgpF.NextPgpObject();
-
             pgpF = new PgpObjectFactory(c1.GetDataStream());
-
             PgpLiteralData ld = (PgpLiteralData)pgpF.NextPgpObject();
-
             Stream inLd = ld.GetDataStream();
             byte[] bytes = Streams.ReadAll(inLd);
-
-            if (!AreEqual(bytes, Encoding.ASCII.GetBytes("hello world!")))
-            {
-                Fail("wrong plain text in decrypted packet");
-            }
+            Assert.That(bytes, Is.EqualTo(Encoding.ASCII.GetBytes("hello world!")), "wrong plain text in decrypted packet");
         }
 
-        public override void PerformTest()
+        [Test]
+        public void PerformTest()
         {
-            //
             // Read the public key
-            //
             PgpPublicKeyRing pubKeyRing = new PgpPublicKeyRing(testPubKey);
-
             DoBasicKeyRingCheck(pubKeyRing);
 
-            //
             // Read the private key
-            //
             PgpSecretKeyRing secretKeyRing = new PgpSecretKeyRing(testPrivKey);
-
             TestDecrypt(secretKeyRing);
 
             EncryptDecryptTest(ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256));
 
             EncryptDecryptTest(new X25519());
+        }
 
-            GnuPGCrossCheck();
+        [Test]
+        public void ReadPublicKey()
+        {
+            PgpPublicKeyRing pubKeyRing = new PgpPublicKeyRing(testPubKey);
+            DoBasicKeyRingCheck(pubKeyRing);
+        }
 
-            Generate();
+        [Test]
+        public void ReadPrivateKey()
+        {
+            PgpSecretKeyRing secretKeyRing = new PgpSecretKeyRing(testPrivKey);
+            TestDecrypt(secretKeyRing);
+        }
 
-            //Generate25519();
+        [Test]
+        public void EncryptDecryptNistP256Test()
+        {
+            EncryptDecryptTest(ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256));
+        }
 
-            EncryptDecryptX25519KeysTest();
+        [Test]
+        public void EncryptDecryptX25519Test()
+        {
+            EncryptDecryptTest(new X25519());
         }
 
         private void DoBasicKeyRingCheck(PgpPublicKeyRing pubKeyRing)
@@ -430,49 +314,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 if (pubKey.IsMasterKey)
                 {
-                    if (pubKey.IsEncryptionKey)
-                    {
-                        Fail("master key showed as encryption key!");
-                    }
+                    Assert.IsFalse(pubKey.IsEncryptionKey, "master key showed as encryption key!");
                 }
                 else
                 {
-                    if (!pubKey.IsEncryptionKey)
-                    {
-                        Fail("sub key not encryption key!");
-                    }
+                    Assert.IsTrue(pubKey.IsEncryptionKey, "sub key not encryption key!");
 
                     foreach (PgpSignature certification in pubKeyRing.GetPublicKey().GetSignatures())
                     {
                         certification.InitVerify(pubKeyRing.GetPublicKey());
 
-                        if (!certification.VerifyCertification((string)First(pubKeyRing.GetPublicKey().GetUserIds()), pubKeyRing.GetPublicKey()))
-                        {
-                            Fail("subkey certification does not verify");
-                        }
+                        var firstUserId = pubKeyRing.GetPublicKey().GetUserIds().FirstOrDefault() as string;
+                        Assert.NotNull(firstUserId);
+                        Assert.IsTrue(certification.VerifyCertification(firstUserId, pubKeyRing.GetPublicKey()));
                     }
                 }
             }
-        }
-
-        private static object First(IEnumerable e)
-        {
-            IEnumerator n = e.GetEnumerator();
-            Assert.IsTrue(n.MoveNext());
-            return n.Current;
-        }
-
-        public override string Name
-        {
-            get { return "PgpECDHTest"; }
-        }
-
-        [Test]
-        public void TestFunction()
-        {
-            string resultText = Perform().ToString();
-
-            Assert.AreEqual(Name + ": Okay", resultText);
         }
     }
 }

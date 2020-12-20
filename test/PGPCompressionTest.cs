@@ -1,18 +1,12 @@
-using System;
 using System.IO;
 using System.Text;
-
 using NUnit.Framework;
-
-using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.Utilities.IO;
-using Org.BouncyCastle.Utilities.Test;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
     [TestFixture]
     public class PgpCompressionTest
-        : SimpleTest
     {
         private static readonly byte[] Data = Encoding.ASCII.GetBytes("hello world! !dlrow olleh");
 
@@ -40,20 +34,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             doTestCompression(CompressionAlgorithmTag.BZip2);
         }
 
-        public override void PerformTest()
-        {
-            doTestCompression(CompressionAlgorithmTag.Uncompressed);
-            doTestCompression(CompressionAlgorithmTag.Zip);
-            doTestCompression(CompressionAlgorithmTag.ZLib);
-            doTestCompression(CompressionAlgorithmTag.BZip2);
-        }
-
         private void doTestCompression(
             CompressionAlgorithmTag type)
         {
             using MemoryStream bOut = new MemoryStream();
             PgpCompressedDataGenerator cPacket = new PgpCompressedDataGenerator(type);
-            using (Stream os = cPacket.Open(new UncloseableStream(bOut), new byte[Data.Length - 1]))
+            using (Stream os = cPacket.Open(bOut, new byte[Data.Length - 1]))
                 os.Write(Data, 0, Data.Length);
             ValidateData(bOut.ToArray());
         }
@@ -67,15 +53,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             byte[] bytes = Streams.ReadAll(pIn);
             pIn.Close();
 
-            if (!AreEqual(bytes, Data))
-            {
-                Fail("compression test failed");
-            }
-        }
-
-        public override string Name
-        {
-            get { return "PGPCompressionTest"; }
+            Assert.That(bytes, Is.EqualTo(Data));
         }
     }
 }
