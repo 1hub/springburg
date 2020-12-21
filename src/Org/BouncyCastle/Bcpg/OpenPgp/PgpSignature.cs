@@ -1,6 +1,7 @@
 using System;
 using System.Formats.Asn1;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -58,9 +59,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Return true if this signature represents a certification.</summary>
         public bool IsCertification() => IsCertification(SignatureType);
 
-        public void InitVerify(PgpPublicKey publicKey)
+        public void InitVerify(PgpPublicKey publicKey, bool ignoreTrailingWhitespace = false)
         {
             this.helper = new PgpSignatureHelper(SignatureType, HashAlgorithm);
+            this.helper.IgnoreTrailingWhitespace = ignoreTrailingWhitespace;
             this.publicKey = publicKey;
         }
 

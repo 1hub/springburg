@@ -89,6 +89,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         private void doUpdateCRLF()
         {
+            pendingWhitespacePosition = 0;
             sig.TransformBlock(new byte[] { (byte)'\r', (byte)'\n' }, 0, 2, null, 0);
         }
 
