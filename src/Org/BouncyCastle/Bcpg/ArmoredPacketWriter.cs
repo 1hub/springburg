@@ -22,7 +22,8 @@ namespace Org.BouncyCastle.Bcpg
 
         public IPacketWriter CreateNestedWriter(Stream stream)
         {
-            throw new NotImplementedException();
+            useClearText = false;
+            return new PacketWriter(stream);
         }
 
         public void Dispose()

@@ -243,11 +243,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// </summary>
         public IPacketWriter Open(IPacketWriter writer)
         {
-            return writer.CreateNestedWriter(OpenStream(writer));
-        }
-
-        public Stream OpenStream(IPacketWriter writer)
-        {
             if (writer == null)
                 throw new ArgumentNullException(nameof(writer));
             if (cOut != null)
@@ -326,22 +321,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
                 myOut.Write(inLineIv, 0, inLineIv.Length);
 
-                return new WrappedGeneratorStream(this, myOut);
+                return writer.CreateNestedWriter(new WrappedGeneratorStream(this, myOut));
             }
             catch (Exception e)
             {
                 throw new PgpException("Exception creating cipher", e);
             }
-        }
-
-        public IPacketWriter Open(Stream outputStream)
-        {
-            return Open(new PacketWriter(outputStream));
-        }
-
-        public Stream OpenStream(Stream outputStream)
-        {
-            return OpenStream(new PacketWriter(outputStream));
         }
 
         void IStreamGenerator.Close()

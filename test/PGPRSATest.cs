@@ -723,7 +723,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpPublicKey puK = pgpPriv.GetSecretKey(encP.KeyId).PublicKey;
 
             cPk.AddMethod(puK);
-            using (var encryptedWriter = cPk.Open(new UncloseableStream(cbOut)))
+            var writer = new PacketWriter(cbOut);
+            using (var encryptedWriter = cPk.Open(writer))
             using (var literalStream = lPk.Open(encryptedWriter, PgpLiteralData.Binary, "", DateTime.UtcNow))
             {
                 literalStream.Write(shortText);
@@ -752,7 +753,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             puK = pgpPriv.GetSecretKey(encP.KeyId).PublicKey;
 
             cPk.AddMethod(puK);
-            using (var encryptedWriter = cPk.Open(new UncloseableStream(cbOut)))
+            writer = new PacketWriter(cbOut);
+            using (var encryptedWriter = cPk.Open(writer))
             using (var literalStream = lPk.Open(encryptedWriter, PgpLiteralData.Binary, "", DateTime.UtcNow))
             {
                 literalStream.Write(text);
@@ -926,7 +928,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
             DateTime testDateTime = new DateTime(1973, 7, 27);
 
-            var writer = new PacketWriter(bOut);
+            writer = new PacketWriter(bOut);
             using (var compressedWriter = cGen.Open(writer))
             using (var signingWriter = sGen.Open(compressedWriter))
             using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", testDateTime))

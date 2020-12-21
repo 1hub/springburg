@@ -310,7 +310,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             cPk.AddMethod(puK);
 
-            using (var cOut = cPk.Open(new UncloseableStream(cbOut)))
+            writer = new PacketWriter(cbOut);
+            using (var cOut = cPk.Open(writer))
             using (var pOut = new PgpLiteralDataGenerator().Open(cOut, PgpLiteralData.Utf8, "", DateTime.UtcNow))
                 pOut.Write(text, 0, text.Length);
 

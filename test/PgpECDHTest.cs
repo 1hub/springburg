@@ -194,12 +194,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
             cPk.AddMethod(ecdhKeyPair.PublicKey);
             PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
-            using (var cOut = cPk.Open(new UncloseableStream(cbOut)))
+            var writer = new PacketWriter(cbOut);
+            using (var cOut = cPk.Open(writer))
             using (var pOut = lData.Open(cOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
                 pOut.Write(text);
 
             // Read it back
-            PgpObjectFactory pgpF = new PgpObjectFactory(cbOut.ToArray());
+            cbOut.Position = 0;
+            PgpObjectFactory pgpF = new PgpObjectFactory(cbOut);
             PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
             PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
             Stream clear = encP.GetDataStream(ecdhKeyPair.PrivateKey);
@@ -223,12 +225,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
             cPk.AddMethod(publicKeyRing.GetPublicKey(0x6c37367cd2f455c5));
             PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
-            using (var cOut = cPk.Open(new UncloseableStream(cbOut)))
+            var writer = new PacketWriter(cbOut);
+            using (var cOut = cPk.Open(writer))
             using (var pOut = lData.Open(cOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
                 pOut.Write(text);
 
             // Read it back
-            PgpObjectFactory pgpF = new PgpObjectFactory(cbOut.ToArray());
+            cbOut.Position = 0;
+            PgpObjectFactory pgpF = new PgpObjectFactory(cbOut);
             PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
             PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
             Stream clear = encP.GetDataStream(secretKey.ExtractPrivateKey("test".ToCharArray()));
