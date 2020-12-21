@@ -818,13 +818,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpLiteralData p2 = (PgpLiteralData)pgpFact.NextPgpObject();
             Stream dIn = p2.GetInputStream();
 
-            ops.InitVerify(pubKey);
-
-            int ch;
-            while ((ch = dIn.ReadByte()) >= 0)
-            {
-                ops.Update((byte)ch);
-            }
+            var signatureCalculator = ops.GetSignatureCalculator(pubKey);
+            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
 
             PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
             PgpSignature sig = p3[0];
@@ -843,18 +838,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 Fail("key id mismatch in signature");
             }
 
-            if (!ops.Verify(sig))
+            if (!sig.Verify(signatureCalculator))
             {
                 Fail("Failed generated signature check - " + hashAlgorithm);
             }
 
             sig.InitVerify(pubKey);
 
-            for (int i = 0; i != original.Length; i++)
-            {
-                sig.Update(original[i]);
-            }
-
+            sig.Update(original);
             sig.Update(original);
 
             if (!sig.Verify())

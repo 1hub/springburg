@@ -291,7 +291,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
             PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
             DateTime testDateTime = new DateTime(1973, 7, 27);
-            int ch;
 
             using (var writer = new PacketWriter(bOut))
             using (var compressedWriter = cGen.Open(writer))
@@ -313,20 +312,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             Assert.AreEqual(testDateTime, p2.ModificationTime);
 
             Stream dIn = p2.GetInputStream();
-
-            ops.InitVerify(pgpPubKey);
-
-            while ((ch = dIn.ReadByte()) >= 0)
-            {
-                ops.Update((byte)ch);
-            }
+            var signatureCalculator = ops.GetSignatureCalculator(pgpPubKey);
+            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
 
             PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-
-            if (!ops.Verify(p3[0]))
-            {
-                Fail("Failed generated signature check");
-            }
+            Assert.True(p3[0].Verify(signatureCalculator), "Failed generated signature check");
         }
 
         public override void PerformTest()
@@ -361,20 +351,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             Stream dIn = p2.GetInputStream();
 
-            ops.InitVerify(pubKey);
-
-            int ch;
-            while ((ch = dIn.ReadByte()) >= 0)
-            {
-                ops.Update((byte)ch);
-            }
+            var signatureCalculator = ops.GetSignatureCalculator(pubKey);
+            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
 
             PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-
-            if (!ops.Verify(p3[0]))
-            {
-                Fail("Failed signature check");
-            }
+            Assert.True(p3[0].Verify(signatureCalculator), "Failed generated signature check");
 
             //
             // signature generation
@@ -421,19 +402,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             dIn = p2.GetInputStream();
 
-            ops.InitVerify(pubKey);
-
-            while ((ch = dIn.ReadByte()) >= 0)
-            {
-                ops.Update((byte)ch);
-            }
+            signatureCalculator = ops.GetSignatureCalculator(pubKey);
+            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
 
             p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-
-            if (!ops.Verify(p3[0]))
-            {
-                Fail("Failed generated signature check");
-            }
+            Assert.True(p3[0].Verify(signatureCalculator), "Failed generated signature check");
 
             //
             // Read the public key with user attributes

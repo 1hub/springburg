@@ -656,20 +656,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             Stream dIn = p2.GetInputStream();
 
-            ops.InitVerify(pgpPub.GetPublicKey(ops.KeyId));
+            var signatureCalculator = ops.GetSignatureCalculator(pgpPub.GetPublicKey(ops.KeyId));
+            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
 
-            int ch;
-            while ((ch = dIn.ReadByte()) >= 0)
-            {
-                ops.Update((byte)ch);
-            }
-
-            PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-
-            if (!ops.Verify(p3[0]))
-            {
-                Fail("Failed signature check");
-            }
+            var p3 = (PgpSignatureList)pgpFact.NextPgpObject();
+            Assert.True(p3[0].Verify(signatureCalculator), "Failed generated signature check");
 
             //
             // encrypted message - read subkey
@@ -957,21 +948,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             dIn = p2.GetInputStream();
 
-            ops.InitVerify(secretKey.PublicKey);
-
-            // TODO Need a stream object to automatically call Update?
-            // (via ISigner implementation of PgpSignatureGenerator)
-            while ((ch = dIn.ReadByte()) >= 0)
-            {
-                ops.Update((byte)ch);
-            }
+            signatureCalculator = ops.GetSignatureCalculator(secretKey.PublicKey);
+            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
 
             p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-
-            if (!ops.Verify(p3[0]))
-            {
-                Fail("Failed generated signature check");
-            }
+            Assert.True(p3[0].Verify(signatureCalculator), "Failed generated signature check");
 
             //
             // signature generation - version 3
@@ -1011,23 +992,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             dIn = p2.GetInputStream();
 
-            ops.InitVerify(secretKey.PublicKey);
-
-            // TODO Need a stream object to automatically call Update?
-            // (via ISigner implementation of PgpSignatureGenerator)
-            while ((ch = dIn.ReadByte()) >= 0)
-            {
-                ops.Update((byte)ch);
-            }
+            signatureCalculator = ops.GetSignatureCalculator(secretKey.PublicKey);
+            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
 
             p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-
             Assert.AreEqual(3, p3[0].Version);
-
-            if (!ops.Verify(p3[0]))
-            {
-                Fail("Failed v3 generated signature check");
-            }
+            Assert.True(p3[0].Verify(signatureCalculator), "Failed generated signature check");
 
             //
             // extract PGP 8 private key
@@ -1092,22 +1062,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             Stream dIn = p2.GetInputStream();
 
-            ops.InitVerify(pubKey);
+            var signatureCalculator = ops.GetSignatureCalculator(pubKey);
+            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
 
-            // TODO Need a stream object to automatically call Update?
-            // (via ISigner implementation of PgpSignatureGenerator)
-            int ch;
-            while ((ch = dIn.ReadByte()) >= 0)
-            {
-                ops.Update((byte)ch);
-            }
-
-            PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-
-            if (!ops.Verify(p3[0]))
-            {
-                Fail("Failed generated signature check - " + hashAlgorithm);
-            }
+            var p3 = (PgpSignatureList)pgpFact.NextPgpObject();
+            Assert.True(p3[0].Verify(signatureCalculator), "Failed generated signature check - " + hashAlgorithm);
         }
 
         private class UncloseableMemoryStream

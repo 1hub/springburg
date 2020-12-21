@@ -7,9 +7,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     {
         private readonly OnePassSignaturePacket sigPack;
 
-        private PgpSignatureHelper helper;
-        private PgpPublicKey publicKey;
-
         internal PgpOnePassSignature(OnePassSignaturePacket sigPack)
         {
             this.sigPack = sigPack;
@@ -23,21 +20,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public PublicKeyAlgorithmTag KeyAlgorithm => sigPack.KeyAlgorithm;
 
-        public void InitVerify(PgpPublicKey publicKey)
+        public PgpSignatureCalculator GetSignatureCalculator(PgpPublicKey publicKey)
         {
-            this.helper = new PgpSignatureHelper(SignatureType, HashAlgorithm);
-            this.publicKey = publicKey;
+            return new PgpSignatureCalculator(new PgpSignatureHelper(SignatureType, HashAlgorithm), publicKey);
         }
-
-
-        public void Update(byte b) => this.helper.Update(b);
-
-        public void Update(params byte[] bytes) => this.helper.Update(bytes);
-
-        public void Update(byte[] bytes, int off, int length) => this.helper.Update(bytes, off, length);
-
-        /// <summary>Verify the calculated signature against the passed in PgpSignature.</summary>
-        public bool Verify(PgpSignature pgpSig) => helper.Verify(pgpSig.GetDecodedSignature(), pgpSig.GetSignatureTrailer(), this.publicKey.GetKey());
 
         public override void Encode(IPacketWriter writer)
         {

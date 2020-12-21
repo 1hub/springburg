@@ -118,6 +118,28 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
+        internal void UpdateWithIdData(int header, byte[] idBytes)
+        {
+            this.Update(
+                (byte)header,
+                (byte)(idBytes.Length >> 24),
+                (byte)(idBytes.Length >> 16),
+                (byte)(idBytes.Length >> 8),
+                (byte)(idBytes.Length));
+            this.Update(idBytes);
+        }
+
+        internal void UpdateWithPublicKey(PgpPublicKey key)
+        {
+            byte[] keyBytes = key.publicPk.GetEncodedContents();
+
+            this.Update(
+                (byte)0x99,
+                (byte)(keyBytes.Length >> 8),
+                (byte)(keyBytes.Length));
+            this.Update(keyBytes);
+        }
+
         public bool Verify(MPInteger[] signature, byte[] trailer, AsymmetricAlgorithm key)
         {
             sig.TransformFinalBlock(trailer, 0, trailer.Length);

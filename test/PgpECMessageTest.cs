@@ -128,17 +128,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             Stream dIn = lData .GetInputStream();
 
-            ops.InitVerify(publicKeyRing.GetPublicKey(ops.KeyId));
-
-            int ch;
-            while ((ch = dIn.ReadByte()) >= 0)
-            {
-                ops.Update((byte)ch);
-            }
+            var signatureCalculator = ops.GetSignatureCalculator(publicKeyRing.GetPublicKey(ops.KeyId));
+            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
 
             PgpSignatureList p3 = (PgpSignatureList)compFact.NextPgpObject();
-
-            Assert.IsTrue(ops.Verify(p3[0]), "Failed signature check");
+            Assert.IsTrue(p3[0].Verify(signatureCalculator), "Failed signature check");
         }
     }
 }

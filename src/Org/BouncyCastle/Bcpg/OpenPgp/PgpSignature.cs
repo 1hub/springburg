@@ -1,8 +1,5 @@
 using System;
-using System.Formats.Asn1;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
@@ -41,7 +38,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         internal PgpSignature(SignaturePacket sigPacket, TrustPacket trustPacket)
         {
             if (sigPacket == null)
-                throw new ArgumentNullException("sigPacket");
+                throw new ArgumentNullException(nameof(sigPacket));
 
             this.sigPck = sigPacket;
             this.trustPck = trustPacket;
@@ -66,38 +63,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             this.publicKey = publicKey;
         }
 
-        public void Update(byte b) => this.helper.Update(b);
-
         public void Update(params byte[] bytes) => this.helper.Update(bytes);
 
         public void Update(byte[] bytes, int off, int length) => this.helper.Update(bytes, off, length);
 
+        public bool Verify(PgpSignatureCalculator signatureCalculator) => signatureCalculator.helper.Verify(sigPck.GetSignature(), GetSignatureTrailer(), signatureCalculator.publicKey.GetKey());
+
         public bool Verify() => helper.Verify(sigPck.GetSignature(), GetSignatureTrailer(), this.publicKey.GetKey());
-
-        private void UpdateWithIdData(
-            int header,
-            byte[] idBytes)
-        {
-            this.Update(
-                (byte)header,
-                (byte)(idBytes.Length >> 24),
-                (byte)(idBytes.Length >> 16),
-                (byte)(idBytes.Length >> 8),
-                (byte)(idBytes.Length));
-            this.Update(idBytes);
-        }
-
-        private void UpdateWithPublicKey(
-            PgpPublicKey key)
-        {
-            byte[] keyBytes = GetEncodedPublicKey(key);
-
-            this.Update(
-                (byte)0x99,
-                (byte)(keyBytes.Length >> 8),
-                (byte)(keyBytes.Length));
-            this.Update(keyBytes);
-        }
 
         /// <summary>
         /// Verify the signature as certifying the passed in public key as associated
@@ -110,7 +82,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpUserAttributeSubpacketVector userAttributes,
             PgpPublicKey key)
         {
-            UpdateWithPublicKey(key);
+            this.helper.UpdateWithPublicKey(key);
 
             //
             // hash in the userAttributes
@@ -122,7 +94,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 {
                     packet.Encode(bOut);
                 }
-                UpdateWithIdData(0xd1, bOut.ToArray());
+                this.helper.UpdateWithIdData(0xd1, bOut.ToArray());
             }
             catch (IOException e)
             {
@@ -143,12 +115,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             string id,
             PgpPublicKey key)
         {
-            UpdateWithPublicKey(key);
+            this.helper.UpdateWithPublicKey(key);
 
             //
             // hash in the id
             //
-            UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
+            this.helper.UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
 
             return this.Verify();
         }
@@ -161,8 +133,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpPublicKey masterKey,
             PgpPublicKey pubKey)
         {
-            UpdateWithPublicKey(masterKey);
-            UpdateWithPublicKey(pubKey);
+            this.helper.UpdateWithPublicKey(masterKey);
+            this.helper.UpdateWithPublicKey(pubKey);
 
             return this.Verify();
         }
@@ -178,7 +150,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 throw new InvalidOperationException("signature is not a key signature");
             }
 
-            UpdateWithPublicKey(pubKey);
+            this.helper.UpdateWithPublicKey(pubKey);
 
             return this.Verify();
         }
@@ -231,19 +203,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             if (trustPck != null)
             {
                 outStream.WritePacket(trustPck);
-            }
-        }
-
-        private byte[] GetEncodedPublicKey(
-            PgpPublicKey pubKey)
-        {
-            try
-            {
-                return pubKey.publicPk.GetEncodedContents();
-            }
-            catch (IOException e)
-            {
-                throw new PgpException("exception preparing key.", e);
             }
         }
 

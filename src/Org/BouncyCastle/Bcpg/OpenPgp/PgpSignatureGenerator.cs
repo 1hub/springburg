@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Org.BouncyCastle.Bcpg.Sig;
@@ -9,12 +11,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     /// <summary>Generator for PGP signatures.</summary>
     public class PgpSignatureGenerator
     {
-        private static readonly SignatureSubpacket[] EmptySignatureSubpackets = new SignatureSubpacket[0];
-
         private HashAlgorithmTag hashAlgorithm;
 
-        private SignatureSubpacket[] unhashed = EmptySignatureSubpackets;
-        private SignatureSubpacket[] hashed = EmptySignatureSubpackets;
+        private SignatureSubpacket[] unhashed = Array.Empty<SignatureSubpacket>();
+        private SignatureSubpacket[] hashed = Array.Empty<SignatureSubpacket>();
 
         private PgpSignatureHelper helper;
         private PgpPrivateKey privateKey;
@@ -34,52 +34,38 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             this.privateKey = privateKey;
         }
 
-        private void Update(byte[] bytes) => this.helper.Update(bytes);
-
-        public void SetHashedSubpackets(
-            PgpSignatureSubpacketVector hashedPackets)
+        public void SetHashedSubpackets(PgpSignatureSubpacketVector hashedPackets)
         {
             if (version == 3)
                 throw new PgpException("Version 3 signatures don't support subpackets");
 
-            hashed = hashedPackets == null
-                ? EmptySignatureSubpackets
-                : hashedPackets.ToSubpacketArray();
+            hashed = hashedPackets == null ? Array.Empty<SignatureSubpacket>() : hashedPackets.ToSubpacketArray();
         }
 
-        public void SetUnhashedSubpackets(
-            PgpSignatureSubpacketVector unhashedPackets)
+        public void SetUnhashedSubpackets(PgpSignatureSubpacketVector unhashedPackets)
         {
             if (version == 3)
                 throw new PgpException("Version 3 signatures don't support subpackets");
 
-            unhashed = unhashedPackets == null
-                ? EmptySignatureSubpackets
-                : unhashedPackets.ToSubpacketArray();
-        }
-
-        /// <summary>Return the one pass header associated with the current signature.</summary>
-        public PgpOnePassSignature GenerateOnePassVersion(bool isNested)
-        {
-            return new PgpOnePassSignature(new OnePassSignaturePacket(helper.SignatureType, hashAlgorithm, privateKey.PublicKeyPacket.Algorithm, privateKey.KeyId, isNested));
+            unhashed = unhashedPackets == null ? Array.Empty<SignatureSubpacket>() : unhashedPackets.ToSubpacketArray();
         }
 
         /// <summary>Return a signature object containing the current signature state.</summary>
-        public PgpSignature Generate()
+        private PgpSignature Generate()
         {
             if (version >= 4)
             {
                 SignatureSubpacket[] hPkts = hashed, unhPkts = unhashed;
 
-                if (!packetPresent(hashed, SignatureSubpacketTag.CreationTime))
+                if (!hashed.Any(sp => sp.SubpacketType == SignatureSubpacketTag.CreationTime))
                 {
-                    hPkts = insertSubpacket(hPkts, new SignatureCreationTime(false, DateTime.UtcNow));
+                    hPkts = hPkts.Append(new SignatureCreationTime(false, DateTime.UtcNow)).ToArray();
                 }
 
-                if (!packetPresent(hashed, SignatureSubpacketTag.IssuerKeyId)
-                    && !packetPresent(unhashed, SignatureSubpacketTag.IssuerKeyId))
+                if (!hashed.Any(sp => sp.SubpacketType == SignatureSubpacketTag.IssuerKeyId) &&
+                    !unhashed.Any(sp => sp.SubpacketType == SignatureSubpacketTag.IssuerKeyId))
                 {
-                    unhPkts = insertSubpacket(unhPkts, new IssuerKeyId(false, privateKey.KeyId));
+                    unhPkts = unhPkts.Append(new IssuerKeyId(false, privateKey.KeyId)).ToArray();
                 }
 
                 int version = 4;
@@ -149,17 +135,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <param name="id">The ID we are certifying against the public key.</param>
         /// <param name="pubKey">The key we are certifying against the ID.</param>
         /// <returns>The certification.</returns>
-        public PgpSignature GenerateCertification(
-            string id,
-            PgpPublicKey pubKey)
+        public PgpSignature GenerateCertification(string id, PgpPublicKey pubKey)
         {
-            UpdateWithPublicKey(pubKey);
-
-            //
-            // hash in the id
-            //
-            UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
-
+            this.helper.UpdateWithPublicKey(pubKey);
+            this.helper.UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
             return Generate();
         }
 
@@ -171,7 +150,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpUserAttributeSubpacketVector userAttributes,
             PgpPublicKey pubKey)
         {
-            UpdateWithPublicKey(pubKey);
+            this.helper.UpdateWithPublicKey(pubKey);
 
             //
             // hash in the attributes
@@ -183,7 +162,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 {
                     packet.Encode(bOut);
                 }
-                UpdateWithIdData(0xd1, bOut.ToArray());
+                this.helper.UpdateWithIdData(0xd1, bOut.ToArray());
             }
             catch (IOException e)
             {
@@ -201,9 +180,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpPublicKey masterKey,
             PgpPublicKey pubKey)
         {
-            UpdateWithPublicKey(masterKey);
-            UpdateWithPublicKey(pubKey);
-
+            this.helper.UpdateWithPublicKey(masterKey);
+            this.helper.UpdateWithPublicKey(pubKey);
             return Generate();
         }
 
@@ -212,79 +190,21 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <returns>The certification.</returns>
         public PgpSignature GenerateCertification(PgpPublicKey pubKey)
         {
-            UpdateWithPublicKey(pubKey);
-
+            this.helper.UpdateWithPublicKey(pubKey);
             return Generate();
-        }
-
-        private byte[] GetEncodedPublicKey(PgpPublicKey pubKey)
-        {
-            try
-            {
-                return pubKey.publicPk.GetEncodedContents();
-            }
-            catch (IOException e)
-            {
-                throw new PgpException("exception preparing key.", e);
-            }
-        }
-
-        private bool packetPresent(
-            SignatureSubpacket[] packets,
-            SignatureSubpacketTag type)
-        {
-            for (int i = 0; i != packets.Length; i++)
-            {
-                if (packets[i].SubpacketType == type)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private SignatureSubpacket[] insertSubpacket(
-            SignatureSubpacket[] packets,
-            SignatureSubpacket subpacket)
-        {
-            SignatureSubpacket[] tmp = new SignatureSubpacket[packets.Length + 1];
-            tmp[0] = subpacket;
-            packets.CopyTo(tmp, 1);
-            return tmp;
-        }
-
-        private void UpdateWithIdData(
-            int header,
-            byte[] idBytes)
-        {
-            this.Update(new[] {
-                (byte)header,
-                (byte)(idBytes.Length >> 24),
-                (byte)(idBytes.Length >> 16),
-                (byte)(idBytes.Length >> 8),
-                (byte)idBytes.Length });
-            this.Update(idBytes);
-        }
-
-        private void UpdateWithPublicKey(
-            PgpPublicKey key)
-        {
-            byte[] keyBytes = GetEncodedPublicKey(key);
-
-            this.Update(new[] {
-                (byte)0x99,
-                (byte)(keyBytes.Length >> 8),
-                (byte)keyBytes.Length });
-            this.Update(keyBytes);
         }
 
         public IPacketWriter Open(IPacketWriter writer, bool generateOnePass = true, bool isNested = false)
         {
             if (generateOnePass)
-                GenerateOnePassVersion(isNested).Encode(writer);
+            {
+                var onePassPacket = new OnePassSignaturePacket(helper.SignatureType, hashAlgorithm, privateKey.PublicKeyPacket.Algorithm, privateKey.KeyId, isNested);
+                writer.WritePacket(onePassPacket);
+            }
             if (writer is ArmoredPacketWriter)
+            {
                 helper.IgnoreTrailingWhitespace = true;
+            }
             return new SigningPacketWriter(writer, helper, this);
         }
 
@@ -293,6 +213,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             IPacketWriter innerWriter;
             ICryptoTransform hashTransform;
             PgpSignatureGenerator generator;
+            bool literalDataWritten;
 
             public SigningPacketWriter(IPacketWriter innerWriter, ICryptoTransform hashTransform, PgpSignatureGenerator generator)
             {
@@ -309,10 +230,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             public void Dispose()
             {
-                // TODO: Assert that literal data have been written
+                Debug.Assert(literalDataWritten);
                 generator.Generate().Encode(innerWriter);
                 // DO NOT DISPOSE THE INNER WRITER
-                //innerWriter.Dispose();
             }
 
             public Stream GetPacketStream(InputStreamPacket packet)
@@ -321,10 +241,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 {
                     // TODO: Version 5 signatures
                     var packetStream = innerWriter.GetPacketStream(packet);
+                    literalDataWritten = true;
                     return new CryptoStream(packetStream, hashTransform, CryptoStreamMode.Write);
                 }
                 else
                 {
+                    // FIXME: Better exception
                     throw new NotSupportedException();
                 }
             }

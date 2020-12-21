@@ -112,8 +112,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 			byte[]					dataBytes = Encoding.ASCII.GetBytes(data);
 			MemoryStream			bOut = new MemoryStream();
 			PgpSignatureGenerator	sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test".ToCharArray()), digest);
-			int ch;
-
 			PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
 			DateTime testDate = new DateTime((DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond) * TimeSpan.TicksPerSecond);
 
@@ -139,20 +137,16 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
 			Stream dIn = p2.GetInputStream();
 
-			ops.InitVerify(pubRing.GetPublicKey());
-
-			while ((ch = dIn.ReadByte()) >= 0)
-			{
-				ops.Update((byte)ch);
-			}
-
+			var signatureCalculator = ops.GetSignatureCalculator(pubRing.GetPublicKey());
+			signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
+			
 			PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
 			PgpSignature sig = p3[0];
 
 			Assert.AreEqual(digest, sig.HashAlgorithm);
 			Assert.AreEqual(PublicKeyAlgorithmTag.Dsa, sig.KeyAlgorithm);
 
-			Assert.IsTrue(ops.Verify(sig));
+			Assert.IsTrue(sig.Verify(signatureCalculator));
 		}
 
 		private void doSigVerifyTest(
@@ -173,17 +167,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
 			Stream dIn = p2.GetInputStream();
 
-			ops.InitVerify(publicKey.GetPublicKey());
-
-			int ch;
-			while ((ch = dIn.ReadByte()) >= 0)
-			{
-				ops.Update((byte)ch);
-			}
+			var signatureCalculator = ops.GetSignatureCalculator(publicKey.GetPublicKey());
+			signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
 
 			PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-
-			Assert.IsTrue(ops.Verify(p3[0]));
+			Assert.IsTrue(p3[0].Verify(signatureCalculator));
 		}
 
 		private PgpObjectFactory loadSig(
