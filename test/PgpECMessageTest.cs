@@ -62,21 +62,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [Test]
         public void DoTestMasterKey()
         {
-            PgpSecretKey key = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeyMaster, false),
-                "test".ToCharArray());
-
-            byte[] msg = Encoding.UTF8.GetBytes("hello world!");
-
-            PgpSignatureGenerator signGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha256);
-            signGen.InitSign(PgpSignature.BinaryDocument, key.ExtractPrivateKey(null));
-            signGen.Update(msg);
-            PgpSignature sig = signGen.Generate();
-
+            PgpSecretKey key = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeyMaster, false), "test".ToCharArray());
             PgpPublicKey publicKey = new PgpPublicKeyRing(testPubKey).GetPublicKey();
-            sig.InitVerify(publicKey);
-            sig.Update(msg);
-
-            Assert.IsTrue(sig.Verify(), "signature failed to verify!");
+            KeyTestHelper.SignAndVerifyTestMessage(key.ExtractPrivateKey(null), publicKey);
         }
 
         [Test]

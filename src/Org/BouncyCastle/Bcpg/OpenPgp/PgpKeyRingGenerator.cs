@@ -278,12 +278,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             try
             {
-                PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
+                PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, masterKey.PrivateKey, HashAlgorithmTag.Sha1);
 
                 //
                 // Generate the certification
                 //
-                sGen.InitSign(PgpSignature.SubkeyBinding, masterKey.PrivateKey);
 
                 sGen.SetHashedSubpackets(hashedPackets);
                 sGen.SetUnhashedSubpackets(unhashedPackets);
@@ -322,13 +321,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             try
             {
-                PgpSignatureGenerator sGen = new PgpSignatureGenerator(hashAlgorithm);
+                PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, masterKey.PrivateKey, hashAlgorithm);
 
-                //
                 // Generate the certification
-                //
-                sGen.InitSign(PgpSignature.SubkeyBinding, masterKey.PrivateKey);
-
                 sGen.SetHashedSubpackets(hashedPackets);
                 sGen.SetUnhashedSubpackets(unhashedPackets);
 

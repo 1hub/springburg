@@ -15,7 +15,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private CryptoStream cOut;
         private SymmetricAlgorithm c;
         private bool withIntegrityPacket;
-        private bool oldFormat;
         private CryptoStream digestOut;
         private HashAlgorithm digest;
 
@@ -140,15 +139,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Base constructor.</summary>
         /// <param name="encAlgorithm">The symmetric algorithm to use.</param>
         /// <param name="withIntegrityPacket">Use integrity packet.</param>
-        /// <param name="oldFormat">PGP 2.6.x compatibility required.</param>
         public PgpEncryptedDataGenerator(
             SymmetricKeyAlgorithmTag encAlgorithm,
-            bool withIntegrityPacket = false,
-            bool oldFormat = false)
+            bool withIntegrityPacket = false)
         {
             this.defAlgorithm = encAlgorithm;
             this.withIntegrityPacket = withIntegrityPacket;
-            this.oldFormat = oldFormat;
         }
 
         /// <summary>
@@ -243,20 +239,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>
-        /// <p>
-        /// If buffer is non null stream assumed to be partial, otherwise the length will be used
-        /// to output a fixed length packet.
-        /// </p>
-        /// <p>
-        /// The stream created can be closed off by either calling Close()
-        /// on the stream or Close() on the generator. Closing the returned
-        /// stream does not close off the Stream parameter <c>outStr</c>.
-        /// </p>
+        /// Return an output stream which will encrypt the data as it is written to it.
         /// </summary>
-        private Stream Open(
-            PacketWriter writer,
-            long length,
-            byte[] buffer)
+        public IPacketWriter Open(IPacketWriter writer)
+        {
+            return writer.CreateNestedWriter(OpenStream(writer));
+        }
+
+        public Stream OpenStream(IPacketWriter writer)
         {
             if (writer == null)
                 throw new ArgumentNullException(nameof(writer));
@@ -301,32 +291,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 // TODO Confirm the IV should be all zero bytes (not inLineIv - see below)
                 c.IV = new byte[c.BlockSize / 8];
 
-                if (buffer == null)
+                if (withIntegrityPacket)
                 {
-                    //
-                    // we have to Add block size + 2 for the Generated IV and + 1 + 22 if integrity protected
-                    //
-                    if (withIntegrityPacket)
-                    {
-                        pOut = writer.GetPacketStream(PacketTag.SymmetricEncryptedIntegrityProtected, length + (c.BlockSize / 8) + 2 + 1 + 22);
-                        pOut.WriteByte(1);        // version number
-                    }
-                    else
-                    {
-                        pOut = writer.GetPacketStream(PacketTag.SymmetricKeyEncrypted, length + (c.BlockSize / 8) + 2);
-                    }
+                    pOut = writer.GetPacketStream(new SymmetricEncIntegrityPacket());
                 }
                 else
                 {
-                    if (withIntegrityPacket)
-                    {
-                        pOut = writer.GetPacketStream(PacketTag.SymmetricEncryptedIntegrityProtected, buffer);
-                        pOut.WriteByte(1);        // version number
-                    }
-                    else
-                    {
-                        pOut = writer.GetPacketStream(PacketTag.SymmetricKeyEncrypted, buffer);
-                    }
+                    pOut = writer.GetPacketStream(new SymmetricEncDataPacket());
                 }
 
                 int blockSize = c.BlockSize / 8;
@@ -363,35 +334,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        /// <summary>
-        /// Return an output stream which will encrypt the data as it is written to it.
-        /// </summary>
-        public Stream Open(Stream outputStream, long length)
+        public IPacketWriter Open(Stream outputStream)
         {
-            return Open(new PacketWriter(outputStream, oldFormat), length, null);
+            return Open(new PacketWriter(outputStream));
         }
 
-        public Stream Open(PacketWriter writer, long length)
+        public Stream OpenStream(Stream outputStream)
         {
-            return Open(writer, length, null);
-        }
-
-        /// <summary>
-        /// Return an output stream which will encrypt the data as it is written to it.
-        /// The stream will be written out in chunks according to the size of the passed in buffer.
-        /// </summary>
-        /// <remarks>
-        /// If the buffer is not a power of 2 in length only the largest power of 2
-        /// bytes worth of the buffer will be used.
-        /// </remarks>
-        public Stream Open(Stream outputStream, byte[] buffer)
-        {
-            return Open(new PacketWriter(outputStream, oldFormat), 0, buffer);
-        }
-
-        public Stream Open(PacketWriter writer, byte[] buffer)
-        {
-            return Open(writer, 0, buffer);
+            return OpenStream(new PacketWriter(outputStream));
         }
 
         void IStreamGenerator.Close()

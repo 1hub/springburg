@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using Org.BouncyCastle.Bcpg.Sig;
 
@@ -18,28 +19,29 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private PgpSignatureHelper helper;
         private PgpPrivateKey privateKey;
 
-        /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
-        public PgpSignatureGenerator(HashAlgorithmTag hashAlgorithm)
-        {
-            this.hashAlgorithm = hashAlgorithm;
-        }
+        private int version;
 
-        /// <summary>Initialise the generator for signing.</summary>
-        public void InitSign(int signatureType, PgpPrivateKey privateKey)
+        /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
+        public PgpSignatureGenerator(int signatureType, PgpPrivateKey privateKey, HashAlgorithmTag hashAlgorithm, int version = 4)
         {
+            // TODO: Add version 5 support
+            if (version < 3 || version > 4)
+                throw new ArgumentOutOfRangeException(nameof(version));
+
+            this.version = version;
+            this.hashAlgorithm = hashAlgorithm;
             this.helper = new PgpSignatureHelper(signatureType, hashAlgorithm);
             this.privateKey = privateKey;
         }
 
-        public void Update(byte b) => this.helper.Update(b);
-
-        public void Update(params byte[] bytes) => this.helper.Update(bytes);
-
-        public void Update(byte[] bytes, int off, int length) => this.helper.Update(bytes, off, length);
+        private void Update(byte[] bytes) => this.helper.Update(bytes);
 
         public void SetHashedSubpackets(
             PgpSignatureSubpacketVector hashedPackets)
         {
+            if (version == 3)
+                throw new PgpException("Version 3 signatures don't support subpackets");
+
             hashed = hashedPackets == null
                 ? EmptySignatureSubpackets
                 : hashedPackets.ToSubpacketArray();
@@ -48,6 +50,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public void SetUnhashedSubpackets(
             PgpSignatureSubpacketVector unhashedPackets)
         {
+            if (version == 3)
+                throw new PgpException("Version 3 signatures don't support subpackets");
+
             unhashed = unhashedPackets == null
                 ? EmptySignatureSubpackets
                 : unhashedPackets.ToSubpacketArray();
@@ -62,62 +67,82 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Return a signature object containing the current signature state.</summary>
         public PgpSignature Generate()
         {
-            SignatureSubpacket[] hPkts = hashed, unhPkts = unhashed;
-
-            if (!packetPresent(hashed, SignatureSubpacketTag.CreationTime))
+            if (version >= 4)
             {
-                hPkts = insertSubpacket(hPkts, new SignatureCreationTime(false, DateTime.UtcNow));
-            }
+                SignatureSubpacket[] hPkts = hashed, unhPkts = unhashed;
 
-            if (!packetPresent(hashed, SignatureSubpacketTag.IssuerKeyId)
-                && !packetPresent(unhashed, SignatureSubpacketTag.IssuerKeyId))
-            {
-                unhPkts = insertSubpacket(unhPkts, new IssuerKeyId(false, privateKey.KeyId));
-            }
-
-            int version = 4;
-            byte[] hData;
-
-            try
-            {
-                MemoryStream hOut = new MemoryStream();
-
-                for (int i = 0; i != hPkts.Length; i++)
+                if (!packetPresent(hashed, SignatureSubpacketTag.CreationTime))
                 {
-                    hPkts[i].Encode(hOut);
+                    hPkts = insertSubpacket(hPkts, new SignatureCreationTime(false, DateTime.UtcNow));
                 }
 
-                byte[] data = hOut.ToArray();
+                if (!packetPresent(hashed, SignatureSubpacketTag.IssuerKeyId)
+                    && !packetPresent(unhashed, SignatureSubpacketTag.IssuerKeyId))
+                {
+                    unhPkts = insertSubpacket(unhPkts, new IssuerKeyId(false, privateKey.KeyId));
+                }
 
-                MemoryStream sOut = new MemoryStream(data.Length + 6);
-                sOut.WriteByte((byte)version);
-                sOut.WriteByte((byte)helper.SignatureType);
-                sOut.WriteByte((byte)privateKey.PublicKeyPacket.Algorithm);
-                sOut.WriteByte((byte)hashAlgorithm);
-                sOut.WriteByte((byte)(data.Length >> 8));
-                sOut.WriteByte((byte)data.Length);
-                sOut.Write(data, 0, data.Length);
+                int version = 4;
+                byte[] hData;
 
-                int hDataLength = (int)sOut.Length;
-                sOut.WriteByte((byte)version);
-                sOut.WriteByte(0xff);
-                sOut.WriteByte((byte)(hDataLength >> 24));
-                sOut.WriteByte((byte)(hDataLength >> 16));
-                sOut.WriteByte((byte)(hDataLength >> 8));
-                sOut.WriteByte((byte)hDataLength);
+                try
+                {
+                    MemoryStream hOut = new MemoryStream();
 
-                hData = sOut.ToArray();
+                    for (int i = 0; i != hPkts.Length; i++)
+                    {
+                        hPkts[i].Encode(hOut);
+                    }
+
+                    byte[] data = hOut.ToArray();
+
+                    MemoryStream sOut = new MemoryStream(data.Length + 6);
+                    sOut.WriteByte((byte)version);
+                    sOut.WriteByte((byte)helper.SignatureType);
+                    sOut.WriteByte((byte)privateKey.PublicKeyPacket.Algorithm);
+                    sOut.WriteByte((byte)hashAlgorithm);
+                    sOut.WriteByte((byte)(data.Length >> 8));
+                    sOut.WriteByte((byte)data.Length);
+                    sOut.Write(data, 0, data.Length);
+
+                    int hDataLength = (int)sOut.Length;
+                    sOut.WriteByte((byte)version);
+                    sOut.WriteByte(0xff);
+                    sOut.WriteByte((byte)(hDataLength >> 24));
+                    sOut.WriteByte((byte)(hDataLength >> 16));
+                    sOut.WriteByte((byte)(hDataLength >> 8));
+                    sOut.WriteByte((byte)hDataLength);
+
+                    hData = sOut.ToArray();
+                }
+                catch (IOException e)
+                {
+                    throw new PgpException("exception encoding hashed data.", e);
+                }
+
+                var signature = helper.Sign(hData, privateKey.Key);
+
+                return new PgpSignature(
+                    new SignaturePacket(helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
+                        hashAlgorithm, hPkts, unhPkts, signature.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
             }
-            catch (IOException e)
+            else
             {
-                throw new PgpException("exception encoding hashed data.", e);
+                var creationTime = DateTimeOffset.UtcNow;
+                long seconds = creationTime.ToUnixTimeSeconds();
+
+                byte[] hData = new byte[]
+                {
+                    (byte)helper.SignatureType,
+                    (byte)(seconds >> 24),
+                    (byte)(seconds >> 16),
+                    (byte)(seconds >> 8),
+                    (byte)seconds
+                };
+
+                var signature = helper.Sign(hData, privateKey.Key);
+                return new PgpSignature(new SignaturePacket(3, helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm, hashAlgorithm, creationTime.UtcDateTime, signature.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
             }
-
-            var signature = helper.Sign(hData, privateKey.Key);
-
-            return new PgpSignature(
-                new SignaturePacket(helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
-                    hashAlgorithm, hPkts, unhPkts, signature.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
         }
 
         /// <summary>Generate a certification for the passed in ID and key.</summary>
@@ -233,12 +258,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             int header,
             byte[] idBytes)
         {
-            this.Update(
+            this.Update(new[] {
                 (byte)header,
                 (byte)(idBytes.Length >> 24),
                 (byte)(idBytes.Length >> 16),
                 (byte)(idBytes.Length >> 8),
-                (byte)(idBytes.Length));
+                (byte)idBytes.Length });
             this.Update(idBytes);
         }
 
@@ -247,11 +272,64 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             byte[] keyBytes = GetEncodedPublicKey(key);
 
-            this.Update(
+            this.Update(new[] {
                 (byte)0x99,
                 (byte)(keyBytes.Length >> 8),
-                (byte)(keyBytes.Length));
+                (byte)keyBytes.Length });
             this.Update(keyBytes);
+        }
+
+        public IPacketWriter Open(IPacketWriter writer, bool generateOnePass = true, bool isNested = false)
+        {
+            if (generateOnePass)
+                GenerateOnePassVersion(isNested).Encode(writer);
+            if (writer is ArmoredPacketWriter)
+                helper.IgnoreTrailingWhitespace = true;
+            return new SigningPacketWriter(writer, helper, this);
+        }
+
+        class SigningPacketWriter : IPacketWriter
+        {
+            IPacketWriter innerWriter;
+            ICryptoTransform hashTransform;
+            PgpSignatureGenerator generator;
+
+            public SigningPacketWriter(IPacketWriter innerWriter, ICryptoTransform hashTransform, PgpSignatureGenerator generator)
+            {
+                this.innerWriter = innerWriter;
+                this.hashTransform = hashTransform;
+                this.generator = generator;
+            }
+
+            public IPacketWriter CreateNestedWriter(Stream stream)
+            {
+                // FIXME: Better exception
+                throw new NotSupportedException();
+            }
+
+            public void Dispose()
+            {
+                // TODO: Assert that literal data have been written
+                generator.Generate().Encode(innerWriter);
+                // DO NOT DISPOSE THE INNER WRITER
+                //innerWriter.Dispose();
+            }
+
+            public Stream GetPacketStream(InputStreamPacket packet)
+            {
+                if (packet is LiteralDataPacket)
+                {
+                    // TODO: Version 5 signatures
+                    var packetStream = innerWriter.GetPacketStream(packet);
+                    return new CryptoStream(packetStream, hashTransform, CryptoStreamMode.Write);
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
+            }
+
+            public void WritePacket(ContainedPacket packet) => innerWriter.WritePacket(packet);
         }
     }
 }

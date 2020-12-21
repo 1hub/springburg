@@ -484,9 +484,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpUserAttributeSubpacketVector uVec = vGen.Generate();
 
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
-
-            sGen.InitSign(PgpSignature.PositiveCertification, pgpSec.GetSecretKey().ExtractPrivateKey(pass));
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.PositiveCertification, pgpSec.GetSecretKey().ExtractPrivateKey(pass), HashAlgorithmTag.Sha1);
 
             PgpSignature sig = sGen.GenerateCertification(uVec, pubKey);
 
@@ -721,35 +719,25 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             MemoryStream cbOut = new UncloseableMemoryStream();
             PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
+            PgpLiteralDataGenerator lPk = new PgpLiteralDataGenerator();
             PgpPublicKey puK = pgpPriv.GetSecretKey(encP.KeyId).PublicKey;
 
             cPk.AddMethod(puK);
-
-            Stream cOut = cPk.Open(new UncloseableStream(cbOut), shortText.Length);
-
-            cOut.Write(shortText, 0, shortText.Length);
-            
-#if PORTABLE
-            cOut.Dispose();
-#else
-            cOut.Close();
-#endif
-
-            pgpF = new PgpObjectFactory(cbOut.ToArray());
-
-            encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
-            encP = (PgpPublicKeyEncryptedData)encList[0];
-
-            pgpPrivKey = pgpPriv.GetSecretKey(encP.KeyId).ExtractPrivateKey(pass);
-
-            if (encP.GetSymmetricAlgorithm(pgpPrivKey) != SymmetricKeyAlgorithmTag.Cast5)
+            using (var encryptedWriter = cPk.Open(new UncloseableStream(cbOut)))
+            using (var literalStream = lPk.Open(encryptedWriter, PgpLiteralData.Binary, "", DateTime.UtcNow))
             {
-                Fail("symmetric algorithm mismatch");
+                literalStream.Write(shortText);
             }
 
+            pgpF = new PgpObjectFactory(cbOut.ToArray());
+            encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
+            encP = (PgpPublicKeyEncryptedData)encList[0];
+            pgpPrivKey = pgpPriv.GetSecretKey(encP.KeyId).ExtractPrivateKey(pass);
+            Assert.AreEqual(SymmetricKeyAlgorithmTag.Cast5, encP.GetSymmetricAlgorithm(pgpPrivKey));
             clear = encP.GetDataStream(pgpPrivKey);
-            outBytes = Streams.ReadAll(clear);
+            pgpF = new PgpObjectFactory(clear);
+            ld = (PgpLiteralData)pgpF.NextPgpObject();
+            outBytes = Streams.ReadAll(ld.GetDataStream());
 
             if (!AreEqual(outBytes, shortText))
             {
@@ -764,27 +752,20 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             puK = pgpPriv.GetSecretKey(encP.KeyId).PublicKey;
 
             cPk.AddMethod(puK);
-
-            cOut = cPk.Open(new UncloseableStream(cbOut), text.Length);
-
-            cOut.Write(text, 0, text.Length);
-
-#if PORTABLE
-            cOut.Dispose();
-#else
-            cOut.Close();
-#endif
+            using (var encryptedWriter = cPk.Open(new UncloseableStream(cbOut)))
+            using (var literalStream = lPk.Open(encryptedWriter, PgpLiteralData.Binary, "", DateTime.UtcNow))
+            {
+                literalStream.Write(text);
+            }
 
             pgpF = new PgpObjectFactory(cbOut.ToArray());
-
             encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
             encP = (PgpPublicKeyEncryptedData)encList[0];
-
             pgpPrivKey = pgpPriv.GetSecretKey(encP.KeyId).ExtractPrivateKey(pass);
-
             clear = encP.GetDataStream(pgpPrivKey);
-            outBytes = Streams.ReadAll(clear);
+            pgpF = new PgpObjectFactory(clear);
+            ld = (PgpLiteralData)pgpF.NextPgpObject();
+            outBytes = Streams.ReadAll(ld.GetDataStream());
 
             if (!AreEqual(outBytes, text))
             {
@@ -807,15 +788,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             char[] passPhrase = "hello".ToCharArray();
             var rsa = RSA.Create(1024);
-            /*rsa.Ke
-            IAsymmetricCipherKeyPairGenerator kpg = GeneratorUtilities.GetKeyPairGenerator("RSA");
-            RsaKeyGenerationParameters genParam = new RsaKeyGenerationParameters(
-                BigInteger.ValueOf(0x10001), new SecureRandom(), 1024, 25);
-
-            kpg.Init(genParam);
-
-
-            AsymmetricCipherKeyPair kp = kpg.GenerateKeyPair();*/
 
             PgpSecretKey secretKey = new PgpSecretKey(
                 PgpSignature.DefaultCertification,
@@ -861,9 +833,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             keyEnc = key.GetEncoded();
 
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
-
-            sGen.InitSign(PgpSignature.KeyRevocation, secretKey.ExtractPrivateKey(passPhrase));
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.KeyRevocation, secretKey.ExtractPrivateKey(passPhrase), HashAlgorithmTag.Sha1);
 
             sig = sGen.GenerateCertification(key);
 
@@ -951,47 +921,18 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
 
             bOut = new UncloseableMemoryStream();
-
-            MemoryStream testIn = new MemoryStream(dataBytes, false);
-
-            sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
-
-            sGen.InitSign(PgpSignature.BinaryDocument, pgpPrivKey);
-
-            PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(
-                CompressionAlgorithmTag.Zip);
-
-            Stream bcOut = cGen.Open(new UncloseableStream(bOut));
-
-            sGen.GenerateOnePassVersion(false).Encode(bcOut);
-
+            sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, pgpPrivKey, HashAlgorithmTag.Sha1);
+            PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
             PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
-
             DateTime testDateTime = new DateTime(1973, 7, 27);
-            Stream lOut = lGen.Open(new UncloseableStream(bcOut), PgpLiteralData.Binary, "_CONSOLE",
-                dataBytes.Length, testDateTime);
 
-            // TODO Need a stream object to automatically call Update?
-            // (via ISigner implementation of PgpSignatureGenerator)
-            while ((ch = testIn.ReadByte()) >= 0)
+            var writer = new PacketWriter(bOut);
+            using (var compressedWriter = cGen.Open(writer))
+            using (var signingWriter = sGen.Open(compressedWriter))
+            using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", testDateTime))
             {
-                lOut.WriteByte((byte)ch);
-                sGen.Update((byte)ch);
+                literalStream.Write(dataBytes);
             }
-
-#if PORTABLE
-            lOut.Dispose();
-#else
-            lOut.Close();
-#endif
-
-            sGen.Generate().Encode(bcOut);
-            
-#if PORTABLE
-            bcOut.Dispose();
-#else
-            bcOut.Close();
-#endif
 
             //
             // verify generated signature
@@ -1035,46 +976,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             bOut = new UncloseableMemoryStream();
 
-            testIn = new MemoryStream(dataBytes);
-            PgpV3SignatureGenerator sGenV3 = new PgpV3SignatureGenerator(HashAlgorithmTag.Sha1);
-
-            sGen.InitSign(PgpSignature.BinaryDocument, pgpPrivKey);
-
+            sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, pgpPrivKey, HashAlgorithmTag.Sha1, version: 3);
             cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
-
-            bcOut = cGen.Open(new UncloseableStream(bOut));
-
-            sGen.GenerateOnePassVersion(false).Encode(bcOut);
-
             lGen = new PgpLiteralDataGenerator();
-            lOut = lGen.Open(
-                new UncloseableStream(bcOut),
-                PgpLiteralData.Binary,
-                "_CONSOLE",
-                dataBytes.Length,
-                testDateTime);
 
-            // TODO Need a stream object to automatically call Update?
-            // (via ISigner implementation of PgpSignatureGenerator)
-            while ((ch = testIn.ReadByte()) >= 0)
+            writer = new PacketWriter(bOut);
+            using (var compressedWriter = cGen.Open(writer))
+            using (var signingWriter = sGen.Open(compressedWriter))
+            using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", testDateTime))
             {
-                lOut.WriteByte((byte) ch);
-                sGen.Update((byte)ch);
+                literalStream.Write(dataBytes);
             }
-            
-#if PORTABLE
-            lOut.Dispose();
-#else
-            lOut.Close();
-#endif
-
-            sGen.Generate().Encode(bcOut);
-
-#if PORTABLE
-            bcOut.Dispose();
-#else
-            bcOut.Close();
-#endif
 
             //
             // verify generated signature
@@ -1107,6 +1019,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             }
 
             p3 = (PgpSignatureList)pgpFact.NextPgpObject();
+
+            Assert.AreEqual(3, p3[0].Version);
 
             if (!ops.Verify(p3[0]))
             {
@@ -1142,49 +1056,18 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
 
             MemoryStream bOut = new UncloseableMemoryStream();
-            MemoryStream testIn = new MemoryStream(dataBytes, false);
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(hashAlgorithm);
-
-            sGen.InitSign(PgpSignature.BinaryDocument, privKey);
-
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, privKey, hashAlgorithm);
             PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
-
-            Stream bcOut = cGen.Open(new UncloseableStream(bOut));
-
-            sGen.GenerateOnePassVersion(false).Encode(bcOut);
-
             PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
             DateTime testDateTime = new DateTime(1973, 7, 27);
-            Stream lOut = lGen.Open(
-                new UncloseableStream(bcOut),
-                PgpLiteralData.Binary,
-                "_CONSOLE",
-                dataBytes.Length,
-                testDateTime);
 
-            // TODO Need a stream object to automatically call Update?
-            // (via ISigner implementation of PgpSignatureGenerator)
-            int ch;
-            while ((ch = testIn.ReadByte()) >= 0)
+            var writer = new PacketWriter(bOut);
+            using (var compressedWriter = cGen.Open(writer))
+            using (var signingWriter = sGen.Open(compressedWriter))
+            using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", testDateTime))
             {
-                lOut.WriteByte((byte)ch);
-                sGen.Update((byte)ch);
+                literalStream.Write(dataBytes);
             }
-            
-#if PORTABLE
-            lOut.Dispose();
-#else
-            lOut.Close();
-#endif
-
-            sGen.Generate().Encode(bcOut);
-
-#if PORTABLE
-            bcOut.Dispose();
-#else
-            bcOut.Close();
-#endif
-
 
             //
             // verify generated signature
@@ -1211,6 +1094,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // TODO Need a stream object to automatically call Update?
             // (via ISigner implementation of PgpSignatureGenerator)
+            int ch;
             while ((ch = dIn.ReadByte()) >= 0)
             {
                 ops.Update((byte)ch);

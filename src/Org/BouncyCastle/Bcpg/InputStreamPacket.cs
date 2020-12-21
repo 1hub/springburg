@@ -4,17 +4,23 @@ namespace Org.BouncyCastle.Bcpg
 {
     public abstract class InputStreamPacket : Packet
     {
-        private readonly Stream bcpgIn;
+        private readonly Stream inputStream;
 
-        internal InputStreamPacket(Stream bcpgIn)
+        protected InputStreamPacket(Stream inputStream)
         {
-            this.bcpgIn = bcpgIn;
+            this.inputStream = inputStream;
+        }
+
+        protected InputStreamPacket()
+        {
+            // TODO
         }
 
         /// <summary>Note: you can only read from this once...</summary>
-        public Stream GetInputStream()
+        public Stream GetInputStream() => inputStream;
+
+        public virtual void EncodeHeader(Stream bcpgOut)
         {
-            return bcpgIn;
         }
     }
 }

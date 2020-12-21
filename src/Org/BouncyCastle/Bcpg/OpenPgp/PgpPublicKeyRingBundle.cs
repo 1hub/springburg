@@ -140,7 +140,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return GetPublicKey(keyID) != null;
         }
 
-        public override void Encode(PacketWriter outStr)
+        public override void Encode(IPacketWriter outStr)
         {
             foreach (long key in order)
             {

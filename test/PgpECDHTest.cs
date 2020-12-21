@@ -164,23 +164,23 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpSecretKey secretKey = secretKeyRing.GetSecretKey(); // secretKeyRing.GetSecretKey(encP.KeyId);
 
-    //        PgpPrivateKey pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyEncryptorBuilder());
+            //        PgpPrivateKey pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyEncryptorBuilder());
 
-    //        clear = encP.getDataStream(pgpPrivKey, "BC");
-    //
-    //        bOut.reset();
-    //
-    //        while ((ch = clear.read()) >= 0)
-    //        {
-    //            bOut.write(ch);
-    //        }
-    //
-    //        out = bOut.toByteArray();
-    //
-    //        if (!AreEqual(out, text))
-    //        {
-    //            fail("wrong plain text in Generated packet");
-    //        }
+            //        clear = encP.getDataStream(pgpPrivKey, "BC");
+            //
+            //        bOut.reset();
+            //
+            //        while ((ch = clear.read()) >= 0)
+            //        {
+            //            bOut.write(ch);
+            //        }
+            //
+            //        out = bOut.toByteArray();
+            //
+            //        if (!AreEqual(out, text))
+            //        {
+            //            fail("wrong plain text in Generated packet");
+            //        }
         }
 
         private void EncryptDecryptTest(ECDiffieHellman ecdh)
@@ -189,17 +189,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpKeyPair ecdhKeyPair = new PgpKeyPair(ecdh, DateTime.UtcNow);
 
-            PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
-            MemoryStream ldOut = new MemoryStream();
-            using (var pOut = lData.Open(ldOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, text.Length, DateTime.UtcNow))
-                pOut.Write(text, 0, text.Length);
-
-            byte[] data = ldOut.ToArray();
+            // Encrypt text
             MemoryStream cbOut = new MemoryStream();
             PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
             cPk.AddMethod(ecdhKeyPair.PublicKey);
-            using (var cOut = cPk.Open(new UncloseableStream(cbOut), data.Length))
-                cOut.Write(data, 0, data.Length);
+            PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
+            using (var cOut = cPk.Open(new UncloseableStream(cbOut)))
+            using (var pOut = lData.Open(cOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
+                pOut.Write(text);
 
             // Read it back
             PgpObjectFactory pgpF = new PgpObjectFactory(cbOut.ToArray());
@@ -221,19 +218,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpSecretKey secretKey = secretKeyRing.GetSecretKey(0x6c37367cd2f455c5);
             byte[] text = Encoding.ASCII.GetBytes("hello world!");
 
-            // Pre-encode literal data
-            PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
-            MemoryStream ldOut = new MemoryStream();
-            using (var pOut = lData.Open(ldOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, text.Length, DateTime.UtcNow))
-                pOut.Write(text);
-            byte[] data = ldOut.ToArray();
-
-            // Encrypt it
+            // Encrypt text
             MemoryStream cbOut = new MemoryStream();
             PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
             cPk.AddMethod(publicKeyRing.GetPublicKey(0x6c37367cd2f455c5));
-            using (var cOut = cPk.Open(new UncloseableStream(cbOut), data.Length))
-                cOut.Write(data);
+            PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
+            using (var cOut = cPk.Open(new UncloseableStream(cbOut)))
+            using (var pOut = lData.Open(cOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
+                pOut.Write(text);
 
             // Read it back
             PgpObjectFactory pgpF = new PgpObjectFactory(cbOut.ToArray());

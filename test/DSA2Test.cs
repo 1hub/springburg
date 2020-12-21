@@ -111,36 +111,18 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 			string					data = "hello world!";
 			byte[]					dataBytes = Encoding.ASCII.GetBytes(data);
 			MemoryStream			bOut = new MemoryStream();
-			MemoryStream			testIn = new MemoryStream(dataBytes, false);
-			PgpSignatureGenerator	sGen = new PgpSignatureGenerator(digest);
-
-			sGen.InitSign(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test".ToCharArray()));
-
-			sGen.GenerateOnePassVersion(false).Encode(bOut);
+			PgpSignatureGenerator	sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test".ToCharArray()), digest);
+			int ch;
 
 			PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
+			DateTime testDate = new DateTime((DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond) * TimeSpan.TicksPerSecond);
 
-//			Date testDate = new Date((System.currentTimeMillis() / 1000) * 1000);
-			DateTime testDate = new DateTime(
-				(DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond) * TimeSpan.TicksPerSecond);
-
-			Stream lOut = lGen.Open(
-				new UncloseableStream(bOut),
-				PgpLiteralData.Binary,
-				"_CONSOLE",
-				dataBytes.Length,
-				testDate);
-
-			int ch;
-			while ((ch = testIn.ReadByte()) >= 0)
+			using (var writer = new PacketWriter(bOut))
+			using (var signingWriter = sGen.Open(writer))
+			using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", testDate))
 			{
-				lOut.WriteByte((byte)ch);
-				sGen.Update((byte)ch);
+				literalStream.Write(dataBytes);
 			}
-
-			lOut.Close();
-
-			sGen.Generate().Encode(bOut);
 
 			PgpObjectFactory        pgpFact = new PgpObjectFactory(bOut.ToArray());
 			PgpOnePassSignatureList p1 = (PgpOnePassSignatureList)pgpFact.NextPgpObject();

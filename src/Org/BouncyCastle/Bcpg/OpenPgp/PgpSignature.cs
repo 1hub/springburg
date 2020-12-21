@@ -222,7 +222,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public byte[] GetSignature() => sigPck.GetSignatureBytes();
 
-        public override void Encode(PacketWriter outStream)
+        public override void Encode(IPacketWriter outStream)
         {
             outStream.WritePacket(sigPck);
 

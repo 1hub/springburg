@@ -10,6 +10,10 @@ namespace Org.BouncyCastle.Bcpg
         {
         }
 
+        public SymmetricEncDataPacket()
+        {
+        }
+
         public override PacketTag Tag => PacketTag.SymmetricKeyEncrypted;
     }
 }

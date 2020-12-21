@@ -258,10 +258,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 		{
 			PgpSecretKey                    pgpSecKey = ReadSecretKey(new MemoryStream(secretKey));
 			PgpPrivateKey                   pgpPrivKey = pgpSecKey.ExtractPrivateKey("".ToCharArray());
-			PgpSignatureGenerator           sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha256);
+			PgpSignatureGenerator           sGen = new PgpSignatureGenerator(PgpSignature.CanonicalTextDocument, pgpPrivKey, HashAlgorithmTag.Sha256);
 			PgpSignatureSubpacketGenerator  spGen = new PgpSignatureSubpacketGenerator();
-
-			sGen.InitSign(PgpSignature.CanonicalTextDocument, pgpPrivKey);
 
 			IEnumerator    it = pgpSecKey.PublicKey.GetUserIds().GetEnumerator();
 			if (it.MoveNext())
@@ -270,39 +268,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 				sGen.SetHashedSubpackets(spGen.Generate());
 			}
 
+			MemoryStream bIn = new MemoryStream(Encoding.UTF8.GetBytes(message), false);
 			MemoryStream bOut = new MemoryStream();
-			ArmoredOutputStream aOut = new ArmoredOutputStream(bOut);
-			MemoryStream bIn = new MemoryStream(Encoding.ASCII.GetBytes(message), false);
 
-			aOut.BeginClearText(HashAlgorithmTag.Sha256);
-
-			//
-			// note the last \n m_in the file is ignored
-			//
-			MemoryStream lineOut = new MemoryStream();
-			int lookAhead = ReadInputLine(lineOut, bIn);
-
-			ProcessLine(aOut, sGen, lineOut.ToArray());
-
-			if (lookAhead != -1)
+			using (var writer = new ArmoredPacketWriter(bOut))
+			using (var signerWriter = sGen.Open(writer))
+			using (var literalStream = new PgpLiteralDataGenerator().Open(signerWriter, PgpLiteralData.Text, "", DateTime.MinValue))
 			{
-				do
-				{
-					lookAhead = ReadInputLine(lineOut, lookAhead, bIn);
-
-					sGen.Update((byte) '\r');
-					sGen.Update((byte) '\n');
-
-					ProcessLine(aOut, sGen, lineOut.ToArray());
-				}
-				while (lookAhead != -1);
+				literalStream.Write(Encoding.UTF8.GetBytes(message));
 			}
-
-			aOut.EndClearText();
-
-			sGen.Generate().Encode(aOut);
-
-			aOut.Close();
 
 			byte[] bs = bOut.ToArray();
 			messageTest(Encoding.ASCII.GetString(bs, 0, bs.Length), type);
@@ -378,20 +352,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 			{
 				sig.Update(line, 0, length);
 			}
-		}
-
-		private static void ProcessLine(
-			Stream					aOut,
-			PgpSignatureGenerator	sGen,
-			byte[]					line)
-		{
-			int length = GetLengthWithoutWhiteSpace(line);
-			if (length > 0)
-			{
-				sGen.Update(line, 0, length);
-			}
-
-			aOut.Write(line, 0, line.Length);
 		}
 
 		private static int GetLengthWithoutWhiteSpace(

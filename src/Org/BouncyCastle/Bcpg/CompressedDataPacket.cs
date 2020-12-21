@@ -12,6 +12,11 @@ namespace Org.BouncyCastle.Bcpg
             this.algorithm = (CompressionAlgorithmTag)bcpgIn.ReadByte();
         }
 
+        public CompressedDataPacket(CompressionAlgorithmTag algorithm)
+        {
+            this.algorithm = algorithm;
+        }
+
         /// <summary>The algorithm tag value.</summary>
         public CompressionAlgorithmTag Algorithm
         {
@@ -19,5 +24,10 @@ namespace Org.BouncyCastle.Bcpg
         }
 
         public override PacketTag Tag => PacketTag.CompressedData;
+
+        public override void EncodeHeader(Stream bcpgOut)
+        {
+            bcpgOut.WriteByte((byte)algorithm);
+        }
     }
 }

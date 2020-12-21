@@ -1,16 +1,18 @@
 ﻿using System;
+using System.Buffers;
 using System.Diagnostics;
-using System.Reflection.Metadata;
 using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    class PgpSignatureHelper
+    class PgpSignatureHelper : ICryptoTransform
     {
         private HashAlgorithm sig;
         private byte lastb; // Initial value anything but '\r'
         private int signatureType;
         private HashAlgorithmTag hashAlgorithm;
+        private byte[] pendingWhitespace;
+        private int pendingWhitespacePosition = 0;
 
         public PgpSignatureHelper(int signatureType, HashAlgorithmTag hashAlgorithm)
         {
@@ -20,7 +22,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             this.sig = PgpUtilities.GetHashAlgorithm(hashAlgorithm);
         }
 
+        public bool IgnoreTrailingWhitespace { get; set; }
+
         public int SignatureType => signatureType;
+
+        bool ICryptoTransform.CanReuseTransform => true;
+
+        bool ICryptoTransform.CanTransformMultipleBlocks => true;
+
+        int ICryptoTransform.InputBlockSize => 1;
+
+        int ICryptoTransform.OutputBlockSize => 1;
 
         public void Update(byte b)
         {
@@ -47,8 +59,28 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     doUpdateCRLF();
                 }
             }
+            else if (IgnoreTrailingWhitespace && (b == ' ' || b == '\t'))
+            {
+                if (pendingWhitespace == null)
+                {
+                    pendingWhitespace = ArrayPool<byte>.Shared.Rent(128);
+                }
+                else if (pendingWhitespacePosition == pendingWhitespace.Length)
+                {
+                    var newPendingWhitespace = ArrayPool<byte>.Shared.Rent(pendingWhitespace.Length * 2);
+                    pendingWhitespace.CopyTo(newPendingWhitespace, 0);
+                    ArrayPool<byte>.Shared.Return(pendingWhitespace);
+                    pendingWhitespace = newPendingWhitespace;
+                }
+                pendingWhitespace[pendingWhitespacePosition++] = b;
+            }
             else
             {
+                if (pendingWhitespacePosition > 0)
+                {
+                    sig.TransformBlock(pendingWhitespace, 0, pendingWhitespacePosition, null, 0);
+                    pendingWhitespacePosition = 0;
+                }
                 sig.TransformBlock(new byte[] { b }, 0, 1, null, 0);
             }
 
@@ -134,6 +166,28 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
 
             return (sigValues, sig.Hash);
+        }
+
+        int ICryptoTransform.TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
+        {
+            Update(inputBuffer, inputOffset, inputCount);
+            inputBuffer.AsSpan(inputOffset, inputCount).CopyTo(outputBuffer.AsSpan(outputOffset));
+            return inputCount;
+        }
+
+        byte[] ICryptoTransform.TransformFinalBlock(byte[] inputBuffer, int inputOffset, int inputCount)
+        {
+            Update(inputBuffer, inputOffset, inputCount);
+            return inputBuffer.AsSpan(inputOffset, inputCount).ToArray();
+        }
+
+        void IDisposable.Dispose()
+        {
+            if (pendingWhitespace != null)
+            {
+                ArrayPool<byte>.Shared.Return(pendingWhitespace);
+                pendingWhitespace = null;
+            }
         }
     }
 }

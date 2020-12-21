@@ -5,14 +5,24 @@ namespace Org.BouncyCastle.Bcpg
 {
     public class SymmetricEncIntegrityPacket : InputStreamPacket
     {
-        private readonly int version;
+        private readonly byte version;
 
         internal SymmetricEncIntegrityPacket(Stream bcpgIn)
             : base(bcpgIn)
         {
-            version = bcpgIn.ReadByte();
+            version = (byte)bcpgIn.ReadByte();
+        }
+
+        public SymmetricEncIntegrityPacket()
+        {
+            version = 1;
         }
 
         public override PacketTag Tag => PacketTag.SymmetricEncryptedIntegrityProtected;
+
+        public override void EncodeHeader(Stream bcpgOut)
+        {
+            bcpgOut.WriteByte(version);
+        }
     }
 }

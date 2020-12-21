@@ -1,5 +1,4 @@
-﻿using Org.BouncyCastle.Bcpg;
-using System.IO;
+﻿using System.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
@@ -17,6 +16,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             Encode(new PacketWriter(s));
         }
 
-        public abstract void Encode(PacketWriter packetWriter);
+        public abstract void Encode(IPacketWriter packetWriter);
     }
 }

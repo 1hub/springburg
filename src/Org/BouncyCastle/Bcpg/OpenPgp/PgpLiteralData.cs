@@ -30,7 +30,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public byte[] GetRawFileName() => data.GetRawFileName();
 
         /// <summary>The modification time for the file.</summary>
-        public DateTime ModificationTime => DateTimeOffset.FromUnixTimeSeconds(data.ModificationTime).UtcDateTime;
+        public DateTime ModificationTime => data.ModificationTime;
 
         /// <summary>The raw input stream for the data stream.</summary>
         public Stream GetInputStream() => data.GetInputStream();

@@ -63,7 +63,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <returns>An <c>IEnumerable</c> of <c>PgpPublicKey</c> objects.</returns>
         public IEnumerable<PgpPublicKey> GetPublicKeys() => keys;
 
-        public override void Encode(PacketWriter outputStream)
+        public override void Encode(IPacketWriter outputStream)
         {
             if (outputStream == null)
                 throw new ArgumentNullException(nameof(outputStream));

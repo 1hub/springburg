@@ -118,39 +118,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
             MemoryStream bOut = new MemoryStream();
             MemoryStream testIn = new MemoryStream(dataBytes, false);
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
-
-            sGen.InitSign(PgpSignature.BinaryDocument, pgpPrivKey);
-
-            PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(
-                CompressionAlgorithmTag.Zip);
-
-            Stream bcOut = cGen.Open(new UncloseableStream(bOut));
-
-            sGen.GenerateOnePassVersion(false).Encode(bcOut);
-
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, pgpPrivKey, HashAlgorithmTag.Sha1);
+            PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
             PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
-
             DateTime testDateTime = new DateTime(1973, 7, 27);
-            Stream lOut = lGen.Open(
-                new UncloseableStream(bcOut),
-                PgpLiteralData.Binary,
-                "_CONSOLE",
-                dataBytes.Length,
-                testDateTime);
-
             int ch;
-            while ((ch = testIn.ReadByte()) >= 0)
-            {
-                lOut.WriteByte((byte)ch);
-                sGen.Update((byte)ch);
-            }
 
-            lOut.Close();
-
-            sGen.Generate().Encode(bcOut);
-
-            bcOut.Close();
+            var writer = new PacketWriter(bOut);
+            using (var compressedWriter = cGen.Open(writer))
+            using (var signingWriter = sGen.Open(compressedWriter))
+            using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", testDateTime))
+                literalStream.Write(dataBytes);
 
             //
             // verify Generated signature
@@ -332,11 +310,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             cPk.AddMethod(puK);
 
-            Stream cOut = cPk.Open(new UncloseableStream(cbOut), bOut.ToArray().Length);
-
-            cOut.Write(text, 0, text.Length);
-
-            cOut.Close();
+            using (var cOut = cPk.Open(new UncloseableStream(cbOut)))
+            using (var pOut = new PgpLiteralDataGenerator().Open(cOut, PgpLiteralData.Utf8, "", DateTime.UtcNow))
+                pOut.Write(text, 0, text.Length);
 
             pgpF = new PgpObjectFactory(cbOut.ToArray());
 
@@ -347,7 +323,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             pgpPrivKey = sKey.GetSecretKey(pgpKeyID).ExtractPrivateKey(pass);
 
             clear = encP.GetDataStream(pgpPrivKey);
-            outBytes = Streams.ReadAll(clear);
+            pgpF = new PgpObjectFactory(clear);
+            ld = (PgpLiteralData)pgpF.NextPgpObject();
+            outBytes = Streams.ReadAll(ld.GetDataStream());
 
             if (!AreEqual(outBytes, text))
             {
@@ -373,30 +351,24 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 PgpKeyPair elGamalKeyPair = new PgpKeyPair(ElGamal.Create(pSize), DateTime.UtcNow);
 
                 cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
-
-                puK = elGamalKeyPair.PublicKey;
-
-                cPk.AddMethod(puK);
+                cPk.AddMethod(elGamalKeyPair.PublicKey);
 
                 cbOut = new MemoryStream();
-
-                cOut = cPk.Open(new UncloseableStream(cbOut), text.Length);
-
-                cOut.Write(text, 0, text.Length);
-
-                cOut.Close();
+                writer = new PacketWriter(cbOut);
+                using (var encryptedWriter = cPk.Open(writer))
+                using (var literalStream = new PgpLiteralDataGenerator().Open(encryptedWriter, PgpLiteralData.Binary, "", DateTime.UtcNow))
+                    literalStream.Write(text);
 
                 pgpF = new PgpObjectFactory(cbOut.ToArray());
-
                 encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
                 encP = (PgpPublicKeyEncryptedData)encList[0];
-
                 pgpPrivKey = elGamalKeyPair.PrivateKey;
 
                 // Note: This is where an exception would be expected if the P size causes problems
                 clear = encP.GetDataStream(pgpPrivKey);
-                byte[] decText = Streams.ReadAll(clear);
+                pgpF = new PgpObjectFactory(clear);
+                ld = (PgpLiteralData)pgpF.NextPgpObject();
+                byte[] decText = Streams.ReadAll(ld.GetDataStream());
 
                 if (!AreEqual(text, decText))
                 {

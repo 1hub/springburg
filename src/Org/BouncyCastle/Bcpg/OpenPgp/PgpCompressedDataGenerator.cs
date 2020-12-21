@@ -44,96 +44,24 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>
-        /// <p>
         /// Return an output stream which will save the data being written to
         /// the compressed object.
-        /// </p>
-        /// <p>
-        /// The stream created can be closed off by either calling Close()
-        /// on the stream or Close() on the generator. Closing the returned
-        /// stream does not close off the Stream parameter <c>outStr</c>.
-        /// </p>
         /// </summary>
-        /// <param name="outputStream">Stream to be used for output.</param>
+        /// <param name="writer">Writer to be used for output.</param>
         /// <returns>A Stream for output of the compressed data.</returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="IOException"></exception>
-        public Stream Open(Stream outputStream)
-        {
-            if (outputStream == null)
-                throw new ArgumentNullException(nameof(outputStream));
-
-            return Open(new PacketWriter(outputStream));
-        }
-
-        public Stream Open(PacketWriter writer)
+        public IPacketWriter Open(IPacketWriter writer)
         {
             if (writer == null)
                 throw new ArgumentNullException(nameof(writer));
             if (dOut != null)
                 throw new InvalidOperationException("generator already in open state");
 
-            this.pkOut = writer.GetPacketStream(PacketTag.CompressedData);
+            var packet = new CompressedDataPacket(algorithm);
 
-            doOpen();
-
-            return new WrappedGeneratorStream(this, dOut);
-        }
-
-        /// <summary>
-        /// <p>
-        /// Return an output stream which will compress the data as it is written to it.
-        /// The stream will be written out in chunks according to the size of the passed in buffer.
-        /// </p>
-        /// <p>
-        /// The stream created can be closed off by either calling Close()
-        /// on the stream or Close() on the generator. Closing the returned
-        /// stream does not close off the Stream parameter <c>outStr</c>.
-        /// </p>
-        /// <p>
-        /// <b>Note</b>: if the buffer is not a power of 2 in length only the largest power of 2
-        /// bytes worth of the buffer will be used.
-        /// </p>
-        /// <p>
-        /// <b>Note</b>: using this may break compatibility with RFC 1991 compliant tools.
-        /// Only recent OpenPGP implementations are capable of accepting these streams.
-        /// </p>
-        /// </summary>
-        /// <param name="outputStream">Stream to be used for output.</param>
-        /// <param name="buffer">The buffer to use.</param>
-        /// <returns>A Stream for output of the compressed data.</returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        /// <exception cref="IOException"></exception>
-        /// <exception cref="PgpException"></exception>
-        public Stream Open(Stream outputStream, byte[] buffer)
-        {
-            if (outputStream == null)
-                throw new ArgumentNullException(nameof(outputStream));
-
-            return Open(new PacketWriter(outputStream), buffer);
-        }
-
-        public Stream Open(PacketWriter writer, byte[] buffer)
-        {
-            if (writer == null)
-                throw new ArgumentNullException(nameof(writer));
-            if (buffer == null)
-                throw new ArgumentNullException(nameof(buffer));
-            if (dOut != null)
-                throw new InvalidOperationException("generator already in open state");
-
-            this.pkOut = writer.GetPacketStream(PacketTag.CompressedData, buffer);
-
-            doOpen();
-
-            return new WrappedGeneratorStream(this, dOut);
-        }
-
-        private void doOpen()
-        {
-            pkOut.WriteByte((byte)algorithm);
+            this.pkOut = writer.GetPacketStream(packet);
 
             switch (algorithm)
             {
@@ -150,7 +78,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     // Checksum
                     flg |= (byte)(31 - ((cmf << 8) + flg) % 31);
                     Debug.Assert(((cmf << 8) + flg) % 31 == 0);
-                    pkOut.WriteByte(cmf); 
+                    pkOut.WriteByte(cmf);
                     pkOut.WriteByte(flg);
                     dOut =
                         new CryptoStream(
@@ -165,6 +93,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     // Constructor should guard against this possibility
                     throw new InvalidOperationException();
             }
+
+            return writer.CreateNestedWriter(new WrappedGeneratorStream(this, dOut));
         }
 
         /// <summary>Close the compressed object.</summary>summary>

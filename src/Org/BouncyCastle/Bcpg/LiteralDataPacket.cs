@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 
@@ -7,7 +8,7 @@ namespace Org.BouncyCastle.Bcpg
     {
         private int format;
         private byte[] fileName;
-        private long modDate;
+        private long modificationTime;
 
         internal LiteralDataPacket(Stream bcpgIn)
             : base(bcpgIn)
@@ -16,31 +17,54 @@ namespace Org.BouncyCastle.Bcpg
             int len = bcpgIn.ReadByte();
 
             fileName = new byte[len];
-            for (int i = 0; i != len; ++i)
+            if (len > 0 && bcpgIn.Read(fileName) != len)
             {
-                int ch = bcpgIn.ReadByte();
-                if (ch < 0)
-                    throw new IOException("literal data truncated in header");
-
-                fileName[i] = (byte)ch;
+                throw new IOException("literal data truncated in header");
             }
 
-            modDate = (((uint)bcpgIn.ReadByte() << 24)
-                | ((uint)bcpgIn.ReadByte() << 16)
-                | ((uint)bcpgIn.ReadByte() << 8)
-                | (uint)bcpgIn.ReadByte());
+            modificationTime =
+                ((uint)bcpgIn.ReadByte() << 24) |
+                ((uint)bcpgIn.ReadByte() << 16) |
+                ((uint)bcpgIn.ReadByte() << 8) |
+                (uint)bcpgIn.ReadByte();
+        }
+
+        public LiteralDataPacket(
+            int format,
+            string fileName,
+            DateTime modificationTime)
+        {
+            this.format = format;
+            this.fileName = Encoding.UTF8.GetBytes(fileName);
+            this.modificationTime = new DateTimeOffset(modificationTime, TimeSpan.Zero).ToUnixTimeSeconds();
         }
 
         /// <summary>The format tag value.</summary>
         public int Format => format;
 
         /// <summary>The modification time of the file in milli-seconds (since Jan 1, 1970 UTC)</summary>
-        public long ModificationTime => modDate;
+        public DateTime ModificationTime => DateTimeOffset.FromUnixTimeSeconds(modificationTime).UtcDateTime;
 
         public string FileName => Encoding.UTF8.GetString(fileName);
 
         public byte[] GetRawFileName() => (byte[])fileName.Clone();
 
         public override PacketTag Tag => PacketTag.LiteralData;
+
+        public override void EncodeHeader(Stream bcpgOut)
+        {
+            bcpgOut.Write(new[] {
+                (byte)format,
+                (byte)fileName.Length });
+
+            bcpgOut.Write(fileName);
+
+            bcpgOut.Write(new[] {
+                (byte)(modificationTime >> 24),
+                (byte)(modificationTime >> 16),
+                (byte)(modificationTime >> 8),
+                (byte)modificationTime });
+
+        }
     }
 }

@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Buffers;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public class PacketWriter
+    public class PacketWriter : IPacketWriter
     {
         private Stream stream;
         private bool preferOldFormat;
@@ -12,6 +15,11 @@ namespace Org.BouncyCastle.Bcpg
         {
             this.stream = stream;
             this.preferOldFormat = preferOldFormat;
+        }
+
+        public void Dispose()
+        {
+            this.stream.Close();
         }
 
         private static void WriteNewPacketLength(
@@ -83,17 +91,18 @@ namespace Org.BouncyCastle.Bcpg
 
         public void WritePacket(ContainedPacket packet)
         {
-            using MemoryStream memoryStream = new MemoryStream();
-            packet.Encode(memoryStream);
-            WriteHeader(stream, packet.Tag, memoryStream.Length, partial: false, useOldPacket: preferOldFormat && (int)packet.Tag <= 16);
-            stream.Write(memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
+            using var packetStream = new PacketOutputStream(stream, packet.Tag, canBePartial: false, preferOldFormat: preferOldFormat);
+            packet.Encode(packetStream);
         }
 
-        public Stream GetPacketStream(PacketTag tag) => new PacketOutputStream(stream, tag);
+        public Stream GetPacketStream(InputStreamPacket packet)
+        {
+            var packetStream = new PacketOutputStream(stream, packet.Tag, canBePartial: true, preferOldFormat: preferOldFormat);
+            packet.EncodeHeader(packetStream);
+            return packetStream;
+        }
 
-        public Stream GetPacketStream(PacketTag tag, long length) => new PacketOutputStream(stream, tag, length, preferOldFormat);
-
-        public Stream GetPacketStream(PacketTag tag, byte[] buffer) => new PacketOutputStream(stream, tag, buffer);
+        public IPacketWriter CreateNestedWriter(Stream stream) => new PacketWriter(stream, preferOldFormat);
 
         /// <summary>
         /// Stream that pipes the output as OpenPGP packets, either partial ones
@@ -102,6 +111,12 @@ namespace Org.BouncyCastle.Bcpg
         class PacketOutputStream : Stream
         {
             private Stream outputStream;
+            private List<byte[]> bufferedPackets;
+            private PacketTag packetTag;
+            private bool delayedHeader;
+            private bool canBePartial;
+            private bool oldFormat;
+
             private byte[] partialBuffer;
             private int partialBufferLength;
             private int partialPower;
@@ -118,109 +133,100 @@ namespace Org.BouncyCastle.Bcpg
 
             public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
-            /// <summary>Create a stream representing an old style partial object.</summary>
-            /// <param name="outputStream">Output stream to write to.</param>
-            /// <param name="tag">The packet tag for the object.</param>
             public PacketOutputStream(
                 Stream outputStream,
-                PacketTag tag)
+                PacketTag tag,
+                bool canBePartial = false,
+                bool preferOldFormat = false)
             {
                 if (outputStream == null)
                     throw new ArgumentNullException(nameof(outputStream));
 
                 this.outputStream = outputStream;
-                WriteHeader(outputStream, tag, 0, partial: true, useOldPacket: true);
-            }
-
-            /// <summary>Create a stream representing a general packet.</summary>
-            /// <param name="outStr">Output stream to write to.</param>
-            /// <param name="tag">Packet tag.</param>
-            /// <param name="length">Size of chunks making up the packet.</param>
-            /// <param name="oldFormat">If true, the header is written out in old format.</param>
-            public PacketOutputStream(
-                Stream outStr,
-                PacketTag tag,
-                long length,
-                bool oldFormat)
-            {
-                if (outStr == null)
-                    throw new ArgumentNullException(nameof(outStr));
-
-                this.outputStream = outStr;
-
-                if (length > 0xFFFFFFFFL)
-                {
-                    WriteHeader(outputStream, tag, 0, partial: true, useOldPacket: false);
-                    this.partialBufferLength = 1 << BufferSizePower;
-                    this.partialBuffer = new byte[partialBufferLength];
-                    this.partialPower = BufferSizePower;
-                    this.partialOffset = 0;
-                }
-                else
-                {
-                    WriteHeader(outputStream, tag, length, partial: false, useOldPacket: oldFormat);
-                }
-            }
-
-            /// <summary>Create a new style partial input stream buffered into chunks.</summary>
-            /// <param name="outputStream">Output stream to write to.</param>
-            /// <param name="tag">Packet tag.</param>
-            /// <param name="buffer">Buffer to use for collecting chunks.</param>
-            public PacketOutputStream(
-                Stream outputStream,
-                PacketTag tag,
-                byte[] buffer)
-            {
-                if (outputStream == null)
-                    throw new ArgumentNullException(nameof(outputStream));
-
-                this.outputStream = outputStream;
-                WriteHeader(this.outputStream, tag, 0, useOldPacket: false, partial: true);
-
-                this.partialBuffer = buffer;
-
-                uint length = (uint)partialBuffer.Length;
-                for (partialPower = 0; length != 1; partialPower++)
-                {
-                    length >>= 1;
-                }
-
-                if (partialPower > 30)
-                {
-                    throw new IOException("Buffer cannot be greater than 2^30 in length.");
-                }
-                this.partialBufferLength = 1 << partialPower;
+                this.packetTag = tag;
+                this.canBePartial = canBePartial;
+                this.oldFormat = preferOldFormat && (int)tag < 16;
+                this.delayedHeader = true;
+                this.partialBufferLength = 1 << BufferSizePower;
+                this.partialBuffer = ArrayPool<byte>.Shared.Rent(partialBufferLength);
+                this.partialPower = BufferSizePower;
                 this.partialOffset = 0;
             }
 
             private void PartialFlush(bool isLast)
             {
-                if (isLast)
+                if (delayedHeader)
                 {
-                    WriteNewPacketLength(outputStream, partialOffset);
-                    outputStream.Write(partialBuffer, 0, partialOffset);
+                    if (isLast)
+                    {
+                        if (bufferedPackets != null)
+                        {
+                            WriteHeader(outputStream, packetTag, partialOffset + bufferedPackets.Count * partialBufferLength, useOldPacket: oldFormat);
+                            foreach (var buffer in bufferedPackets)
+                            {
+                                outputStream.Write(buffer);
+                            }
+                        }
+                        else
+                        {
+                            WriteHeader(outputStream, packetTag, partialOffset, useOldPacket: oldFormat);
+                        }
+                        outputStream.Write(partialBuffer, 0, partialOffset);
+                    }
+                    else if (canBePartial)
+                    {
+                        delayedHeader = false;
+                        WriteHeader(outputStream, packetTag, 0, partial: true, useOldPacket: oldFormat);
+                        if (!oldFormat)
+                        {
+                            outputStream.WriteByte((byte)(0xE0 | partialPower));
+                        }
+                        outputStream.Write(partialBuffer, 0, partialBufferLength);
+                    }
+                    else
+                    {
+                        bufferedPackets = bufferedPackets ?? new List<byte[]>();
+                        bufferedPackets.Add(partialBuffer);
+                        // We never generate non-partial packets this long but they would be unrepresentable
+                        Debug.Assert((bufferedPackets.Count + 1) * (long)partialBufferLength < 0xFFFFFFFFL);
+                        partialBuffer = ArrayPool<byte>.Shared.Rent(partialBufferLength);
+                    }
                 }
                 else
                 {
-                    outputStream.WriteByte((byte)(0xE0 | partialPower));
-                    outputStream.Write(partialBuffer, 0, partialBufferLength);
+                    if (!oldFormat)
+                    {
+                        if (isLast)
+                        {
+                            WriteNewPacketLength(outputStream, partialOffset);
+                        }
+                        else
+                        {
+                            outputStream.WriteByte((byte)(0xE0 | partialPower));
+                        }
+                    }
+                    outputStream.Write(partialBuffer, 0, partialOffset);
                 }
 
                 partialOffset = 0;
             }
 
-            private void WritePartial(
-                byte b)
+            public override void WriteByte(byte value)
             {
                 if (partialOffset == partialBufferLength)
                 {
                     PartialFlush(false);
                 }
 
-                partialBuffer[partialOffset++] = b;
+                partialBuffer[partialOffset++] = value;
             }
 
-            private void WritePartial(ReadOnlySpan<byte> buffer)
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                Write(buffer.AsSpan(offset, count));
+            }
+
+            public override void Write(ReadOnlySpan<byte> buffer)
             {
                 if (partialOffset == partialBufferLength)
                 {
@@ -249,52 +255,6 @@ namespace Org.BouncyCastle.Bcpg
                 }
             }
 
-            public override void WriteByte(
-                byte value)
-            {
-                if (partialBuffer != null)
-                {
-                    WritePartial(value);
-                }
-                else
-                {
-                    outputStream.WriteByte(value);
-                }
-            }
-
-            public override void Write(
-                byte[] buffer,
-                int offset,
-                int count)
-            {
-                if (partialBuffer != null)
-                {
-                    WritePartial(buffer.AsSpan(offset, count));
-                }
-                else
-                {
-                    outputStream.Write(buffer, offset, count);
-                }
-            }
-
-            public override void Write(ReadOnlySpan<byte> buffer)
-            {
-                if (partialBuffer != null)
-                {
-                    WritePartial(buffer);
-                }
-                else
-                {
-                    outputStream.Write(buffer);
-                }
-            }
-
-            public void Write(params byte[] buffer)
-            {
-                Write(buffer.AsSpan());
-            }
-
-            /// <summary>Flush the underlying stream.</summary>
             public override void Flush()
             {
                 outputStream.Flush();
@@ -304,13 +264,24 @@ namespace Org.BouncyCastle.Bcpg
             {
                 if (disposing)
                 {
+                    PartialFlush(true);
+
+                    if (bufferedPackets != null)
+                    {
+                        foreach (var buffer in bufferedPackets)
+                        {
+                            ArrayPool<byte>.Shared.Return(buffer, true);
+                        }
+                        bufferedPackets = null;
+                    }
+
                     if (partialBuffer != null)
                     {
-                        PartialFlush(true);
-                        Array.Clear(partialBuffer, 0, partialBuffer.Length);
+                        ArrayPool<byte>.Shared.Return(partialBuffer, true);
                         partialBuffer = null;
                     }
                 }
+
                 base.Dispose(disposing);
             }
 

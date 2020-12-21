@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -274,54 +275,31 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpPrivateKey pgpPrivKey)
         {
             string data = "hello world!";
+            byte[] dataBytes = Encoding.ASCII.GetBytes(data);
+
             MemoryStream bOut = new MemoryStream();
 
-            byte[] dataBytes = Encoding.ASCII.GetBytes(data);
-            MemoryStream testIn = new MemoryStream(dataBytes, false);
-
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
-
-            sGen.InitSign(PgpSignature.BinaryDocument, pgpPrivKey);
-
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, pgpPrivKey, HashAlgorithmTag.Sha1);
             PgpSignatureSubpacketGenerator spGen = new PgpSignatureSubpacketGenerator();
 
-            IEnumerator enumerator = sKey.GetSecretKey().PublicKey.GetUserIds().GetEnumerator();
-            enumerator.MoveNext();
-            string primaryUserId = (string)enumerator.Current;
+            string primaryUserId = (string)sKey.GetSecretKey().PublicKey.GetUserIds().First();
 
             spGen.SetSignerUserId(true, primaryUserId);
 
             sGen.SetHashedSubpackets(spGen.Generate());
 
-            PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(
-                CompressionAlgorithmTag.Zip);
-
-            Stream bcOut = cGen.Open(new UncloseableStream(bOut));
-
-            sGen.GenerateOnePassVersion(false).Encode(bcOut);
-
+            PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
             PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
-
             DateTime testDateTime = new DateTime(1973, 7, 27);
-            Stream lOut = lGen.Open(
-                new UncloseableStream(bcOut),
-                PgpLiteralData.Binary,
-                "_CONSOLE",
-                dataBytes.Length,
-                testDateTime);
-
             int ch;
-            while ((ch = testIn.ReadByte()) >= 0)
+
+            using (var writer = new PacketWriter(bOut))
+            using (var compressedWriter = cGen.Open(writer))
+            using (var signingWriter = sGen.Open(compressedWriter))
+            using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", testDateTime))
             {
-                lOut.WriteByte((byte)ch);
-                sGen.Update((byte)ch);
+                literalStream.Write(dataBytes);
             }
-
-            lOut.Close();
-
-            sGen.Generate().Encode(bcOut);
-
-            bcOut.Close();
 
             PgpObjectFactory pgpFact = new PgpObjectFactory(bOut.ToArray());
             PgpCompressedData c1 = (PgpCompressedData)pgpFact.NextPgpObject();
@@ -332,10 +310,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpOnePassSignature ops = p1[0];
 
             PgpLiteralData p2 = (PgpLiteralData)pgpFact.NextPgpObject();
-            if (!p2.ModificationTime.Equals(testDateTime))
-            {
-                Fail("Modification time not preserved");
-            }
+            Assert.AreEqual(testDateTime, p2.ModificationTime);
 
             Stream dIn = p2.GetInputStream();
 
@@ -412,38 +387,18 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             const string data = "hello world!";
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
             MemoryStream bOut = new MemoryStream();
-            MemoryStream testIn = new MemoryStream(dataBytes, false);
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
-
-            sGen.InitSign(PgpSignature.CanonicalTextDocument, pgpPrivKey);
-
-            PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(
-                CompressionAlgorithmTag.Zip);
-
-            Stream bcOut = cGen.Open(new UncloseableStream(bOut));
-
-            sGen.GenerateOnePassVersion(false).Encode(bcOut);
-
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.CanonicalTextDocument, pgpPrivKey, HashAlgorithmTag.Sha1);
+            PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
             PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
             DateTime testDateTime = new DateTime(1973, 7, 27);
-            Stream lOut = lGen.Open(
-                new UncloseableStream(bcOut),
-                PgpLiteralData.Text,
-                "_CONSOLE",
-                dataBytes.Length,
-                testDateTime);
 
-            while ((ch = testIn.ReadByte()) >= 0)
+            using (var writer = new PacketWriter(bOut))
+            using (var compressedWriter = cGen.Open(writer))
+            using (var signingWriter = sGen.Open(compressedWriter))
+            using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", testDateTime))
             {
-                lOut.WriteByte((byte)ch);
-                sGen.Update((byte)ch);
+                literalStream.Write(dataBytes);
             }
-
-            lOut.Close();
-
-            sGen.Generate().Encode(bcOut);
-
-            bcOut.Close();
 
             //
             // verify Generated signature - canconical text

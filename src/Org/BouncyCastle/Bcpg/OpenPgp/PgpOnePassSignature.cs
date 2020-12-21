@@ -39,7 +39,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Verify the calculated signature against the passed in PgpSignature.</summary>
         public bool Verify(PgpSignature pgpSig) => helper.Verify(pgpSig.GetDecodedSignature(), pgpSig.GetSignatureTrailer(), this.publicKey.GetKey());
 
-        public override void Encode(PacketWriter writer)
+        public override void Encode(IPacketWriter writer)
         {
             writer.WritePacket(sigPack);
         }

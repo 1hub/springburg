@@ -123,6 +123,23 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             return bOut.ToArray();
         }
 
+        private byte[] EncryptMessage(byte[] msg, bool withIntegrityPacket)
+        {
+            MemoryStream bOut = new MemoryStream();
+
+            PgpEncryptedDataGenerator encryptedGenerator = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityPacket);
+            PgpCompressedDataGenerator comData = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
+            PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
+            encryptedGenerator.AddMethod(pass, HashAlgorithmTag.Sha1);
+            using (var writer = new PacketWriter(bOut))
+            using (var encryptedWriter = encryptedGenerator.Open(writer))
+            using (var compressedWriter = comData.Open(encryptedWriter))
+            using (var ldOut = lData.Open(compressedWriter, PgpLiteralData.Binary, PgpLiteralData.Console, TestDateTime))
+                ldOut.Write(msg);
+
+            return bOut.ToArray();
+        }
+
         public override void PerformTest()
         {
             byte[] data = DecryptMessage(enc1);
@@ -136,116 +153,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             byte[] text = Encoding.ASCII.GetBytes("hello world!\n");
 
-            //
-            // encryption step - convert to literal data, compress, encode.
-            //
-            MemoryStream bOut = new MemoryStream();
-
-            PgpCompressedDataGenerator comData = new PgpCompressedDataGenerator(
-                CompressionAlgorithmTag.Zip);
-
-            PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
-            Stream comOut = comData.Open(new UncloseableStream(bOut));
-            Stream ldOut = lData.Open(
-                new UncloseableStream(comOut),
-                PgpLiteralData.Binary,
-                PgpLiteralData.Console,
-                text.Length,
-                TestDateTime);
-
-            ldOut.Write(text, 0, text.Length);
-#if PORTABLE
-            ldOut.Dispose();
-
-            comOut.Dispose();
-#else
-            ldOut.Close();
-
-            comOut.Close();
-#endif
-            //
-            // encrypt - with stream close
-            //
-            MemoryStream cbOut = new MemoryStream();
-            PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
-
-            cPk.AddMethod(pass, HashAlgorithmTag.Sha1);
-
-            byte[] bOutData = bOut.ToArray();
-            Stream cOut = cPk.Open(new UncloseableStream(cbOut), bOutData.Length);
-            cOut.Write(bOutData, 0, bOutData.Length);
-#if PORTABLE
-            cOut.Dispose();
-#else
-            cOut.Close();
-#endif
-
-            data = DecryptMessage(cbOut.ToArray());
+            byte[] encryptedData = EncryptMessage(text, withIntegrityPacket: false);
+            data = DecryptMessage(encryptedData);
             if (!AreEqual(data, text))
-            {
-                Fail("wrong plain text in generated packet");
-            }
-
-            //
-            // encrypt - with generator close
-            //
-            cbOut = new MemoryStream();
-            cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
-
-            cPk.AddMethod(pass, HashAlgorithmTag.Sha1);
-
-            bOutData = bOut.ToArray();
-            cOut = cPk.Open(new UncloseableStream(cbOut), bOutData.Length);
-            cOut.Write(bOutData, 0, bOutData.Length);
-            cOut.Close();
-
-            data = DecryptMessage(cbOut.ToArray());
-
-            if (!AreEqual(data, text))
-            {
-                Fail("wrong plain text in generated packet");
-            }
-
-            //
-            // encrypt - partial packet style.
-            //
-            byte[] test = new byte[1233];
-
-            RandomNumberGenerator.Fill(test);
-
-            bOut = new MemoryStream();
-
-            comData = new PgpCompressedDataGenerator(
-                CompressionAlgorithmTag.Zip);
-            comOut = comData.Open(new UncloseableStream(bOut));
-
-            lData = new PgpLiteralDataGenerator();
-            ldOut = lData.Open(
-                new UncloseableStream(comOut),
-                PgpLiteralData.Binary,
-                PgpLiteralData.Console,
-                TestDateTime,
-                new byte[16]);
-
-            ldOut.Write(test, 0, test.Length);
-            ldOut.Close();
-
-            comOut.Close();
-            cbOut = new MemoryStream();
-            cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityPacket: false);
-
-            cPk.AddMethod(pass, HashAlgorithmTag.Sha1);
-
-            cOut = cPk.Open(new UncloseableStream(cbOut), new byte[16]);
-            {
-                byte[] tmp = bOut.ToArray();
-                cOut.Write(tmp, 0, tmp.Length);
-            }
-
-            cOut.Close();
-
-            data = DecryptMessage(cbOut.ToArray());
-            if (!AreEqual(data, test))
             {
                 Fail("wrong plain text in generated packet");
             }
@@ -253,18 +163,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // with integrity packet
             //
-            cbOut = new MemoryStream();
-            cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityPacket: true);
-
-            cPk.AddMethod(pass, HashAlgorithmTag.Sha1);
-
-            cOut = cPk.Open(new UncloseableStream(cbOut), new byte[16]);
-            bOutData = bOut.ToArray();
-            cOut.Write(bOutData, 0, bOutData.Length);
-            cOut.Close();
-
-            data = DecryptMessage(cbOut.ToArray());
-            if (!AreEqual(data, test))
+            encryptedData = EncryptMessage(text, withIntegrityPacket: true);
+            data = DecryptMessage(encryptedData);
+            if (!AreEqual(data, text))
             {
                 Fail("wrong plain text in generated packet");
             }
@@ -272,8 +173,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // decrypt with buffering
             //
-            data = DecryptMessageBuffered(cbOut.ToArray());
-            if (!AreEqual(data, test))
+            data = DecryptMessageBuffered(encryptedData);
+            if (!AreEqual(data, text))
             {
                 Fail("wrong plain text in buffer generated packet");
             }
@@ -305,38 +206,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // with integrity packet - one byte message
             //
             byte[] msg = new byte[1];
-            bOut = new MemoryStream();
-
-            comData = new PgpCompressedDataGenerator(
-                CompressionAlgorithmTag.Zip);
-
-            lData = new PgpLiteralDataGenerator();
-            comOut = comData.Open(new UncloseableStream(bOut));
-            ldOut = lData.Open(
-                new UncloseableStream(comOut),
-                PgpLiteralData.Binary,
-                PgpLiteralData.Console,
-                msg.Length,
-                TestDateTime);
-
-            ldOut.Write(msg, 0, msg.Length);
-
-            ldOut.Close();
-            comOut.Close();
-
-            cbOut = new MemoryStream();
-            cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5, true);
-
-            cPk.AddMethod(pass, HashAlgorithmTag.Sha1);
-
-            cOut = cPk.Open(new UncloseableStream(cbOut), new byte[16]);
-
-            data = bOut.ToArray();
-            cOut.Write(data, 0, data.Length);
-
-            cOut.Close();
-
-            data = DecryptMessage(cbOut.ToArray());
+            encryptedData = EncryptMessage(msg, true);
+            data = DecryptMessage(encryptedData);
             if (!AreEqual(data, msg))
             {
                 Fail("wrong plain text in generated packet");
@@ -345,7 +216,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // decrypt with buffering
             //
-            data = DecryptMessageBuffered(cbOut.ToArray());
+            data = DecryptMessageBuffered(encryptedData);
             if (!AreEqual(data, msg))
             {
                 Fail("wrong plain text in buffer generated packet");

@@ -147,17 +147,40 @@ namespace Org.BouncyCastle.Bcpg
 
         public override void WriteByte(byte b)
         {
-
-            crc.Update(b);
-            encodingBuffer[encodingBufferPtr++] = b;
-
-            if (encodingBufferPtr == PlainTextLength)
+            if (clearText)
             {
-                var status = Base64.EncodeToUtf8InPlace(encodingBuffer, encodingBufferPtr, out var bytesWritten);
-                Debug.Assert(status == System.Buffers.OperationStatus.Done);
-                outStream.Write(encodingBuffer.AsSpan(0, bytesWritten));
-                outStream.Write(nl);
-                encodingBufferPtr = 0;
+                outStream.WriteByte(b);
+                if (newLine)
+                {
+                    if (!(b == '\n' && lastb == '\r'))
+                    {
+                        newLine = false;
+                    }
+                    if (b == '-')
+                    {
+                        outStream.WriteByte((byte)' ');
+                        outStream.WriteByte((byte)'-'); // dash escape
+                    }
+                }
+                if (b == '\r' || (b == '\n' && lastb != '\r'))
+                {
+                    newLine = true;
+                }
+                lastb = b;
+            }
+            else
+            {
+                crc.Update(b);
+                encodingBuffer[encodingBufferPtr++] = b;
+
+                if (encodingBufferPtr == PlainTextLength)
+                {
+                    var status = Base64.EncodeToUtf8InPlace(encodingBuffer, encodingBufferPtr, out var bytesWritten);
+                    Debug.Assert(status == System.Buffers.OperationStatus.Done);
+                    outStream.Write(encodingBuffer.AsSpan(0, bytesWritten));
+                    outStream.Write(nl);
+                    encodingBufferPtr = 0;
+                }
             }
         }
 
@@ -203,6 +226,8 @@ namespace Org.BouncyCastle.Bcpg
                         default: type = "MESSAGE"; break;
                     }
 
+                    //if (!newLine)
+                    //    outStream.Write(nl);
                     DoWrite(headerStart + type + headerTail);
                     outStream.Write(nl);
 

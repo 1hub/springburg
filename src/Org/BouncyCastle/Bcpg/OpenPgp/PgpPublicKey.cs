@@ -624,7 +624,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             get { return publicPk; }
         }
 
-        public override void Encode(PacketWriter outStr)
+        public override void Encode(IPacketWriter outStr)
         {
             outStr.WritePacket(publicPk);
 

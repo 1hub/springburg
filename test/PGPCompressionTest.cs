@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 using NUnit.Framework;
@@ -34,24 +35,26 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             doTestCompression(CompressionAlgorithmTag.BZip2);
         }
 
-        private void doTestCompression(
-            CompressionAlgorithmTag type)
+        private void doTestCompression(CompressionAlgorithmTag type)
         {
             using MemoryStream bOut = new MemoryStream();
+
+            // Compress data
             PgpCompressedDataGenerator cPacket = new PgpCompressedDataGenerator(type);
-            using (Stream os = cPacket.Open(bOut, new byte[Data.Length - 1]))
-                os.Write(Data, 0, Data.Length);
-            ValidateData(bOut.ToArray());
-        }
+            PgpLiteralDataGenerator lPacket = new PgpLiteralDataGenerator();
+            var writer = new PacketWriter(bOut);
+            using (var compressedWriter = cPacket.Open(writer))
+            using (var literalStream = lPacket.Open(compressedWriter, PgpLiteralData.Binary, "", DateTime.UtcNow))
+                literalStream.Write(Data);
 
-        private void ValidateData(byte[] compressed)
-        {
-            PgpObjectFactory pgpFact = new PgpObjectFactory(compressed);
+            // Read it back
+            bOut.Position = 0;
+            PgpObjectFactory pgpFact = new PgpObjectFactory(bOut);
             PgpCompressedData c1 = (PgpCompressedData)pgpFact.NextPgpObject();
-
             Stream pIn = c1.GetDataStream();
-            byte[] bytes = Streams.ReadAll(pIn);
-            pIn.Close();
+            pgpFact = new PgpObjectFactory(pIn);
+            PgpLiteralData l1 = (PgpLiteralData)pgpFact.NextPgpObject();
+            byte[] bytes = Streams.ReadAll(l1.GetDataStream());
 
             Assert.That(bytes, Is.EqualTo(Data));
         }

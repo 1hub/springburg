@@ -299,12 +299,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpSignatureSubpacketVector hashedPackets,
             PgpSignatureSubpacketVector unhashedPackets)
         {
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(HashAlgorithmTag.Sha1);
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(certificationLevel, keyPair.PrivateKey, HashAlgorithmTag.Sha1);
 
-            //
             // Generate the certification
-            //
-            sGen.InitSign(certificationLevel, keyPair.PrivateKey);
 
             sGen.SetHashedSubpackets(hashedPackets);
             sGen.SetUnhashedSubpackets(unhashedPackets);
@@ -329,13 +326,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpSignatureSubpacketVector unhashedPackets,
             HashAlgorithmTag hashAlgorithm)
         {
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(hashAlgorithm);
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(certificationLevel, keyPair.PrivateKey, hashAlgorithm);
 
-            //
             // Generate the certification
-            //
-            sGen.InitSign(certificationLevel, keyPair.PrivateKey);
-
             sGen.SetHashedSubpackets(hashedPackets);
             sGen.SetUnhashedSubpackets(unhashedPackets);
 
@@ -762,7 +755,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        public override void Encode(PacketWriter outStr)
+        public override void Encode(IPacketWriter outStr)
         {
             outStr.WritePacket(secret);
 
