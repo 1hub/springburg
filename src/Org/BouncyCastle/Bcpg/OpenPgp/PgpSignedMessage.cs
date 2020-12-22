@@ -14,7 +14,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         internal PgpSignedMessage(IPacketReader packetReader)
         {
-            var packet = packetReader.ReadPacket();
+            var packet = packetReader.ReadContainedPacket();
             onePassSignaturePacket = packet as OnePassSignaturePacket;
             signaturePacket = packet as SignaturePacket;
             Debug.Assert(onePassSignaturePacket != null || signaturePacket != null);
@@ -46,7 +46,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             if (signaturePacket == null)
             {
-                signaturePacket = (SignaturePacket)packetReader.ReadPacket();
+                signaturePacket = (SignaturePacket)packetReader.ReadContainedPacket();
             }
 
             creationTime = signaturePacket.CreationTime;
@@ -78,23 +78,20 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 // DO NOT DISPOSE THE INNER READER
             }
 
-            public PacketTag NextPacketTag()
-            {
-                return innerReader.NextPacketTag();
-            }
+            public PacketTag NextPacketTag() => innerReader.NextPacketTag();
 
-            public Packet ReadPacket()
+            public ContainedPacket ReadContainedPacket() => innerReader.ReadContainedPacket();
+
+            public (StreamablePacket Packet, Stream Stream) ReadStreamablePacket()
             {
                 if (innerReader.NextPacketTag() == PacketTag.LiteralData)
                 {
                     // TODO: Version 5 signatures
-                    var literalDataPacket = (LiteralDataPacket)innerReader.ReadPacket();
+                    var literalDataPacket = innerReader.ReadStreamablePacket();
                     literalDataRead = true;
-                    // FIXME: Improve interface
-                    literalDataPacket.inputStream = new CryptoStream(literalDataPacket.GetInputStream(), hashTransform, CryptoStreamMode.Read);
-                    return literalDataPacket;
+                    return (literalDataPacket.Packet, new CryptoStream(literalDataPacket.Stream, hashTransform, CryptoStreamMode.Read));
                 }
-                return innerReader.ReadPacket();
+                return innerReader.ReadStreamablePacket();
             }
         }
     }

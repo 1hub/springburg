@@ -4,14 +4,13 @@ using System.Text;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public class LiteralDataPacket : InputStreamPacket
+    public class LiteralDataPacket : StreamablePacket
     {
         private int format;
         private byte[] fileName;
         private long modificationTime;
 
         internal LiteralDataPacket(Stream bcpgIn)
-            : base(bcpgIn)
         {
             format = bcpgIn.ReadByte();
             int len = bcpgIn.ReadByte();

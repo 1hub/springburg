@@ -43,7 +43,7 @@ namespace Org.BouncyCastle.Bcpg
             this.stream.Dispose();
         }
 
-        public Stream GetPacketStream(InputStreamPacket packet)
+        public Stream GetPacketStream(StreamablePacket packet)
         {
             if (inClearText)
             {

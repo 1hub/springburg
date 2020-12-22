@@ -2,13 +2,12 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public class ReservedPacket : InputStreamPacket
+    public class ReservedPacket : StreamablePacket
     {
-        internal ReservedPacket(Stream bcpgIn)
-            : base(bcpgIn)
+        public override PacketTag Tag => PacketTag.Reserved;
+
+        public override void EncodeHeader(Stream bcpgOut)
         {
         }
-
-        public override PacketTag Tag => PacketTag.Reserved;
     }
 }

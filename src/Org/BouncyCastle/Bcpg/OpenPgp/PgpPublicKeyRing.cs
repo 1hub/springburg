@@ -42,13 +42,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     + "tag 0x" + ((int)initialTag).ToString("X"));
             }
 
-            PublicKeyPacket pubPk = (PublicKeyPacket)packetReader.ReadPacket();
+            PublicKeyPacket pubPk = (PublicKeyPacket)packetReader.ReadContainedPacket();
             keys.Add(ReadPublicKey(packetReader, pubPk));
 
             // Read subkeys
             while (packetReader.NextPacketTag() == PacketTag.PublicSubkey)
             {
-                pubPk = (PublicSubkeyPacket)packetReader.ReadPacket();
+                pubPk = (PublicSubkeyPacket)packetReader.ReadContainedPacket();
                 keys.Add(ReadPublicKey(packetReader, pubPk, subKey: true));
             }
         }

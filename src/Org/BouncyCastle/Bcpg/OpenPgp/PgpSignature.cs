@@ -54,7 +54,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             var packetReader = new PacketReader(detachedSignature);
             if (packetReader.NextPacketTag() != PacketTag.Signature)
                 throw new PgpException("Not a signature");
-            this.sigPck = (SignaturePacket)packetReader.ReadPacket();
+            this.sigPck = (SignaturePacket)packetReader.ReadContainedPacket();
         }
 
         /// <summary>The OpenPGP version number for this signature.</summary>

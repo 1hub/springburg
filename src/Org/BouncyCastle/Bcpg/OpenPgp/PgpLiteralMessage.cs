@@ -6,19 +6,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     public class PgpLiteralMessage : PgpMessage
     {
         private LiteralDataPacket literalDataPacket;
+        private Stream inputStream;
 
         internal PgpLiteralMessage(IPacketReader packetReader)
         {
-            this.literalDataPacket = (LiteralDataPacket)packetReader.ReadPacket();
+            var packet = packetReader.ReadStreamablePacket();
+            this.literalDataPacket = (LiteralDataPacket)packet.Packet;
+            this.inputStream = packet.Stream;
         }
 
         public DateTime ModificationTime => literalDataPacket.ModificationTime;
 
         public string FileName => literalDataPacket.FileName;
 
-        public Stream GetStream()
-        {
-            return this.literalDataPacket.GetInputStream();
-        }
+        public Stream GetStream() => inputStream;
     }
 }

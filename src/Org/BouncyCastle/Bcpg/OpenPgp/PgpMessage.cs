@@ -20,7 +20,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             // Skip over marker packets
             while (IsSkippablePacket(packetReader.NextPacketTag()))
             {
-                packetReader.ReadPacket();
+                packetReader.ReadContainedPacket();
             }
 
             switch (packetReader.NextPacketTag())
@@ -38,11 +38,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 case PacketTag.PublicKeyEncryptedSession:
                 case PacketTag.SymmetricKeyEncryptedSessionKey:
                     return new PgpEncryptedMessage(packetReader);
-
-                // Skip over some packets?
-                /*case PacketTag.Marker:
-                    packetReader.ReadPacket();
-                    continue;*/
 
                 default:
                     // TODO: Better exception

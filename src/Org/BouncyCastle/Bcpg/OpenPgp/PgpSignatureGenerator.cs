@@ -233,7 +233,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 // DO NOT DISPOSE THE INNER WRITER
             }
 
-            public Stream GetPacketStream(InputStreamPacket packet)
+            public Stream GetPacketStream(StreamablePacket packet)
             {
                 if (packet is LiteralDataPacket)
                 {

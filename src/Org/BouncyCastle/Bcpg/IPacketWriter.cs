@@ -7,7 +7,7 @@ namespace Org.BouncyCastle.Bcpg
     {
         void WritePacket(ContainedPacket packet);
 
-        Stream GetPacketStream(InputStreamPacket packet);
+        Stream GetPacketStream(StreamablePacket packet);
 
         IPacketWriter CreateNestedWriter(Stream stream);
     }

@@ -46,7 +46,7 @@ namespace Org.BouncyCastle.Bcpg
             return this.packetReader.NextPacketTag();
         }
 
-        public Packet ReadPacket()
+        public ContainedPacket ReadContainedPacket()
         {
             if (this.armoredInputStream.IsClearText())
             {
@@ -65,7 +65,7 @@ namespace Org.BouncyCastle.Bcpg
                     return new OnePassSignaturePacket(PgpSignature.CanonicalTextDocument, hashAlgorithmTag, 0, 0, false);
                 }
 
-                return new LiteralDataPacket(PgpLiteralData.Utf8, "", DateTime.MinValue) { inputStream = new LiteralDataStream(armoredInputStream) };
+                throw new NotSupportedException();
             }
 
             if (this.packetReader == null)
@@ -73,7 +73,25 @@ namespace Org.BouncyCastle.Bcpg
                 this.packetReader = new PacketReader(armoredInputStream);
             }
 
-            return this.packetReader.ReadPacket();
+            return this.packetReader.ReadContainedPacket();
+        }
+
+        public (StreamablePacket Packet, Stream Stream) ReadStreamablePacket()
+        {
+            if (this.armoredInputStream.IsClearText())
+            {
+                if (!generatedOnePassPacket)
+                    throw new NotSupportedException();
+
+                return (new LiteralDataPacket(PgpLiteralData.Utf8, "", DateTime.MinValue), new LiteralDataStream(armoredInputStream));
+            }
+
+            if (this.packetReader == null)
+            {
+                this.packetReader = new PacketReader(armoredInputStream);
+            }
+
+            return this.packetReader.ReadStreamablePacket();
         }
 
         class LiteralDataStream : Stream

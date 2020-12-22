@@ -8,7 +8,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     {
         private static TrustPacket ReadOptionalTrustPacket(PacketReader packetReader)
         {
-            return packetReader.NextPacketTag() == PacketTag.Trust ? (TrustPacket)packetReader.ReadPacket() : null;
+            return packetReader.NextPacketTag() == PacketTag.Trust ? (TrustPacket)packetReader.ReadContainedPacket() : null;
         }
 
         private static IList<PgpSignature> ReadSignaturesAndTrust(PacketReader packetReader)
@@ -19,7 +19,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
                 while (packetReader.NextPacketTag() == PacketTag.Signature)
                 {
-                    SignaturePacket signaturePacket = (SignaturePacket)packetReader.ReadPacket();
+                    SignaturePacket signaturePacket = (SignaturePacket)packetReader.ReadContainedPacket();
                     TrustPacket trustPacket = ReadOptionalTrustPacket(packetReader);
                     sigList.Add(new PgpSignature(signaturePacket, trustPacket));
                 }
@@ -40,7 +40,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             // Ignore GPG comment packets if found.
             while (packetReader.NextPacketTag() == PacketTag.Experimental2)
             {
-                packetReader.ReadPacket();
+                packetReader.ReadContainedPacket();
             }
 
             TrustPacket trust = ReadOptionalTrustPacket(packetReader);
@@ -58,7 +58,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             while (packetReader.NextPacketTag() == PacketTag.UserId
                 || packetReader.NextPacketTag() == PacketTag.UserAttribute)
             {
-                Packet obj = packetReader.ReadPacket();
+                Packet obj = packetReader.ReadContainedPacket();
                 if (obj is UserIdPacket)
                 {
                     UserIdPacket id = (UserIdPacket)obj;

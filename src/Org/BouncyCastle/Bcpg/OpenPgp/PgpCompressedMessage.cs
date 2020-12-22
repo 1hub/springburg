@@ -8,18 +8,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     public class PgpCompressedMessage : PgpMessage
     {
         private CompressedDataPacket compressedDataPacket;
+        private Stream inputStream;
         private IPacketReader packetReader;
         
         internal PgpCompressedMessage(IPacketReader packetReader)
         {
-            this.compressedDataPacket = (CompressedDataPacket)packetReader.ReadPacket();
+            var packet = packetReader.ReadStreamablePacket();
+            this.compressedDataPacket = (CompressedDataPacket)packet.Packet;
+            this.inputStream = packet.Stream;
             this.packetReader = packetReader;
         }
 
         private Stream GetDataStream()
         {
-            var inputStream = this.compressedDataPacket.GetInputStream();
-
             switch (this.compressedDataPacket.Algorithm)
             {
                 case CompressionAlgorithmTag.Uncompressed:

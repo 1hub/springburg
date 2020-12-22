@@ -52,7 +52,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     + "tag 0x" + ((int)initialTag).ToString("X"));
             }
 
-            SecretKeyPacket secret = (SecretKeyPacket)packetReader.ReadPacket();
+            SecretKeyPacket secret = (SecretKeyPacket)packetReader.ReadContainedPacket();
             keys.Add(new PgpSecretKey(secret, ReadPublicKey(packetReader, secret.PublicKeyPacket)));
 
             // Read subkeys
@@ -60,12 +60,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             {
                 if (packetReader.NextPacketTag() == PacketTag.SecretSubkey)
                 {
-                    SecretSubkeyPacket sub = (SecretSubkeyPacket)packetReader.ReadPacket();
+                    SecretSubkeyPacket sub = (SecretSubkeyPacket)packetReader.ReadContainedPacket();
                     keys.Add(new PgpSecretKey(sub, ReadPublicKey(packetReader, sub.PublicKeyPacket, subKey: true)));
                 }
                 else
                 {
-                    PublicSubkeyPacket sub = (PublicSubkeyPacket)packetReader.ReadPacket();
+                    PublicSubkeyPacket sub = (PublicSubkeyPacket)packetReader.ReadContainedPacket();
                     extraPubKeys.Add(ReadPublicKey(packetReader, sub, subKey: true));
                 }
             }

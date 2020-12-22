@@ -1,4 +1,5 @@
 using Org.BouncyCastle.Utilities.IO;
+using System.Diagnostics;
 using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
@@ -53,7 +54,7 @@ namespace Org.BouncyCastle.Bcpg
             return (PacketTag)maskB;
         }
 
-        public Packet ReadPacket()
+        private (Packet Packet, Stream Stream) ReadPacket()
         {
             int hdr = next ? nextB : inputStream.ReadByte();
 
@@ -61,7 +62,7 @@ namespace Org.BouncyCastle.Bcpg
 
             if (hdr < 0)
             {
-                return null;
+                return (null, null);
             }
 
             if ((hdr & 0x80) == 0)
@@ -145,49 +146,63 @@ namespace Org.BouncyCastle.Bcpg
             switch (tag)
             {
                 case PacketTag.Reserved:
-                    return new ReservedPacket(objStream);
+                    return (new ReservedPacket(), objStream);
                 case PacketTag.PublicKeyEncryptedSession:
-                    return new PublicKeyEncSessionPacket(objStream);
+                    return (new PublicKeyEncSessionPacket(objStream), null);
                 case PacketTag.Signature:
-                    return new SignaturePacket(objStream);
+                    return (new SignaturePacket(objStream), null);
                 case PacketTag.SymmetricKeyEncryptedSessionKey:
-                    return new SymmetricKeyEncSessionPacket(objStream);
+                    return (new SymmetricKeyEncSessionPacket(objStream), null);
                 case PacketTag.OnePassSignature:
-                    return new OnePassSignaturePacket(objStream);
+                    return (new OnePassSignaturePacket(objStream), null);
                 case PacketTag.SecretKey:
-                    return new SecretKeyPacket(objStream);
+                    return (new SecretKeyPacket(objStream), null);
                 case PacketTag.PublicKey:
-                    return new PublicKeyPacket(objStream);
+                    return (new PublicKeyPacket(objStream), null);
                 case PacketTag.SecretSubkey:
-                    return new SecretSubkeyPacket(objStream);
+                    return (new SecretSubkeyPacket(objStream), null);
                 case PacketTag.CompressedData:
-                    return new CompressedDataPacket(objStream);
+                    return (new CompressedDataPacket(objStream), objStream);
                 case PacketTag.SymmetricKeyEncrypted:
-                    return new SymmetricEncDataPacket(objStream);
+                    return (new SymmetricEncDataPacket(), objStream);
                 case PacketTag.Marker:
-                    return new MarkerPacket(objStream);
+                    return (new MarkerPacket(objStream), null);
                 case PacketTag.LiteralData:
-                    return new LiteralDataPacket(objStream);
+                    return (new LiteralDataPacket(objStream), objStream);
                 case PacketTag.Trust:
-                    return new TrustPacket(objStream);
+                    return (new TrustPacket(objStream), null);
                 case PacketTag.UserId:
-                    return new UserIdPacket(objStream);
+                    return (new UserIdPacket(objStream), null);
                 case PacketTag.UserAttribute:
-                    return new UserAttributePacket(objStream);
+                    return (new UserAttributePacket(objStream), null);
                 case PacketTag.PublicSubkey:
-                    return new PublicSubkeyPacket(objStream);
+                    return (new PublicSubkeyPacket(objStream), null);
                 case PacketTag.SymmetricEncryptedIntegrityProtected:
-                    return new SymmetricEncIntegrityPacket(objStream);
+                    return (new SymmetricEncIntegrityPacket(objStream), objStream);
                 case PacketTag.ModificationDetectionCode:
-                    return new ModDetectionCodePacket(objStream);
+                    return (new ModDetectionCodePacket(objStream), null);
                 case PacketTag.Experimental1:
                 case PacketTag.Experimental2:
                 case PacketTag.Experimental3:
                 case PacketTag.Experimental4:
-                    return new ExperimentalPacket(tag, objStream);
+                    return (new ExperimentalPacket(tag, objStream), null);
                 default:
                     throw new IOException("unknown packet type encountered: " + tag);
             }
+        }
+
+        public ContainedPacket ReadContainedPacket()
+        {
+            var packet = ReadPacket();
+            Debug.Assert(packet.Packet is ContainedPacket);
+            return (ContainedPacket)packet.Packet;
+        }
+
+        public (StreamablePacket Packet, Stream Stream) ReadStreamablePacket()
+        {
+            var packet = ReadPacket();
+            Debug.Assert(packet.Packet is StreamablePacket);
+            return ((StreamablePacket)packet.Packet, packet.Stream);
         }
 
         /// <summary>

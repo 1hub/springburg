@@ -7,8 +7,9 @@ namespace Org.BouncyCastle.Bcpg
     {
         PacketTag NextPacketTag();
 
-        // TODO: ContainedPacket
-        Packet ReadPacket();
+        ContainedPacket ReadContainedPacket();
+
+        (StreamablePacket Packet, Stream Stream) ReadStreamablePacket();
 
         IPacketReader CreateNestedReader(Stream stream);
     }

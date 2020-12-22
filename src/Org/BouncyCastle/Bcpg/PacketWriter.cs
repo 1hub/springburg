@@ -102,7 +102,7 @@ namespace Org.BouncyCastle.Bcpg
             packet.Encode(packetStream);
         }
 
-        public Stream GetPacketStream(InputStreamPacket packet)
+        public Stream GetPacketStream(StreamablePacket packet)
         {
             if (currentPacketStream != null)
                 throw new InvalidOperationException("Streamable packet is currently being written");

@@ -2,12 +2,11 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public class CompressedDataPacket : InputStreamPacket
+    public class CompressedDataPacket : StreamablePacket
     {
         private readonly CompressionAlgorithmTag algorithm;
 
         internal CompressedDataPacket(Stream bcpgIn)
-            : base(bcpgIn)
         {
             this.algorithm = (CompressionAlgorithmTag)bcpgIn.ReadByte();
         }

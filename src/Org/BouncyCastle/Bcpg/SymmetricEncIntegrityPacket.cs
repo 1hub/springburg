@@ -3,12 +3,11 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public class SymmetricEncIntegrityPacket : InputStreamPacket
+    public class SymmetricEncIntegrityPacket : StreamablePacket
     {
         private readonly byte version;
 
         internal SymmetricEncIntegrityPacket(Stream bcpgIn)
-            : base(bcpgIn)
         {
             version = (byte)bcpgIn.ReadByte();
         }

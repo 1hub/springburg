@@ -13,7 +13,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     {
         private List<PublicKeyEncSessionPacket> publicKeyEncSessionPackets;
         private List<SymmetricKeyEncSessionPacket> symmetricKeyEncSessionPackets;
-        private InputStreamPacket encryptedPacket;
+        private StreamablePacket encryptedPacket;
+        private Stream inputStream;
         private IPacketReader packetReader;
         private CryptoStream encStream;
         private HashAlgorithm hashAlgorithm;
@@ -29,7 +30,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             while (packetReader.NextPacketTag() == PacketTag.PublicKeyEncryptedSession ||
                    packetReader.NextPacketTag() == PacketTag.SymmetricKeyEncryptedSessionKey)
             {
-                var keyPacket = packetReader.ReadPacket();
+                var keyPacket = packetReader.ReadContainedPacket();
                 if (keyPacket is SymmetricKeyEncSessionPacket symmetricKeyEncSessionPacket)
                 {
                     symmetricKeyEncSessionPackets.Add(symmetricKeyEncSessionPacket);
@@ -41,12 +42,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 packets.Add(keyPacket);
             }
 
-            Packet packet = packetReader.ReadPacket();
-            if (!(packet is SymmetricEncDataPacket) &&
-                !(packet is SymmetricEncIntegrityPacket))
+            var packet = packetReader.ReadStreamablePacket();
+            if (!(packet.Packet is SymmetricEncDataPacket) &&
+                !(packet.Packet is SymmetricEncIntegrityPacket))
                 throw new IOException("unexpected packet in stream: " + packet);
 
-            this.encryptedPacket = (InputStreamPacket)packet;
+            this.encryptedPacket = packet.Packet;
+            this.inputStream = packet.Stream;
         }
 
         public IEnumerable<long> KeyIds => publicKeyEncSessionPackets.Select(pk => pk.KeyId);
@@ -134,7 +136,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             SymmetricKeyAlgorithmTag keyAlgorithm = (SymmetricKeyAlgorithmTag)sessionData[0];
 
             if (keyAlgorithm == SymmetricKeyAlgorithmTag.Null)
-                return encryptedPacket.GetInputStream();
+                return inputStream;
 
             var key = sessionData.Slice(1);
             SymmetricAlgorithm encryptionAlgorithm = PgpUtilities.GetSymmetricAlgorithm(keyAlgorithm);
@@ -161,7 +163,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
 
             encStream = new CryptoStream(
-                encryptedPacket.GetInputStream(),
+                inputStream,
                 new ZeroPaddedCryptoTransformWrapper(decryptor),
                 CryptoStreamMode.Read);
             if (encryptedPacket is SymmetricEncIntegrityPacket)
