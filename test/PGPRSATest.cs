@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-
+using NuGet.Frameworks;
 using NUnit.Framework;
 
 using Org.BouncyCastle.Bcpg.Attr;
@@ -313,7 +313,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "gO3XB0d6VAq2kMOKc2YiB4ZtZcFvvmP9KdmVIZxVjpa9ozjP5j9zFso1HOpFcsn/VDBEqy5TvsNx"
             + "Qvmtc8X7lqK/zLRVkSSBItik2IIhsAIAAw==");
 
-        private void FingerPrintTest()
+        [Test]
+        public void FingerPrintTest()
         {
             //
             // version 3
@@ -378,10 +379,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             Assert.AreEqual(data, bytes);
         }
 
-        private void ExistingEmbeddedJpegTest()
+        [Test]
+        public void ExistingEmbeddedJpegTest()
         {
             PgpPublicKeyRing pgpPub = new PgpPublicKeyRing(embeddedJPEGKey);
-
             PgpPublicKey pubKey = pgpPub.GetPublicKey();
 
             int count = 0;
@@ -391,29 +392,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 foreach (PgpSignature sig in pubKey.GetSignaturesForUserAttribute(attributes))
                 {
                     sig.InitVerify(pubKey);
-
-                    if (!sig.VerifyCertification(attributes, pubKey))
-                    {
-                        Fail("signature failed verification");
-                    }
-
+                    Assert.IsTrue(sig.VerifyCertification(attributes, pubKey));
                     sigCount++;
                 }
 
-                if (sigCount != 1)
-                {
-                    Fail("Failed user attributes signature check");
-                }
+                Assert.AreEqual(1, sigCount);
                 count++;
             }
 
-            if (count != 1)
-            {
-                Fail("didn't find user attributes");
-            }
+            Assert.AreEqual(1, count);
         }
 
-        private void EmbeddedJpegTest()
+        [Test]
+        public void EmbeddedJpegTest()
         {
             PgpPublicKeyRing pgpPub = new PgpPublicKeyRing(testPubKey);
             PgpSecretKeyRing pgpSec = new PgpSecretKeyRing(testPrivKey);
@@ -439,36 +430,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 foreach (PgpSignature s in nKey.GetSignaturesForUserAttribute(attributes))
                 {
                     s.InitVerify(pubKey);
-
-                    if (!s.VerifyCertification(attributes, pubKey))
-                    {
-                        Fail("added signature failed verification");
-                    }
-
+                    Assert.IsTrue(sig.VerifyCertification(attributes, nKey));
                     sigCount++;
                 }
 
-                if (sigCount != 1)
-                {
-                    Fail("Failed added user attributes signature check");
-                }
+                Assert.AreEqual(1, sigCount);
                 count++;
             }
 
-            if (count != 1)
-            {
-                Fail("didn't find added user attributes");
-            }
+            Assert.AreEqual(1, count);
 
             nKey = PgpPublicKey.RemoveCertification(nKey, uVec);
-
-            if (nKey.GetUserAttributes().GetEnumerator().MoveNext())
-            {
-                Fail("found attributes where none expected");
-            }
+            Assert.IsFalse(nKey.GetUserAttributes().Any());
         }
 
-        public override void PerformTest()
+        [Test]
+        public void PerformTest()
         {
             //
             // Read the public key
@@ -487,23 +464,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpSignature sig = (PgpSignature)enumerator.Current;
 
             sig.InitVerify(pgpPub.GetPublicKey());
-
-            if (!sig.VerifyCertification(uid, pgpPub.GetPublicKey()))
-            {
-                Fail("failed to verify certification");
-            }
+            Assert.IsTrue(sig.VerifyCertification(uid, pgpPub.GetPublicKey()));
 
             //
             // write a public key
             //
-            MemoryStream bOut = new UncloseableMemoryStream();
-
+            MemoryStream bOut = new MemoryStream();
             pgpPub.Encode(bOut);
-
-            if (!AreEqual(bOut.ToArray(), testPubKey))
-            {
-                Fail("public key rewrite failed");
-            }
+            Assert.AreEqual(testPubKey, bOut.ToArray());
 
             //
             // Read the public key
@@ -514,7 +482,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // write a V3 public key
             //
-            bOut = new UncloseableMemoryStream();
+            bOut = new MemoryStream();
 
             pgpPubV3.Encode(bOut);
 
@@ -531,15 +499,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 //
                 // write a v3 private key
                 //
-                bOut = new UncloseableMemoryStream();
-
+                bOut = new MemoryStream();
                 pgpPriv2.Encode(bOut);
-
                 byte[] result = bOut.ToArray();
-                if (!AreEqual(result, testPrivKeyV3))
-                {
-                    Fail("private key V3 rewrite failed");
-                }
+                Assert.AreEqual(testPrivKeyV3, result);
             }
 
             //
@@ -551,14 +514,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // write a private key
             //
-            bOut = new UncloseableMemoryStream();
-
+            bOut = new MemoryStream();
             pgpPriv.Encode(bOut);
-
-            if (!AreEqual(bOut.ToArray(), testPrivKey))
-            {
-                Fail("private key rewrite failed");
-            }
+            Assert.AreEqual(testPrivKey, bOut.ToArray());
 
             //
             // test encryption
@@ -613,7 +571,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             byte[] shortText = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o' };
 
-            MemoryStream cbOut = new UncloseableMemoryStream();
+            MemoryStream cbOut = new MemoryStream();
             PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
             PgpLiteralDataGenerator lPk = new PgpLiteralDataGenerator();
             PgpPublicKey puK = pgpPriv.GetSecretKey(encKeyId).PublicKey;
@@ -638,7 +596,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // encrypt
             //
-            cbOut = new UncloseableMemoryStream();
+            cbOut = new MemoryStream();
             cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
             puK = pgpPriv.GetSecretKey(encKeyId).PublicKey;
 
@@ -697,20 +655,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             sig = (PgpSignature)enumerator.Current;
 
             sig.InitVerify(key);
-
-            if (!sig.VerifyCertification(uid, key))
-            {
-                Fail("failed to verify certification");
-            }
+            Assert.IsTrue(sig.VerifyCertification(uid, key));
 
             pgpPrivKey = secretKey.ExtractPrivateKey(passPhrase);
 
             key = PgpPublicKey.RemoveCertification(key, uid, sig);
-
-            if (key == null)
-            {
-                Fail("failed certification removal");
-            }
+            Assert.NotNull(key);
 
             byte[] keyEnc = key.GetEncoded();
 
@@ -735,11 +685,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             sig = (PgpSignature)sgEnum.Current;
 
             sig.InitVerify(key);
-
-            if (!sig.VerifyCertification(key))
-            {
-                Fail("failed to verify revocation certification");
-            }
+            Assert.IsTrue(sig.VerifyCertification(key));
 
             //
             // use of PgpKeyPair
@@ -763,7 +709,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             secretKey.ExtractPrivateKey(passPhrase);
 
-            secretKey.Encode(new UncloseableMemoryStream());
+            secretKey.Encode(new MemoryStream());
 
             //
             // secret key password changing.
@@ -774,11 +720,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             secretKey.ExtractPrivateKey(newPass.ToCharArray());
 
-            secretKey.Encode(new UncloseableMemoryStream());
+            secretKey.Encode(new MemoryStream());
 
             key = secretKey.PublicKey;
 
-            key.Encode(new UncloseableMemoryStream());
+            key.Encode(new MemoryStream());
 
 
             enumerator = key.GetUserIds().GetEnumerator();
@@ -791,11 +737,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             sig = (PgpSignature)enumerator.Current;
 
             sig.InitVerify(key);
-
-            if (!sig.VerifyCertification(uid, key))
-            {
-                Fail("failed to verify certification");
-            }
+            Assert.IsTrue(sig.VerifyCertification(uid, key));
 
             pgpPrivKey = secretKey.ExtractPrivateKey(newPass.ToCharArray());
 
@@ -805,7 +747,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             const string data = "hello world!";
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
 
-            bOut = new UncloseableMemoryStream();
+            bOut = new MemoryStream();
             sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, pgpPrivKey, HashAlgorithmTag.Sha1);
             PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
             PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
@@ -833,7 +775,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // signature generation - version 3
             //
-            bOut = new UncloseableMemoryStream();
+            bOut = new MemoryStream();
 
             sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, pgpPrivKey, HashAlgorithmTag.Sha1, version: 3);
             cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
@@ -873,9 +815,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PerformTestSig(HashAlgorithmTag.Sha256, secretKey.PublicKey, pgpPrivKey);
             PerformTestSig(HashAlgorithmTag.Sha384, secretKey.PublicKey, pgpPrivKey);
             PerformTestSig(HashAlgorithmTag.Sha512, secretKey.PublicKey, pgpPrivKey);
-            FingerPrintTest();
-            ExistingEmbeddedJpegTest();
-            EmbeddedJpegTest();
         }
 
         private void PerformTestSig(
@@ -886,7 +825,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             const string data = "hello world!";
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
 
-            MemoryStream bOut = new UncloseableMemoryStream();
+            MemoryStream bOut = new MemoryStream();
             PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, privKey, hashAlgorithm);
             PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
             PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
@@ -908,35 +847,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             Assert.AreEqual(testDateTime, literalMessage.ModificationTime);
             literalMessage.GetStream().CopyTo(Stream.Null);
             Assert.IsTrue(signedMessage.Verify(pubKey));
-        }
-
-        private class UncloseableMemoryStream
-            : MemoryStream
-        {
-#if PORTABLE
-            protected override void Dispose(bool disposing)
-            {
-                throw new Exception("Dispose() called on underlying stream");
-            }
-#else
-            public override void Close()
-            {
-                throw new Exception("Close() called on underlying stream");
-            }
-#endif
-        }
-
-        public override string Name
-        {
-            get { return "PgpRsaTest"; }
-        }
-
-        [Test]
-        public void TestFunction()
-        {
-            string resultText = Perform().ToString();
-
-            Assert.AreEqual(Name + ": Okay", resultText);
         }
     }
 }

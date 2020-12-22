@@ -356,7 +356,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             }
         }
 
-        public override void PerformTest()
+        [Test]
+        public void PerformTest()
         {
             DoTestRemoveSignature();
 
@@ -677,21 +678,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private void doTestMissingSubpackets(byte[] signature)
         {
-            /*
-            PgpObjectFactory f = new PgpObjectFactory(signature);
-            object obj = f.NextPgpObject();
-
-            while (!(obj is PgpSignatureList))
-            {
-                obj = f.NextPgpObject();
-                if (obj is PgpLiteralData)
-                {
-                    Stream input = ((PgpLiteralData)obj).GetDataStream();
-                    input.CopyTo(Stream.Null);
-                }
-            }
-
-            PgpSignature sig = ((PgpSignatureList)obj)[0];
+            PgpSignature sig = new PgpSignature(signature);
 
             if (sig.Version > 3)
             {
@@ -723,7 +710,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 {
                     Fail("HasSubpackets property was true with no packets");
                 }
-            }*/
+            }
         }
 
         private void preferredAlgorithmCheck<T>(
@@ -828,19 +815,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 Fail("Failed generated signature check against original data");
             }*/
-        }
-
-        public override string Name
-        {
-            get { return "PgpSignatureTest"; }
-        }
-
-        [Test]
-        public void TestFunction()
-        {
-            string resultText = Perform().ToString();
-
-            Assert.AreEqual(Name + ": Okay", resultText);
         }
     }
 }

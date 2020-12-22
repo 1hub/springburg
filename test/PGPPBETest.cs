@@ -1,29 +1,23 @@
-using System;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
-
 using NUnit.Framework;
 using Org.BouncyCastle.Utilities.IO;
-using Org.BouncyCastle.Utilities.Test;
+using System;
+using System.IO;
+using System.Text;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
     [TestFixture]
     public class PgpPbeTest
-        : SimpleTest
     {
         private static readonly DateTime TestDateTime = new DateTime(2003, 8, 29, 23, 35, 11, 0);
 
         private static readonly byte[] enc1 = Convert.FromBase64String(
-            "jA0EAwMC5M5wWBP2HBZgySvUwWFAmMRLn7dWiZN6AkQMvpE3b6qwN3SSun7zInw2"
-            + "hxxdgFzVGfbjuB8w");
-        //        private static readonly byte[] enc1crc = Convert.FromBase64String("H66L");
+            "jA0EAwMC5M5wWBP2HBZgySvUwWFAmMRLn7dWiZN6AkQMvpE3b6qwN3SSun7zInw2" +
+            "hxxdgFzVGfbjuB8w");
+        
         private static readonly string pass = "hello world";
 
-        /**
-		 * Message with both PBE and symmetric
-		 */
+        // Message with both PBE and symmetric
         private static readonly byte[] testPBEAsym = Convert.FromBase64String(
             "hQIOA/ZlQEFWB5vuEAf/covEUaBve7NlWWdiO5NZubdtTHGElEXzG9hyBycp9At8" +
             "nZGi27xOZtEGFQo7pfz4JySRc3O0s6w7PpjJSonFJyNSxuze2LuqRwFWBYYcbS8/" +
@@ -72,67 +66,42 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             return bOut.ToArray();
         }
 
-        public override void PerformTest()
+        [Test]
+        public void DecryptMessage()
         {
             byte[] data = DecryptMessage(enc1);
-            if (data[0] != 'h' || data[1] != 'e' || data[2] != 'l')
-            {
-                Fail("wrong plain text in packet");
-            }
+            Assert.AreEqual('h', data[0]);
+            Assert.AreEqual('e', data[1]);
+            Assert.AreEqual('l', data[2]);
+        }
 
-            //
-            // create a PBE encrypted message and read it back.
-            //
-            byte[] text = Encoding.ASCII.GetBytes("hello world!\n");
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void EncryptAndDecryptMessage(bool withIntegrityPacket)
+        {
+            var text = Encoding.ASCII.GetBytes("hello world!\n");
+            var encryptedData = EncryptMessage(text, withIntegrityPacket);
+            var data = DecryptMessage(encryptedData);
+            Assert.AreEqual(text, data);
+        }
 
-            byte[] encryptedData = EncryptMessage(text, withIntegrityPacket: false);
-            data = DecryptMessage(encryptedData);
-            if (!AreEqual(data, text))
-            {
-                Fail("wrong plain text in generated packet");
-            }
-
-            //
-            // with integrity packet
-            //
-            encryptedData = EncryptMessage(text, withIntegrityPacket: true);
-            data = DecryptMessage(encryptedData);
-            if (!AreEqual(data, text))
-            {
-                Fail("wrong plain text in generated packet");
-            }
-
-            //
-            // sample message
-            //
+        [Test]
+        public void SampleMessage()
+        {
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(testPBEAsym);
             var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage("password");
             byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
             Assert.AreEqual(Encoding.ASCII.GetBytes("Sat 10.02.07\r\n"), bytes);
-
-            //
-            // with integrity packet - one byte message
-            //
-            byte[] msg = new byte[1];
-            encryptedData = EncryptMessage(msg, true);
-            data = DecryptMessage(encryptedData);
-            if (!AreEqual(data, msg))
-            {
-                Fail("wrong plain text in generated packet");
-            }
-        }
-
-        public override string Name
-        {
-            get { return "PgpPbeTest"; }
         }
 
         [Test]
-        public void TestFunction()
+        public void OneByteMessage()
         {
-            string resultText = Perform().ToString();
-
-            Assert.AreEqual(Name + ": Okay", resultText);
+            var msg = new byte[1] { 0xba };
+            var encryptedData = EncryptMessage(msg, true);
+            var data = DecryptMessage(encryptedData);
+            Assert.AreEqual(msg, data);
         }
     }
 }

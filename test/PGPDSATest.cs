@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -12,7 +13,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
     [TestFixture]
     public class PgpDsaTest
-        : SimpleTest
     {
         private static readonly byte[] testPubKey = Convert.FromBase64String(
               "mQGiBD9HBzURBACzkxRCVGJg5+Ld9DU4Xpnd4LCKgMq7YOY7Gi0EgK92gbaa6+zQ"
@@ -261,17 +261,25 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private static readonly char[] pass = "hello world".ToCharArray();
 
-        /**
-        * Generated signature test
-        *
-        * @param sKey
-        * @param pgpPrivKey
-        * @return test result
-        */
-        public void GenerateTest(
-            PgpSecretKeyRing sKey,
-            PgpPublicKey pgpPubKey,
-            PgpPrivateKey pgpPrivKey)
+        private PgpPublicKey pubKey;
+        private PgpSecretKey secretKey;
+        private PgpPrivateKey pgpPrivKey;
+
+        [SetUp]
+        public void Setup()
+        {
+            // Read the public key
+            var pgpPub = new PgpPublicKeyRing(testPubKey);
+            pubKey = pgpPub.GetPublicKey();
+
+            // Read the private key
+            var sKey = new PgpSecretKeyRing(testPrivKey);
+            secretKey = sKey.GetSecretKey();
+            pgpPrivKey = secretKey.ExtractPrivateKey(pass);
+        }
+
+        [Test]
+        public void GenerateMessage()
         {
             string data = "hello world!";
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
@@ -281,10 +289,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, pgpPrivKey, HashAlgorithmTag.Sha1);
             PgpSignatureSubpacketGenerator spGen = new PgpSignatureSubpacketGenerator();
 
-            string primaryUserId = (string)sKey.GetSecretKey().PublicKey.GetUserIds().First();
+            string primaryUserId = (string)secretKey.PublicKey.GetUserIds().First();
 
             spGen.SetSignerUserId(true, primaryUserId);
-
             sGen.SetHashedSubpackets(spGen.Generate());
 
             PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
@@ -304,44 +311,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             literalMessage.GetStream().CopyTo(Stream.Null);
-            Assert.IsTrue(signedMessage.Verify(pgpPubKey));
+            Assert.IsTrue(signedMessage.Verify(pubKey));
         }
 
-        public override void PerformTest()
+        [Test]
+        public void GenerateCanonicalMessage()
         {
-            PgpPublicKey pubKey = null;
-
-            //
-            // Read the public key
-            //
-            PgpPublicKeyRing pgpPub = new PgpPublicKeyRing(testPubKey);
-
-            pubKey = pgpPub.GetPublicKey();
-
-            //
-            // Read the private key
-            //
-            PgpSecretKeyRing sKey = new PgpSecretKeyRing(testPrivKey);
-            PgpSecretKey secretKey = sKey.GetSecretKey();
-            PgpPrivateKey pgpPrivKey = secretKey.ExtractPrivateKey(pass);
-
-            //
-            // test signature message
-            //
-            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(sig1);
-            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
-            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
-            literalMessage.GetStream().CopyTo(Stream.Null);
-            Assert.IsTrue(signedMessage.Verify(pubKey));
-
-            //
-            // signature generation
-            //
-            GenerateTest(sKey, pubKey, pgpPrivKey);
-
-            //
-            // signature generation - canonical text
-            //
             const string data = "hello world!";
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
             MemoryStream bOut = new MemoryStream();
@@ -358,23 +333,61 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 literalStream.Write(dataBytes);
             }
 
-            //
-            // verify Generated signature - canconical text
-            //
+            // Verify generated signature
             bOut.Position = 0;
-            compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(bOut);
-            signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
-            literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(bOut);
+            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             Assert.AreEqual(testDateTime, literalMessage.ModificationTime);
             literalMessage.GetStream().CopyTo(Stream.Null);
             Assert.IsTrue(signedMessage.Verify(pubKey));
+        }
 
+        [Test]
+        public void VerifyMessage()
+        {
+            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(sig1);
+            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            literalMessage.GetStream().CopyTo(Stream.Null);
+            Assert.IsTrue(signedMessage.Verify(pubKey));
+        }
+
+        [Test]
+        public void KeyPair()
+        {
+            DSA dsa = DSA.Create(512);
+            PgpKeyPair pgpKp = new PgpKeyPair(dsa, DateTime.UtcNow);
+            PgpPublicKey k1 = pgpKp.PublicKey;
+            PgpPrivateKey k2 = pgpKp.PrivateKey;
+        }
+
+        [Test]
+        public void ReadSecretKey()
+        {
+            // reading test extra data - key with edge condition for DSA key password.
+            char[] passPhrase = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+
+            var sKey = new PgpSecretKeyRing(testPrivKey2);
+            var pgpPrivKey = sKey.GetSecretKey().ExtractPrivateKey(passPhrase);
+
+            // reading test - aes256 encrypted passphrase.
+            sKey = new PgpSecretKeyRing(aesSecretKey);
+            pgpPrivKey = sKey.GetSecretKey().ExtractPrivateKey(pass);
+
+            // reading test - twofish encrypted passphrase.
+            sKey = new PgpSecretKeyRing(twofishSecretKey);
+            pgpPrivKey = sKey.GetSecretKey().ExtractPrivateKey(pass);
+        }
+
+        [Test]
+        public void ReadUserAttributes()
+        {
             //
             // Read the public key with user attributes
             //
-            pgpPub = new PgpPublicKeyRing(testPubWithUserAttr);
-
-            pubKey = pgpPub.GetPublicKey();
+            var pgpPub = new PgpPublicKeyRing(testPubWithUserAttr);
+            var pubKey = pgpPub.GetPublicKey();
 
             int count = 0;
             foreach (PgpUserAttributeSubpacketVector attributes in pubKey.GetUserAttributes())
@@ -382,24 +395,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 int sigCount = 0;
                 foreach (object sigs in pubKey.GetSignaturesForUserAttribute(attributes))
                 {
-                    if (sigs == null)
-                        Fail("null signature found");
-
+                    Assert.NotNull(sigs);
                     sigCount++;
                 }
 
-                if (sigCount != 1)
-                {
-                    Fail("Failed user attributes signature check");
-                }
-
+                Assert.AreEqual(1, sigCount);
                 count++;
             }
 
-            if (count != 1)
-            {
-                Fail("Failed user attributes check");
-            }
+            Assert.AreEqual(1, count);
 
             byte[] pgpPubBytes = pgpPub.GetEncoded();
             pgpPub = new PgpPublicKeyRing(pgpPubBytes);
@@ -408,69 +412,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             foreach (object ua in pubKey.GetUserAttributes())
             {
-                if (ua == null)
-                    Fail("null user attribute found");
-
+                Assert.NotNull(ua);
                 count++;
             }
 
-            if (count != 1)
-            {
-                Fail("Failed user attributes reread");
-            }
-
-            //
-            // reading test extra data - key with edge condition for DSA key password.
-            //
-            char[] passPhrase = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-
-            sKey = new PgpSecretKeyRing(testPrivKey2);
-            pgpPrivKey = sKey.GetSecretKey().ExtractPrivateKey(passPhrase);
-
-            //
-            // reading test - aes256 encrypted passphrase.
-            //
-            sKey = new PgpSecretKeyRing(aesSecretKey);
-            pgpPrivKey = sKey.GetSecretKey().ExtractPrivateKey(pass);
-
-            //
-            // reading test - twofish encrypted passphrase.
-            //
-            sKey = new PgpSecretKeyRing(twofishSecretKey);
-            pgpPrivKey = sKey.GetSecretKey().ExtractPrivateKey(pass);
-
-            //
-            // use of PgpKeyPair
-            //
-            DSA dsa = DSA.Create(512);
-            /*DsaParametersGenerator pGen = new DsaParametersGenerator();
-            pGen.Init(512, 80, new SecureRandom()); // TODO Is the certainty okay?
-            DsaParameters dsaParams = pGen.GenerateParameters();
-            DsaKeyGenerationParameters kgp = new DsaKeyGenerationParameters(new SecureRandom(), dsaParams);
-			IAsymmetricCipherKeyPairGenerator kpg = GeneratorUtilities.GetKeyPairGenerator("DSA");
-			kpg.Init(kgp);
-
-
-			AsymmetricCipherKeyPair kp = kpg.GenerateKeyPair();*/
-
-            PgpKeyPair pgpKp = new PgpKeyPair(dsa, DateTime.UtcNow);
-
-            PgpPublicKey k1 = pgpKp.PublicKey;
-            PgpPrivateKey k2 = pgpKp.PrivateKey;
-        }
-
-        public override string Name
-        {
-            get { return "PgpDsaTest"; }
-        }
-
-
-        [Test]
-        public void TestFunction()
-        {
-            string resultText = Perform().ToString();
-
-            Assert.AreEqual(Name + ": Okay", resultText);
+            Assert.AreEqual(1, count);
         }
     }
 }

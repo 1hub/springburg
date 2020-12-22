@@ -12,7 +12,6 @@ namespace Org.BouncyCastle.Bcpg
         {
             if (bcpgIn == null)
                 throw new ArgumentNullException("bcpgIn");
-
             this.digest = new byte[20];
             Streams.ReadFully(bcpgIn, this.digest);
         }

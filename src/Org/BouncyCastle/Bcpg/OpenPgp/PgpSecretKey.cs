@@ -601,101 +601,87 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 return null;
 
             PublicKeyPacket pubPk = secret.PublicKeyPacket;
-            try
+            byte[] data = ExtractKeyData(rawPassPhrase, clearPassPhrase);
+            var bcpgIn = new MemoryStream(data, false);
+            AsymmetricAlgorithm privateKey;
+            switch (pubPk.Algorithm)
             {
-                byte[] data = ExtractKeyData(rawPassPhrase, clearPassPhrase);
-                var bcpgIn = new MemoryStream(data, false);
-                AsymmetricAlgorithm privateKey;
-                switch (pubPk.Algorithm)
-                {
-                    case PublicKeyAlgorithmTag.RsaEncrypt:
-                    case PublicKeyAlgorithmTag.RsaGeneral:
-                    case PublicKeyAlgorithmTag.RsaSign:
-                        RsaPublicBcpgKey rsaPub = (RsaPublicBcpgKey)pubPk.Key;
-                        RsaSecretBcpgKey rsaPriv = new RsaSecretBcpgKey(bcpgIn);
+                case PublicKeyAlgorithmTag.RsaEncrypt:
+                case PublicKeyAlgorithmTag.RsaGeneral:
+                case PublicKeyAlgorithmTag.RsaSign:
+                    RsaPublicBcpgKey rsaPub = (RsaPublicBcpgKey)pubPk.Key;
+                    RsaSecretBcpgKey rsaPriv = new RsaSecretBcpgKey(bcpgIn);
 
-                        // The modulus size determines the encoded output size of the CRT parameters.
-                        byte[] n = rsaPub.Modulus.Value;
-                        int halfModulusLength = (n.Length + 1) / 2;
+                    // The modulus size determines the encoded output size of the CRT parameters.
+                    byte[] n = rsaPub.Modulus.Value;
+                    int halfModulusLength = (n.Length + 1) / 2;
 
-                        var privateExponent = new BigInteger(rsaPriv.PrivateExponent.Value, isBigEndian: true, isUnsigned: true);
-                        var DP = BigInteger.Remainder(privateExponent, new BigInteger(rsaPriv.PrimeP.Value, isBigEndian: true, isUnsigned: true) - BigInteger.One);
-                        var DQ = BigInteger.Remainder(privateExponent, new BigInteger(rsaPriv.PrimeQ.Value, isBigEndian: true, isUnsigned: true) - BigInteger.One);
+                    var privateExponent = new BigInteger(rsaPriv.PrivateExponent.Value, isBigEndian: true, isUnsigned: true);
+                    var DP = BigInteger.Remainder(privateExponent, new BigInteger(rsaPriv.PrimeP.Value, isBigEndian: true, isUnsigned: true) - BigInteger.One);
+                    var DQ = BigInteger.Remainder(privateExponent, new BigInteger(rsaPriv.PrimeQ.Value, isBigEndian: true, isUnsigned: true) - BigInteger.One);
 
-                        var rsaParameters = new RSAParameters
-                        {
-                            Modulus = n,
-                            Exponent = rsaPub.PublicExponent.Value,
-                            D = ExportKeyParameter(rsaPriv.PrivateExponent.Value, n.Length),
-                            P = ExportKeyParameter(rsaPriv.PrimeP.Value, halfModulusLength),
-                            Q = ExportKeyParameter(rsaPriv.PrimeQ.Value, halfModulusLength),
-                            DP = ExportKeyParameter(DP, halfModulusLength),
-                            DQ = ExportKeyParameter(DQ, halfModulusLength),
-                            InverseQ = ExportKeyParameter(rsaPriv.InverseQ.Value, halfModulusLength),
-                        };
-                        privateKey = RSA.Create(rsaParameters);
-                        break;
-                    case PublicKeyAlgorithmTag.Dsa:
-                        DsaPublicBcpgKey dsaPub = (DsaPublicBcpgKey)pubPk.Key;
-                        DsaSecretBcpgKey dsaPriv = new DsaSecretBcpgKey(bcpgIn);
-                        privateKey = DSA.Create(new DSAParameters
-                        {
-                            X = dsaPriv.X.Value,
-                            Y = dsaPub.Y.Value,
-                            P = dsaPub.P.Value,
-                            Q = dsaPub.Q.Value,
-                            G = dsaPub.G.Value,
-                        });
-                        break;
-                    case PublicKeyAlgorithmTag.ECDH:
-                    case PublicKeyAlgorithmTag.ECDsa:
-                        ECPublicBcpgKey ecdsaPub = (ECPublicBcpgKey)secret.PublicKeyPacket.Key;
-                        ECSecretBcpgKey ecdsaPriv = new ECSecretBcpgKey(bcpgIn);
-                        var ecCurve = ECCurve.CreateFromOid(ecdsaPub.CurveOid);
-                        var ecParams = new ECParameters
-                        {
-                            Curve = ecCurve,
-                            D = ecCurve.Oid.Value != "1.3.6.1.4.1.3029.1.5.1" ? ecdsaPriv.X.Value : ecdsaPriv.X.Value.Reverse().ToArray(),
-                            Q = PgpUtilities.DecodePoint(ecdsaPub.EncodedPoint),
-                        };
-                        privateKey = pubPk.Algorithm == PublicKeyAlgorithmTag.ECDH ? PgpUtilities.GetECDiffieHellman(ecParams) : ECDsa.Create(ecParams);
-                        break;
-                    case PublicKeyAlgorithmTag.EdDsa:
-                        ECPublicBcpgKey eddsaPub = (ECPublicBcpgKey)secret.PublicKeyPacket.Key;
-                        ECSecretBcpgKey eddsaPriv = new ECSecretBcpgKey(bcpgIn);
-                        privateKey = new Ed25519Dsa(
-                            eddsaPriv.X.Value,
-                            eddsaPub.EncodedPoint.Value.AsSpan(1).ToArray());
-                        break;
-                    case PublicKeyAlgorithmTag.ElGamalEncrypt:
-                    case PublicKeyAlgorithmTag.ElGamalGeneral:
-                        ElGamalPublicBcpgKey elPub = (ElGamalPublicBcpgKey)pubPk.Key;
-                        ElGamalSecretBcpgKey elPriv = new ElGamalSecretBcpgKey(bcpgIn);
-                        ElGamalParameters elParams = new ElGamalParameters { P = elPub.P.Value, G = elPub.G.Value, Y = elPub.Y.Value, X = elPriv.X.Value };
-                        privateKey = ElGamal.Create(elParams);
-                        break; 
-                     /*
-                     case PublicKeyAlgorithmTag.ElGamalEncrypt:
-                     case PublicKeyAlgorithmTag.ElGamalGeneral:
-                         ElGamalPublicBcpgKey elPub = (ElGamalPublicBcpgKey)pubPk.Key;
-                         ElGamalSecretBcpgKey elPriv = new ElGamalSecretBcpgKey(bcpgIn);
-                         ElGamalParameters elParams = new ElGamalParameters(elPub.P, elPub.G);
-                         privateKey = new ElGamalPrivateKeyParameters(elPriv.X, elParams);
-                         break;*/
-                     default:
-                        throw new PgpException("unknown public key algorithm encountered");
-                }
+                    var rsaParameters = new RSAParameters
+                    {
+                        Modulus = n,
+                        Exponent = rsaPub.PublicExponent.Value,
+                        D = ExportKeyParameter(rsaPriv.PrivateExponent.Value, n.Length),
+                        P = ExportKeyParameter(rsaPriv.PrimeP.Value, halfModulusLength),
+                        Q = ExportKeyParameter(rsaPriv.PrimeQ.Value, halfModulusLength),
+                        DP = ExportKeyParameter(DP, halfModulusLength),
+                        DQ = ExportKeyParameter(DQ, halfModulusLength),
+                        InverseQ = ExportKeyParameter(rsaPriv.InverseQ.Value, halfModulusLength),
+                    };
+                    privateKey = RSA.Create(rsaParameters);
+                    break;
 
-                return new PgpPrivateKey(KeyId, pubPk, privateKey);
+                case PublicKeyAlgorithmTag.Dsa:
+                    DsaPublicBcpgKey dsaPub = (DsaPublicBcpgKey)pubPk.Key;
+                    DsaSecretBcpgKey dsaPriv = new DsaSecretBcpgKey(bcpgIn);
+                    privateKey = DSA.Create(new DSAParameters
+                    {
+                        X = dsaPriv.X.Value,
+                        Y = dsaPub.Y.Value,
+                        P = dsaPub.P.Value,
+                        Q = dsaPub.Q.Value,
+                        G = dsaPub.G.Value,
+                    });
+                    break;
+
+                case PublicKeyAlgorithmTag.ECDH:
+                case PublicKeyAlgorithmTag.ECDsa:
+                    ECPublicBcpgKey ecdsaPub = (ECPublicBcpgKey)secret.PublicKeyPacket.Key;
+                    ECSecretBcpgKey ecdsaPriv = new ECSecretBcpgKey(bcpgIn);
+                    var ecCurve = ECCurve.CreateFromOid(ecdsaPub.CurveOid);
+                    var ecParams = new ECParameters
+                    {
+                        Curve = ecCurve,
+                        D = ecCurve.Oid.Value != "1.3.6.1.4.1.3029.1.5.1" ? ecdsaPriv.X.Value : ecdsaPriv.X.Value.Reverse().ToArray(),
+                        Q = PgpUtilities.DecodePoint(ecdsaPub.EncodedPoint),
+                    };
+                    privateKey = pubPk.Algorithm == PublicKeyAlgorithmTag.ECDH ? PgpUtilities.GetECDiffieHellman(ecParams) : ECDsa.Create(ecParams);
+                    break;
+
+                case PublicKeyAlgorithmTag.EdDsa:
+                    ECPublicBcpgKey eddsaPub = (ECPublicBcpgKey)secret.PublicKeyPacket.Key;
+                    ECSecretBcpgKey eddsaPriv = new ECSecretBcpgKey(bcpgIn);
+                    privateKey = new Ed25519Dsa(
+                        eddsaPriv.X.Value,
+                        eddsaPub.EncodedPoint.Value.AsSpan(1).ToArray());
+                    break;
+
+                case PublicKeyAlgorithmTag.ElGamalEncrypt:
+                case PublicKeyAlgorithmTag.ElGamalGeneral:
+                    ElGamalPublicBcpgKey elPub = (ElGamalPublicBcpgKey)pubPk.Key;
+                    ElGamalSecretBcpgKey elPriv = new ElGamalSecretBcpgKey(bcpgIn);
+                    ElGamalParameters elParams = new ElGamalParameters { P = elPub.P.Value, G = elPub.G.Value, Y = elPub.Y.Value, X = elPriv.X.Value };
+                    privateKey = ElGamal.Create(elParams);
+                    break;
+
+                default:
+                    throw new PgpException("unknown public key algorithm encountered");
             }
-            catch (PgpException e)
-            {
-                throw e;
-            }
-            catch (Exception e)
-            {
-                throw new PgpException("Exception constructing key", e);
-            }
+
+            return new PgpPrivateKey(KeyId, pubPk, privateKey);
         }
 
         private byte[] ExportKeyParameter(byte[] value, int length)
