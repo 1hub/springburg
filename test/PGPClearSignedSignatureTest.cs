@@ -193,9 +193,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpPublicKeyRingBundle pgpRings = new PgpPublicKeyRingBundle(publicKey);
 
-            PgpObjectFactory pgpFact = new PgpObjectFactory(aIn);
-            PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-            PgpSignature sig = p3[0];
+            PgpSignature sig = new PgpSignature(aIn);
 
             sig.InitVerify(pgpRings.GetPublicKey(sig.KeyId), ignoreTrailingWhitespace: true);
             // FIXME: This belongs directly to the armor reader

@@ -33,12 +33,21 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <exception cref="IOException">If a problem parsing the stream occurs.</exception>
         /// <exception cref="PgpException">If an object is encountered which isn't a PgpSecretKeyRing.</exception>
         public PgpSecretKeyRingBundle(Stream inputStream)
-            : this(new PgpObjectFactory(inputStream).FilterPgpObjects<PgpSecretKeyRing>())
         {
+            this.secretRings = new Dictionary<long, PgpSecretKeyRing>();
+            this.order = new List<long>();
+
+            var packetReader = new PacketReader(inputStream);
+            while (packetReader.NextPacketTag() == PacketTag.SecretKey)
+            {
+                var keyRing = new PgpSecretKeyRing(packetReader);
+                long key = keyRing.GetPublicKey().KeyId;
+                secretRings.Add(key, keyRing);
+                order.Add(key);
+            }
         }
 
-        public PgpSecretKeyRingBundle(
-            IEnumerable<PgpSecretKeyRing> e)
+        public PgpSecretKeyRingBundle(IEnumerable<PgpSecretKeyRing> e)
         {
             this.secretRings = new Dictionary<long, PgpSecretKeyRing>();
             this.order = new List<long>();

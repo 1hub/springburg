@@ -4,7 +4,7 @@ namespace Org.BouncyCastle.Bcpg
 {
     public abstract class InputStreamPacket : Packet
     {
-        private readonly Stream inputStream;
+        internal Stream inputStream;
 
         protected InputStreamPacket(Stream inputStream)
         {

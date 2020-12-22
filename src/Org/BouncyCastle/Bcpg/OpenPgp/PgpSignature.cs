@@ -44,6 +44,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             this.trustPck = trustPacket;
         }
 
+        public PgpSignature(byte[] detachedSignature)
+            : this(new MemoryStream(detachedSignature, false))
+        {
+        }
+
+        public PgpSignature(Stream detachedSignature)
+        {
+            var packetReader = new PacketReader(detachedSignature);
+            if (packetReader.NextPacketTag() != PacketTag.Signature)
+                throw new PgpException("Not a signature");
+            this.sigPck = (SignaturePacket)packetReader.ReadPacket();
+        }
+
         /// <summary>The OpenPGP version number for this signature.</summary>
         public int Version => sigPck.Version;
 
@@ -66,8 +79,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public void Update(params byte[] bytes) => this.helper.Update(bytes);
 
         public void Update(byte[] bytes, int off, int length) => this.helper.Update(bytes, off, length);
-
-        public bool Verify(PgpSignatureCalculator signatureCalculator) => signatureCalculator.helper.Verify(sigPck.GetSignature(), GetSignatureTrailer(), signatureCalculator.publicKey.GetKey());
 
         public bool Verify() => helper.Verify(sigPck.GetSignature(), GetSignatureTrailer(), this.publicKey.GetKey());
 

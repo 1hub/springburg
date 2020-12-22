@@ -57,11 +57,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [Test]
         public void ReferenceTest()
         {
-            PgpPublicKeyRing pubKeyRing = new PgpPublicKeyRing(referencePubKey);
-            PgpPublicKey publicKey = pubKeyRing.GetPublicKey();
-            PgpObjectFactory pgpFact = new PgpObjectFactory(referenceSignature);
-            PgpSignatureList signatureList = (PgpSignatureList)pgpFact.NextPgpObject();
-            PgpSignature signature = signatureList[0];
+            var pubKeyRing = new PgpPublicKeyRing(referencePubKey);
+            var publicKey = pubKeyRing.GetPublicKey();
+            var signature = new PgpSignature(referenceSignature);
             signature.InitVerify(publicKey);
             signature.Update(Encoding.ASCII.GetBytes(referenceMessage));
             Assert.IsTrue(signature.Verify(), "signature failed to verify!");

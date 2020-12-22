@@ -194,13 +194,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return Generate();
         }
 
-        public IPacketWriter Open(IPacketWriter writer, bool generateOnePass = true, bool isNested = false)
+        public IPacketWriter Open(IPacketWriter writer)
         {
-            if (generateOnePass)
-            {
-                var onePassPacket = new OnePassSignaturePacket(helper.SignatureType, hashAlgorithm, privateKey.PublicKeyPacket.Algorithm, privateKey.KeyId, isNested);
-                writer.WritePacket(onePassPacket);
-            }
+            // FIXME: Nesting
+            var onePassPacket = new OnePassSignaturePacket(helper.SignatureType, hashAlgorithm, privateKey.PublicKeyPacket.Algorithm, privateKey.KeyId, /*isNested*/ false);
+            writer.WritePacket(onePassPacket);
             if (writer is ArmoredPacketWriter)
             {
                 helper.IgnoreTrailingWhitespace = true;

@@ -10,6 +10,7 @@ namespace Org.BouncyCastle.Bcpg
     {
         private Stream stream;
         private bool preferOldFormat;
+        private Stream currentPacketStream;
 
         public PacketWriter(Stream stream, bool preferOldFormat = true)
         {
@@ -19,6 +20,8 @@ namespace Org.BouncyCastle.Bcpg
 
         public void Dispose()
         {
+            if (currentPacketStream != null)
+                throw new InvalidOperationException("Streamable packet is currently being written");
             this.stream.Close();
         }
 
@@ -91,14 +94,22 @@ namespace Org.BouncyCastle.Bcpg
 
         public void WritePacket(ContainedPacket packet)
         {
-            using var packetStream = new PacketOutputStream(stream, packet.Tag, canBePartial: false, preferOldFormat: preferOldFormat);
+            if (currentPacketStream != null)
+                throw new InvalidOperationException("Streamable packet is currently being written");
+
+            using var packetStream = new PacketOutputStream(this, stream, packet.Tag, canBePartial: false, preferOldFormat: preferOldFormat);
+            currentPacketStream = packetStream;
             packet.Encode(packetStream);
         }
 
         public Stream GetPacketStream(InputStreamPacket packet)
         {
-            var packetStream = new PacketOutputStream(stream, packet.Tag, canBePartial: true, preferOldFormat: preferOldFormat);
+            if (currentPacketStream != null)
+                throw new InvalidOperationException("Streamable packet is currently being written");
+
+            var packetStream = new PacketOutputStream(this, stream, packet.Tag, canBePartial: true, preferOldFormat: preferOldFormat);
             packet.EncodeHeader(packetStream);
+            currentPacketStream = packetStream;
             return packetStream;
         }
 
@@ -110,6 +121,7 @@ namespace Org.BouncyCastle.Bcpg
         /// </summary>
         class PacketOutputStream : Stream
         {
+            private PacketWriter writer;
             private Stream outputStream;
             private List<byte[]> bufferedPackets;
             private PacketTag packetTag;
@@ -134,6 +146,7 @@ namespace Org.BouncyCastle.Bcpg
             public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
             public PacketOutputStream(
+                PacketWriter writer,
                 Stream outputStream,
                 PacketTag tag,
                 bool canBePartial = false,
@@ -142,6 +155,7 @@ namespace Org.BouncyCastle.Bcpg
                 if (outputStream == null)
                     throw new ArgumentNullException(nameof(outputStream));
 
+                this.writer = writer;
                 this.outputStream = outputStream;
                 this.packetTag = tag;
                 this.canBePartial = canBePartial;
@@ -279,6 +293,12 @@ namespace Org.BouncyCastle.Bcpg
                     {
                         ArrayPool<byte>.Shared.Return(partialBuffer, true);
                         partialBuffer = null;
+                    }
+
+                    Debug.Assert(writer.currentPacketStream == this);
+                    if (writer.currentPacketStream == this)
+                    {
+                        writer.currentPacketStream = null;
                     }
                 }
 

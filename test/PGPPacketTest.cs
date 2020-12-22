@@ -30,11 +30,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     outputStream.Write(buf, 0, i);
 
                 bOut.Position = 0;
-                PgpObjectFactory fact = new PgpObjectFactory(bOut);
-                PgpLiteralData data = (PgpLiteralData)fact.NextPgpObject();
-                Stream inputStream = new BufferedStream(data.GetInputStream());
+                var literalMessage = (PgpLiteralMessage)PgpMessage.ReadMessage(bOut);
                 Array.Clear(buf2, 0, i);
-                inputStream.Read(buf2.AsSpan(0, i));
+                int bytesRead = literalMessage.GetStream().Read(buf2.AsSpan(0, i));
+                Assert.AreEqual(i, bytesRead);
                 Assert.IsTrue(buf2.AsSpan(0, i).SequenceEqual(buf.AsSpan(0, i)), "failed readback test");
             }
         }

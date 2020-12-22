@@ -8,194 +8,80 @@ using Org.BouncyCastle.Utilities.Test;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
-	[TestFixture]
-	public class Dsa2Test
-	{
-		[Test]
-		public void TestK1024H160()
-		{
-			doSigVerifyTest("DSA-1024-160.pub", "dsa-1024-160-sign.gpg");
-		}
+    [TestFixture]
+    public class Dsa2Test
+    {
+        [Test]
+        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha224)]
+        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha256)]
+        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha384)]
+        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha512)]
+        [TestCase("DSA-2048-224.sec", "DSA-2048-224.pub", HashAlgorithmTag.Sha256)]
+        [TestCase("DSA-2048-224.sec", "DSA-2048-224.pub", HashAlgorithmTag.Sha512)]
+        public void GenerateTest(string privateKeyFile, string publicKeyFile, HashAlgorithmTag digest)
+        {
+            PgpSecretKeyRing secRing = loadSecretKey(privateKeyFile);
+            PgpPublicKeyRing pubRing = loadPublicKey(publicKeyFile);
+            string data = "hello world!";
+            byte[] dataBytes = Encoding.ASCII.GetBytes(data);
+            MemoryStream bOut = new MemoryStream();
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test".ToCharArray()), digest);
+            PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
+            DateTime testDate = new DateTime((DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond) * TimeSpan.TicksPerSecond);
 
-		[Test]
-		public void TestK1024H224()
-		{
-			doSigVerifyTest("DSA-1024-160.pub", "dsa-1024-224-sign.gpg");
-		}
+            var writer = new PacketWriter(bOut);
+            using (var signingWriter = sGen.Open(writer))
+            using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, PgpLiteralData.Console, testDate))
+            {
+                literalStream.Write(dataBytes);
+            }
 
-		[Test]
-		public void TestK1024H256()
-		{
-			doSigVerifyTest("DSA-1024-160.pub", "dsa-1024-256-sign.gpg");
-		}
+            bOut.Position = 0;
+            var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(bOut);
+            Assert.AreEqual(digest, signedMessage.HashAlgorithm);
+            Assert.AreEqual(PublicKeyAlgorithmTag.Dsa, signedMessage.KeyAlgorithm);
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            Assert.AreEqual(testDate, literalMessage.ModificationTime);
+            literalMessage.GetStream().CopyTo(Stream.Null);
+            Assert.IsTrue(signedMessage.Verify(pubRing.GetPublicKey()));
+        }
 
-		[Test]
-		public void TestK1024H384()
-		{
-			doSigVerifyTest("DSA-1024-160.pub", "dsa-1024-384-sign.gpg");
-		}
+        [Test]
+        [TestCase("DSA-1024-160.pub", "dsa-1024-160-sign.gpg")]
+        [TestCase("DSA-1024-160.pub", "dsa-1024-224-sign.gpg")]
+        [TestCase("DSA-1024-160.pub", "dsa-1024-256-sign.gpg")]
+        [TestCase("DSA-1024-160.pub", "dsa-1024-384-sign.gpg")]
+        [TestCase("DSA-1024-160.pub", "dsa-1024-512-sign.gpg")]
+        [TestCase("DSA-2048-224.pub", "dsa-2048-224-sign.gpg")]
+        [TestCase("DSA-3072-256.pub", "dsa-3072-256-sign.gpg")]
+        [TestCase("DSA-7680-384.pub", "dsa-7680-384-sign.gpg")]
+        [TestCase("DSA-15360-512.pub", "dsa-15360-512-sign.gpg")]
+        public void SignatureVerifyTest(string publicKeyFile, string sigFile)
+        {
+            PgpPublicKeyRing publicKey = loadPublicKey(publicKeyFile);
 
-		[Test]
-		public void TestK1024H512()
-		{
-			doSigVerifyTest("DSA-1024-160.pub", "dsa-1024-512-sign.gpg");
-		}
+            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(loadSig(sigFile));
+            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            literalMessage.GetStream().CopyTo(Stream.Null);
+            Assert.IsTrue(signedMessage.Verify(publicKey.GetPublicKey()));
+        }
 
-		[Test]
-		public void TestK2048H224()
-		{
-			doSigVerifyTest("DSA-2048-224.pub", "dsa-2048-224-sign.gpg");
-		}
+        private Stream loadSig(string sigName)
+        {
+            return SimpleTest.GetTestDataAsStream("openpgp.dsa.sigs." + sigName);
+        }
 
-		[Test]
-		public void TestK3072H256()
-		{
-			doSigVerifyTest("DSA-3072-256.pub", "dsa-3072-256-sign.gpg");
-		}
+        private PgpPublicKeyRing loadPublicKey(string keyName)
+        {
+            Stream fIn = SimpleTest.GetTestDataAsStream("openpgp.dsa.keys." + keyName);
+            return new PgpPublicKeyRing(fIn);
+        }
 
-		[Test]
-		public void TestK7680H384()
-		{
-			doSigVerifyTest("DSA-7680-384.pub", "dsa-7680-384-sign.gpg");
-		}
-
-		[Test]
-		public void TestK15360H512()
-		{
-			doSigVerifyTest("DSA-15360-512.pub", "dsa-15360-512-sign.gpg");
-		}
-
-		[Test]
-		public void TestGenerateK1024H224()
-		{
-			doSigGenerateTest("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha224);
-		}
-
-		[Test]
-		public void TestGenerateK1024H256()
-		{
-			doSigGenerateTest("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha256);
-		}
-
-		[Test]
-		public void TestGenerateK1024H384()
-		{
-			doSigGenerateTest("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha384);
-		}
-
-		[Test]
-		public void TestGenerateK1024H512()
-		{
-			doSigGenerateTest("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha512);
-		}
-
-		[Test]
-		public void TestGenerateK2048H256()
-		{
-			doSigGenerateTest("DSA-2048-224.sec", "DSA-2048-224.pub", HashAlgorithmTag.Sha256);
-		}
-
-		[Test]
-		public void TestGenerateK2048H512()
-		{
-			doSigGenerateTest("DSA-2048-224.sec", "DSA-2048-224.pub", HashAlgorithmTag.Sha512);
-		}
-
-		private void doSigGenerateTest(
-			string				privateKeyFile,
-			string				publicKeyFile,
-			HashAlgorithmTag	digest)
-		{
-			PgpSecretKeyRing		secRing = loadSecretKey(privateKeyFile);
-			PgpPublicKeyRing		pubRing = loadPublicKey(publicKeyFile);
-			string					data = "hello world!";
-			byte[]					dataBytes = Encoding.ASCII.GetBytes(data);
-			MemoryStream			bOut = new MemoryStream();
-			PgpSignatureGenerator	sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test".ToCharArray()), digest);
-			PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
-			DateTime testDate = new DateTime((DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond) * TimeSpan.TicksPerSecond);
-
-			using (var writer = new PacketWriter(bOut))
-			using (var signingWriter = sGen.Open(writer))
-			using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", testDate))
-			{
-				literalStream.Write(dataBytes);
-			}
-
-			PgpObjectFactory        pgpFact = new PgpObjectFactory(bOut.ToArray());
-			PgpOnePassSignatureList p1 = (PgpOnePassSignatureList)pgpFact.NextPgpObject();
-			PgpOnePassSignature     ops = p1[0];
-
-			Assert.AreEqual(digest, ops.HashAlgorithm);
-			Assert.AreEqual(PublicKeyAlgorithmTag.Dsa, ops.KeyAlgorithm);
-
-			PgpLiteralData          p2 = (PgpLiteralData)pgpFact.NextPgpObject();
-			if (!p2.ModificationTime.Equals(testDate))
-			{
-				Assert.Fail("Modification time not preserved");
-			}
-
-			Stream dIn = p2.GetInputStream();
-
-			var signatureCalculator = ops.GetSignatureCalculator(pubRing.GetPublicKey());
-			signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
-			
-			PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-			PgpSignature sig = p3[0];
-
-			Assert.AreEqual(digest, sig.HashAlgorithm);
-			Assert.AreEqual(PublicKeyAlgorithmTag.Dsa, sig.KeyAlgorithm);
-
-			Assert.IsTrue(sig.Verify(signatureCalculator));
-		}
-
-		private void doSigVerifyTest(
-			string	publicKeyFile,
-			string	sigFile)
-		{
-			PgpPublicKeyRing publicKey = loadPublicKey(publicKeyFile);
-			PgpObjectFactory pgpFact = loadSig(sigFile);
-
-			PgpCompressedData c1 = (PgpCompressedData)pgpFact.NextPgpObject();
-
-			pgpFact = new PgpObjectFactory(c1.GetDataStream());
-
-			PgpOnePassSignatureList p1 = (PgpOnePassSignatureList)pgpFact.NextPgpObject();
-			PgpOnePassSignature ops = p1[0];
-
-			PgpLiteralData p2 = (PgpLiteralData)pgpFact.NextPgpObject();
-
-			Stream dIn = p2.GetInputStream();
-
-			var signatureCalculator = ops.GetSignatureCalculator(publicKey.GetPublicKey());
-			signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
-
-			PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-			Assert.IsTrue(p3[0].Verify(signatureCalculator));
-		}
-
-		private PgpObjectFactory loadSig(
-			string sigName)
-		{
-			Stream fIn = SimpleTest.GetTestDataAsStream("openpgp.dsa.sigs." + sigName);
-
-			return new PgpObjectFactory(fIn);
-		}
-
-		private PgpPublicKeyRing loadPublicKey(
-			string keyName)
-		{
-			Stream fIn = SimpleTest.GetTestDataAsStream("openpgp.dsa.keys." + keyName);
-
-			return new PgpPublicKeyRing(fIn);
-		}
-
-		private PgpSecretKeyRing loadSecretKey(
-			string keyName)
-		{
-			Stream fIn = SimpleTest.GetTestDataAsStream("openpgp.dsa.keys." + keyName);
-
-			return new PgpSecretKeyRing(fIn);
-		}
-	}
+        private PgpSecretKeyRing loadSecretKey(string keyName)
+        {
+            Stream fIn = SimpleTest.GetTestDataAsStream("openpgp.dsa.keys." + keyName);
+            return new PgpSecretKeyRing(fIn);
+        }
+    }
 }

@@ -1,18 +1,15 @@
+using InflatablePalace.Cryptography.Algorithms;
+using NUnit.Framework;
+using Org.BouncyCastle.Utilities.IO;
 using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using InflatablePalace.Cryptography.Algorithms;
-using NUnit.Framework;
-
-using Org.BouncyCastle.Utilities.IO;
-using Org.BouncyCastle.Utilities.Test;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
     [TestFixture]
     public class PgpDsaElGamalTest
-        : SimpleTest
     {
         private static readonly byte[] testPubKeyRing = Convert.FromBase64String(
               "mQGiBEAR8jYRBADNifuSopd20JOQ5x30ljIaY0M6927+vo09NeNxS3KqItba"
@@ -87,38 +84,20 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private static readonly char[] pass = "hello world".ToCharArray();
 
-        public override void PerformTest()
+        private static readonly byte[] text = Encoding.ASCII.GetBytes("hello world!\n");
+
+        [Test]
+        public void SignatureGenerateAndVerify()
         {
-            PgpPublicKey pubKey = null;
+            var pgpPub = new PgpPublicKeyRing(testPubKeyRing);
+            var pubKey = pgpPub.GetPublicKey();
+            var sKey = new PgpSecretKeyRing(testPrivKeyRing);
+            var secretKey = sKey.GetSecretKey();
+            var privKey = secretKey.ExtractPrivateKey(pass);
 
-            //
-            // Read the public key
-            //
-            PgpObjectFactory pgpFact = new PgpObjectFactory(testPubKeyRing);
-            PgpPublicKeyRing pgpPub = (PgpPublicKeyRing)pgpFact.NextPgpObject();
-
-            pubKey = pgpPub.GetPublicKey();
-
-            if (pubKey.BitStrength != 1024)
-            {
-                Fail("failed - key strength reported incorrectly.");
-            }
-
-            //
-            // Read the private key
-            //
-            PgpSecretKeyRing sKey = new PgpSecretKeyRing(testPrivKeyRing);
-            PgpSecretKey secretKey = sKey.GetSecretKey();
-            PgpPrivateKey pgpPrivKey = secretKey.ExtractPrivateKey(pass);
-
-            //
-            // signature generation
-            //
-            const string data = "hello world!";
-            byte[] dataBytes = Encoding.ASCII.GetBytes(data);
+            // Generate signature
             MemoryStream bOut = new MemoryStream();
-            MemoryStream testIn = new MemoryStream(dataBytes, false);
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, pgpPrivKey, HashAlgorithmTag.Sha1);
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, privKey, HashAlgorithmTag.Sha1);
             PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
             PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
             DateTime testDateTime = new DateTime(1973, 7, 27);
@@ -127,284 +106,112 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             using (var compressedWriter = cGen.Open(writer))
             using (var signingWriter = sGen.Open(compressedWriter))
             using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", testDateTime))
-                literalStream.Write(dataBytes);
+                literalStream.Write(text);
 
-            //
-            // verify Generated signature
-            //
-            pgpFact = new PgpObjectFactory(bOut.ToArray());
+            // Verify generated signature
+            bOut.Position = 0;
+            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(bOut);
+            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            Assert.AreEqual(testDateTime, literalMessage.ModificationTime);
+            literalMessage.GetStream().CopyTo(Stream.Null);
+            Assert.IsTrue(signedMessage.Verify(pubKey));
+        }
 
-            PgpCompressedData c1 = (PgpCompressedData)pgpFact.NextPgpObject();
+        [Test]
+        public void DecryptMessage()
+        {
+            var secretKey = FindSuitableKeyForEncryption();
+            var privateKey = secretKey.ExtractPrivateKey(pass);
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(encMessage);
+            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(privateKey);
+            var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            Assert.AreEqual("test.txt", literalMessage.FileName);
+            byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(text, bytes);
+        }
 
-            pgpFact = new PgpObjectFactory(c1.GetDataStream());
+        [Test]
+        public void DecryptAndVerifyMessage()
+        {
+            var pgpPub = new PgpPublicKeyRing(testPubKeyRing);
+            var pubKey = pgpPub.GetPublicKey();
+            var secretKey = FindSuitableKeyForEncryption();
+            var privateKey = secretKey.ExtractPrivateKey(pass);
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(signedAndEncMessage);
+            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(privateKey);
+            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            Assert.AreEqual("test.txt", literalMessage.FileName);
+            var bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(text, bytes);
+            Assert.IsTrue(signedMessage.Verify(pubKey));
+        }
 
-            PgpOnePassSignatureList p1 = (PgpOnePassSignatureList)pgpFact.NextPgpObject();
+        [Test]
+        public void EncryptMessage()
+        {
+            var secretKey = FindSuitableKeyForEncryption();
+            var privateKey = secretKey.ExtractPrivateKey(pass);
 
-            PgpOnePassSignature ops = p1[0];
+            MemoryStream cbOut = new MemoryStream();
+            PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.TripleDes);
+            cPk.AddMethod(secretKey.PublicKey);
+            var writer = new PacketWriter(cbOut);
+            using (var cOut = cPk.Open(writer))
+            using (var pOut = new PgpLiteralDataGenerator().Open(cOut, PgpLiteralData.Utf8, "", DateTime.UtcNow))
+                pOut.Write(text, 0, text.Length);
 
-            PgpLiteralData p2 = (PgpLiteralData)pgpFact.NextPgpObject();
-            if (!p2.ModificationTime.Equals(testDateTime))
-            {
-                Fail("Modification time not preserved");
-            }
+            cbOut.Position = 0;
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(cbOut);
+            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(privateKey);
+            var bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(text, bytes);
+        }
 
-            Stream dIn = p2.GetInputStream();
-
-            var signatureCalculator = ops.GetSignatureCalculator(pubKey);
-            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
-
-            PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-            if (!p3[0].Verify(signatureCalculator))
-            {
-                Fail("Failed Generated signature check");
-            }
-
-            //
-            // test encryption
-            //
-
-            //
-            // find a key sutiable for encryption
-            //
+        private PgpSecretKey FindSuitableKeyForEncryption()
+        {
+            var pgpPub = new PgpPublicKeyRing(testPubKeyRing);
+            var pubKey = pgpPub.GetPublicKey();
+            var sKey = new PgpSecretKeyRing(testPrivKeyRing);
             long pgpKeyID = 0;
             AsymmetricAlgorithm pKey = null;
 
             foreach (PgpPublicKey pgpKey in pgpPub.GetPublicKeys())
             {
-                if (pgpKey.Algorithm == PublicKeyAlgorithmTag.ElGamalEncrypt
-                    || pgpKey.Algorithm == PublicKeyAlgorithmTag.ElGamalGeneral)
+                if (pgpKey.Algorithm == PublicKeyAlgorithmTag.ElGamalEncrypt || pgpKey.Algorithm == PublicKeyAlgorithmTag.ElGamalGeneral)
                 {
                     pKey = pgpKey.GetKey();
                     pgpKeyID = pgpKey.KeyId;
-                    if (pgpKey.BitStrength != 1024)
-                    {
-                        Fail("failed - key strength reported incorrectly.");
-                    }
-
-                    //
-                    // verify the key
-                    //
-
+                    Assert.AreEqual(1024, pgpKey.BitStrength);
                 }
             }
 
-            byte[] outBytes;
-            /*var c = (ElGamal)pKey;
+            return sKey.GetSecretKey(pgpKeyID);
+        }
 
-            byte[] inBytes = Encoding.ASCII.GetBytes("hello world");
-            byte[] outBytes = pKey.Encrypt c.DoFinal(inBytes);*/
-
-            pgpPrivKey = sKey.GetSecretKey(pgpKeyID).ExtractPrivateKey(pass);
-
-            /*c.Init(false, pgpPrivKey.Key);
-
-            outBytes = c.DoFinal(outBytes);
-
-            if (!AreEqual(inBytes, outBytes))
-            {
-                Fail("decryption failed.");
-            }*/
-
-            //
-            // encrypted message
-            //
-            byte[] text = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o',
-                                (byte)' ', (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'!', (byte)'\n' };
-
-            PgpObjectFactory pgpF = new PgpObjectFactory(encMessage);
-
-            PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
-            PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
-
-            Stream clear = encP.GetDataStream(pgpPrivKey);
-
-            pgpFact = new PgpObjectFactory(clear);
-
-            c1 = (PgpCompressedData)pgpFact.NextPgpObject();
-
-            pgpFact = new PgpObjectFactory(c1.GetDataStream());
-
-            PgpLiteralData ld = (PgpLiteralData)pgpFact.NextPgpObject();
-
-            if (!ld.FileName.Equals("test.txt"))
-            {
-                throw new Exception("wrong filename in packet");
-            }
-
-            Stream inLd = ld.GetDataStream();
-            byte[] bytes = Streams.ReadAll(inLd);
-
-            if (!AreEqual(bytes, text))
-            {
-                Fail("wrong plain text in decrypted packet");
-            }
-
-            //
-            // signed and encrypted message
-            //
-            pgpF = new PgpObjectFactory(signedAndEncMessage);
-
-            encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
-            encP = (PgpPublicKeyEncryptedData)encList[0];
-
-            clear = encP.GetDataStream(pgpPrivKey);
-
-            pgpFact = new PgpObjectFactory(clear);
-
-            c1 = (PgpCompressedData)pgpFact.NextPgpObject();
-
-            pgpFact = new PgpObjectFactory(c1.GetDataStream());
-
-            p1 = (PgpOnePassSignatureList)pgpFact.NextPgpObject();
-
-            ops = p1[0];
-
-            ld = (PgpLiteralData)pgpFact.NextPgpObject();
-
-            bOut = new MemoryStream();
-
-            if (!ld.FileName.Equals("test.txt"))
-            {
-                throw new Exception("wrong filename in packet");
-            }
-
-            inLd = ld.GetDataStream();
-
-            //
-            // note: we use the DSA public key here.
-            //
-            signatureCalculator = ops.GetSignatureCalculator(pgpPub.GetPublicKey());
-            signatureCalculator.WrapReadStream(inLd).CopyTo(bOut);
-
-            p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-            if (!p3[0].Verify(signatureCalculator))
-            {
-                Fail("Failed signature check");
-            }
-
-            if (!AreEqual(bOut.ToArray(), text))
-            {
-                Fail("wrong plain text in decrypted packet");
-            }
-
-            //
-            // encrypt
-            //
-            MemoryStream cbOut = new MemoryStream();
-            PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.TripleDes);
-            PgpPublicKey puK = sKey.GetSecretKey(pgpKeyID).PublicKey;
-
-            cPk.AddMethod(puK);
-
-            writer = new PacketWriter(cbOut);
-            using (var cOut = cPk.Open(writer))
-            using (var pOut = new PgpLiteralDataGenerator().Open(cOut, PgpLiteralData.Utf8, "", DateTime.UtcNow))
-                pOut.Write(text, 0, text.Length);
-
-            pgpF = new PgpObjectFactory(cbOut.ToArray());
-
-            encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
-            encP = (PgpPublicKeyEncryptedData)encList[0];
-
-            pgpPrivKey = sKey.GetSecretKey(pgpKeyID).ExtractPrivateKey(pass);
-
-            clear = encP.GetDataStream(pgpPrivKey);
-            pgpF = new PgpObjectFactory(clear);
-            ld = (PgpLiteralData)pgpF.NextPgpObject();
-            outBytes = Streams.ReadAll(ld.GetDataStream());
-
-            if (!AreEqual(outBytes, text))
-            {
-                Fail("wrong plain text in Generated packet");
-            }
-
-            //
-            // use of PgpKeyPair
-            //
-
-            PgpKeyPair pgpKp = new PgpKeyPair(ElGamal.Create(1024), DateTime.UtcNow);
-
-            PgpPublicKey k1 = pgpKp.PublicKey;
-            PgpPrivateKey k2 = pgpKp.PrivateKey;
-
-
-
-
-
+        public void KeyPairPSizeTest()
+        {
             // Test bug with ElGamal P size != 0 mod 8 (don't use these sizes at home!)
             for (int pSize = 257; pSize < 264; ++pSize)
             {
                 PgpKeyPair elGamalKeyPair = new PgpKeyPair(ElGamal.Create(pSize), DateTime.UtcNow);
 
-                cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
+                var cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
                 cPk.AddMethod(elGamalKeyPair.PublicKey);
 
-                cbOut = new MemoryStream();
-                writer = new PacketWriter(cbOut);
+                var cbOut = new MemoryStream();
+                var writer = new PacketWriter(cbOut);
                 using (var encryptedWriter = cPk.Open(writer))
                 using (var literalStream = new PgpLiteralDataGenerator().Open(encryptedWriter, PgpLiteralData.Binary, "", DateTime.UtcNow))
                     literalStream.Write(text);
 
-                pgpF = new PgpObjectFactory(cbOut.ToArray());
-                encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-                encP = (PgpPublicKeyEncryptedData)encList[0];
-                pgpPrivKey = elGamalKeyPair.PrivateKey;
-
-                // Note: This is where an exception would be expected if the P size causes problems
-                clear = encP.GetDataStream(pgpPrivKey);
-                pgpF = new PgpObjectFactory(clear);
-                ld = (PgpLiteralData)pgpF.NextPgpObject();
-                byte[] decText = Streams.ReadAll(ld.GetDataStream());
-
-                if (!AreEqual(text, decText))
-                {
-                    Fail("decrypted message incorrect");
-                }
+                cbOut.Position = 0;
+                var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(cbOut);
+                var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(elGamalKeyPair.PrivateKey);
+                var bytes = Streams.ReadAll(literalMessage.GetStream());
+                Assert.AreEqual(text, bytes);
             }
-
-
-            // check sub key encoding
-
-            foreach (PgpPublicKey pgpKey in pgpPub.GetPublicKeys())
-            {
-                if (!pgpKey.IsMasterKey)
-                {
-                    byte[] kEnc = pgpKey.GetEncoded();
-
-                    PgpObjectFactory objF = new PgpObjectFactory(kEnc);
-
-                    // TODO Make PgpPublicKey a PgpObject or return a PgpPublicKeyRing
-                    //					PgpPublicKey k = (PgpPublicKey)objF.NextPgpObject();
-                    //
-                    //					pKey = k.GetKey();
-                    //					pgpKeyID = k.KeyId;
-                    //					if (k.BitStrength != 1024)
-                    //					{
-                    //						Fail("failed - key strength reported incorrectly.");
-                    //					}
-                    //
-                    //					if (objF.NextPgpObject() != null)
-                    //					{
-                    //						Fail("failed - stream not fully parsed.");
-                    //					}
-                }
-            }
-        }
-
-        public override string Name
-        {
-            get { return "PGPDSAElGamalTest"; }
-        }
-
-        [Test]
-        public void TestFunction()
-        {
-            string resultText = Perform().ToString();
-
-            Assert.AreEqual(Name + ": Okay", resultText);
         }
     }
 }

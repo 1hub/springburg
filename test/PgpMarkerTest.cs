@@ -42,9 +42,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private void MarkerTest(byte[] message)
         {
-            PgpObjectFactory pgpFact = new PgpObjectFactory(message);
-            Assert.IsTrue(pgpFact.NextPgpObject() is PgpMarker);
-            Assert.IsTrue(pgpFact.NextPgpObject() is PgpEncryptedDataList);
+            var encryptedMessage = PgpMessage.ReadMessage(message);
+            Assert.IsTrue(encryptedMessage is PgpEncryptedMessage);
         }
 
         [Test]

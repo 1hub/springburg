@@ -22,8 +22,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             this.order = order;
         }
 
-        public PgpPublicKeyRingBundle(
-            byte[] encoding)
+        public PgpPublicKeyRingBundle(byte[] encoding)
             : this(new MemoryStream(encoding, false))
         {
         }
@@ -32,27 +31,28 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <param name="inputStream">Input stream containing data.</param>
         /// <exception cref="IOException">If a problem parsing the stream occurs.</exception>
         /// <exception cref="PgpException">If an object is encountered which isn't a PgpPublicKeyRing.</exception>
-        public PgpPublicKeyRingBundle(
-            Stream inputStream)
-            : this(new PgpObjectFactory(inputStream).AllPgpObjects())
+        public PgpPublicKeyRingBundle(Stream inputStream)
         {
+            this.pubRings = new Dictionary<long, PgpPublicKeyRing>();
+            this.order = new List<long>(); 
+
+            var packetReader = new PacketReader(inputStream);
+            while (packetReader.NextPacketTag() == PacketTag.PublicKey)
+            {
+                var keyRing = new PgpPublicKeyRing(packetReader);
+                long key = keyRing.GetPublicKey().KeyId;
+                pubRings.Add(key, keyRing);
+                order.Add(key);
+            }
         }
 
-        public PgpPublicKeyRingBundle(
-            IEnumerable e)
+        public PgpPublicKeyRingBundle(IEnumerable<PgpPublicKeyRing> e)
         {
             this.pubRings = new Dictionary<long, PgpPublicKeyRing>();
             this.order = new List<long>();
 
-            foreach (object obj in e)
+            foreach (PgpPublicKeyRing pgpPub in e)
             {
-                PgpPublicKeyRing pgpPub = obj as PgpPublicKeyRing;
-
-                if (pgpPub == null)
-                {
-                    throw new PgpException(obj.GetType().Name + " found where PgpPublicKeyRing expected");
-                }
-
                 long key = pgpPub.GetPublicKey().KeyId;
                 pubRings.Add(key, pgpPub);
                 order.Add(key);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -73,7 +74,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "22n2jo0zo30/TZLo+jDl2vTzIvPeLEsPM3ZUE/1Ytqs4SG2TxIQbH7xf3uzcYXq2"
             + "5Fw9AA==");
 
-//		private static readonly byte[] sig1crc = Convert.FromBase64String("+3i0");
+        //		private static readonly byte[] sig1crc = Convert.FromBase64String("+3i0");
 
         private static readonly byte[] subKey = Convert.FromBase64String(
               "lQH8BD89pyQBBADk1aljL6mBOvd6k4Myr/0yaSI94SPC5WDwuptXZNM92wy8FVZP"
@@ -132,14 +133,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "AZUqTyDyJ6/OUbJF5fI5uiv76DCsw1zyMWotUIu5/X01q+AVP5Ly3STzI7xkWg/J"
             + "APz4zUHism7kSYz2viAQaJx9/bNnH3AM6qm1Fuyikl4=");
 
-//		private static readonly byte[] enc1crc = Convert.FromBase64String("lv4o");
+        //		private static readonly byte[] enc1crc = Convert.FromBase64String("lv4o");
 
-//        private static readonly byte[] enc2 = Convert.FromBase64String(
-//			  "hIwDKwfQexPJboABBAC62jcJH8xKnKb1neDVmiovYON04+7VQ2v4BmeHwJrdag1g"
-//			+ "Ya++6PeBlQ2Q9lSGBwLobVuJmQ7cOnPUJP727JeSGWlMyFtMbBSHekOaTenT5lj7"
-//			+ "Zk7oRHxMp/hByzlMacIDzOn8LPSh515RHM57eDLCOwqnAxGQwk67GRl8f5dFH9JQ"
-//			+ "Aa7xx8rjCqPbiIQW6t5LqCNvPZOiSCmftll6+se1XJhFEuq8WS4nXtPfTiJ3vib4"
-//			+ "3soJdHzGB6AOs+BQ6aKmmNTVAxa5owhtSt1Z/6dfSSk=");
+        //        private static readonly byte[] enc2 = Convert.FromBase64String(
+        //			  "hIwDKwfQexPJboABBAC62jcJH8xKnKb1neDVmiovYON04+7VQ2v4BmeHwJrdag1g"
+        //			+ "Ya++6PeBlQ2Q9lSGBwLobVuJmQ7cOnPUJP727JeSGWlMyFtMbBSHekOaTenT5lj7"
+        //			+ "Zk7oRHxMp/hByzlMacIDzOn8LPSh515RHM57eDLCOwqnAxGQwk67GRl8f5dFH9JQ"
+        //			+ "Aa7xx8rjCqPbiIQW6t5LqCNvPZOiSCmftll6+se1XJhFEuq8WS4nXtPfTiJ3vib4"
+        //			+ "3soJdHzGB6AOs+BQ6aKmmNTVAxa5owhtSt1Z/6dfSSk=");
 
         private static readonly byte[] subPubKey = Convert.FromBase64String(
               "mIsEPz2nJAEEAOTVqWMvqYE693qTgzKv/TJpIj3hI8LlYPC6m1dk0z3bDLwVVk9F"
@@ -177,7 +178,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "EQIAGQUCP0cHNQQLBwMCAxUCAwMWAgECHgECF4AACgkQzSP16cTKNEMCXACfauui"
             + "bSwyG59Yrm8hHCDuCPmqwsQAni+dPl08FVuWh+wb6kOgJV4lcYae");
 
-//		private static readonly byte[] subPubCrc = Convert.FromBase64String("rikt");
+        //		private static readonly byte[] subPubCrc = Convert.FromBase64String("rikt");
 
         private static readonly byte[] pgp8Key = Convert.FromBase64String(
               "lQIEBEBXUNMBBADScQczBibewnbCzCswc/9ut8R0fwlltBRxMW0NMdKJY2LF"
@@ -217,7 +218,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "BA4Y9uTHuObHfI+1yxUS2PrlRUX0m48ZjpIX+cEN3QblGBJudI/A1QSd6P0LZeBr"
             + "7F1Z1aF7ZDo0KzgiAIBvgXkeTpw=");
 
-//		private static readonly byte[] fingerprintCheck = Convert.FromBase64String("CTv2");
+        //		private static readonly byte[] fingerprintCheck = Convert.FromBase64String("CTv2");
 
         private static readonly byte[] jpegImage = Convert.FromBase64String(
               "/9j/4AAQSkZJRgABAQEASABIAAD/4QAWRXhpZgAATU0AKgAAAAgAAAAAAAD/2wBDAAUDBAQEAwUE"
@@ -340,100 +341,41 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         }
 
         private void MixedTest(
-            PgpPrivateKey	pgpPrivKey,
-            PgpPublicKey	pgpPubKey)
+            PgpPrivateKey pgpPrivKey,
+            PgpPublicKey pgpPubKey)
         {
-/*            byte[] text = Encoding.ASCII.GetBytes("hello world!\n");
+            byte[] text = Encoding.ASCII.GetBytes("hello world!\n");
 
-            //
-            // literal data
-            //
-            MemoryStream bOut = new MemoryStream();
-            PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
-            Stream lOut = lGen.Open(
-                bOut,
-                PgpLiteralData.Binary,
-                PgpLiteralData.Console,
-                text.Length,
-                DateTime.UtcNow);
-
-            lOut.Write(text, 0, text.Length);
-
-            lGen.Close();
-
-            byte[] bytes = bOut.ToArray();
-
-            PgpObjectFactory f = new PgpObjectFactory(bytes);
-            CheckLiteralData((PgpLiteralData)f.NextPgpObject(), text);
 
             MemoryStream bcOut = new MemoryStream();
-
-            PgpEncryptedDataGenerator encGen = new PgpEncryptedDataGenerator(
-                SymmetricKeyAlgorithmTag.Aes128,
-                true,
-                RandomNumberGenerator.Create());
-
+            PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
+            PgpEncryptedDataGenerator encGen = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Aes128, withIntegrityPacket: true);
             encGen.AddMethod(pgpPubKey);
-
             encGen.AddMethod("password".ToCharArray(), HashAlgorithmTag.Sha1);
-
-            Stream cOut = encGen.Open(bcOut, bytes.Length);
-
-            cOut.Write(bytes, 0, bytes.Length);
-
-#if PORTABLE
-            cOut.Dispose();
-#else
-            cOut.Close();
-#endif
-
+            var writer = new PacketWriter(bcOut);
+            using (var cOut = encGen.Open(writer))
+            using (var lOut = lGen.Open(cOut, PgpLiteralData.Binary, PgpLiteralData.Console, DateTime.UtcNow))
+                lOut.Write(text);
             byte[] encData = bcOut.ToArray();
 
-            //
-            // asymmetric
-            //
-            PgpObjectFactory pgpF = new PgpObjectFactory(encData);
+            // Asymmetric
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(encData);
+            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(pgpPrivKey);
+            CheckLiteralData(literalMessage, text);
 
-            PgpEncryptedDataList encList = (PgpEncryptedDataList) pgpF.NextPgpObject();
-
-            PgpPublicKeyEncryptedData  encP = (PgpPublicKeyEncryptedData)encList[0];
-
-            Stream clear = encP.GetDataStream(pgpPrivKey);
-
-            PgpObjectFactory pgpFact = new PgpObjectFactory(clear);
-
-            CheckLiteralData((PgpLiteralData)pgpFact.NextPgpObject(), text);
-
-            //
             // PBE
-            //
-            pgpF = new PgpObjectFactory(encData);
-
-            encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
-            PgpPbeEncryptedData encPbe = (PgpPbeEncryptedData) encList[1];
-
-            clear = encPbe.GetDataStream("password".ToCharArray());
-
-            pgpF = new PgpObjectFactory(clear);
-
-            CheckLiteralData((PgpLiteralData) pgpF.NextPgpObject(), text);*/
+            encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(encData);
+            literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage("password".ToCharArray());
+            CheckLiteralData(literalMessage, text);
         }
 
         private void CheckLiteralData(
-            PgpLiteralData	ld,
-            byte[]			data)
+            PgpLiteralMessage literalMessage,
+            byte[] data)
         {
-            if (!ld.FileName.Equals(PgpLiteralData.Console))
-                throw new Exception("wrong filename in packet");
-
-            Stream inLd = ld.GetDataStream();
-            byte[] bytes = Streams.ReadAll(inLd);
-
-            if (!AreEqual(bytes, data))
-            {
-                Fail("wrong plain text in decrypted packet");
-            }
+            Assert.AreEqual(PgpLiteralData.Console, literalMessage.FileName);
+            byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(data, bytes);
         }
 
         private void ExistingEmbeddedJpegTest()
@@ -537,12 +479,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             IEnumerator enumerator = pgpPub.GetPublicKey().GetUserIds().GetEnumerator();
             enumerator.MoveNext();
-            string uid = (string) enumerator.Current;
+            string uid = (string)enumerator.Current;
 
 
             enumerator = pgpPub.GetPublicKey().GetSignaturesForId(uid).GetEnumerator();
             enumerator.MoveNext();
-            PgpSignature sig = (PgpSignature) enumerator.Current;
+            PgpSignature sig = (PgpSignature)enumerator.Current;
 
             sig.InitVerify(pgpPub.GetPublicKey());
 
@@ -590,7 +532,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 // write a v3 private key
                 //
                 bOut = new UncloseableMemoryStream();
-                
+
                 pgpPriv2.Encode(bOut);
 
                 byte[] result = bOut.ToArray();
@@ -637,30 +579,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 Fail("decryption failed.");
             }*/
-            byte[] outBytes;
 
             //
             // test signature message
             //
-            PgpObjectFactory pgpFact = new PgpObjectFactory(sig1);
-
-            PgpCompressedData c1 = (PgpCompressedData)pgpFact.NextPgpObject();
-
-            pgpFact = new PgpObjectFactory(c1.GetDataStream());
-
-            PgpOnePassSignatureList p1 = (PgpOnePassSignatureList)pgpFact.NextPgpObject();
-
-            PgpOnePassSignature ops = p1[0];
-
-            PgpLiteralData p2 = (PgpLiteralData)pgpFact.NextPgpObject();
-
-            Stream dIn = p2.GetInputStream();
-
-            var signatureCalculator = ops.GetSignatureCalculator(pgpPub.GetPublicKey(ops.KeyId));
-            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
-
-            var p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-            Assert.True(p3[0].Verify(signatureCalculator), "Failed generated signature check");
+            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(sig1);
+            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            literalMessage.GetStream().CopyTo(Stream.Null);
+            Assert.True(signedMessage.Verify(pgpPub.GetPublicKey(signedMessage.KeyId)));
 
             //
             // encrypted message - read subkey
@@ -671,37 +598,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // encrypted message
             //
             byte[] text = Encoding.ASCII.GetBytes("hello world!\n");
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(enc1);
 
-            PgpObjectFactory pgpF = new PgpObjectFactory(enc1);
-
-            PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
-            PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
-
-            pgpPrivKey = pgpPriv.GetSecretKey(encP.KeyId).ExtractPrivateKey(pass);
-
-            Stream clear = encP.GetDataStream(pgpPrivKey);
-
-            pgpFact = new PgpObjectFactory(clear);
-
-            c1 = (PgpCompressedData)pgpFact.NextPgpObject();
-
-            pgpFact = new PgpObjectFactory(c1.GetDataStream());
-
-            PgpLiteralData ld = (PgpLiteralData)pgpFact.NextPgpObject();
-
-            if (!ld.FileName.Equals("test.txt"))
-            {
-                throw new Exception("wrong filename in packet");
-            }
-
-            Stream inLd = ld.GetDataStream();
-            byte[] bytes = Streams.ReadAll(inLd);
-
-            if (!AreEqual(bytes, text))
-            {
-                Fail("wrong plain text in decrypted packet");
-            }
+            var encKeyId = encryptedMessage.Methods.OfType<PgpPublicKeyEncryptedData>().First().KeyId;
+            pgpPrivKey = pgpPriv.GetSecretKey(encKeyId).ExtractPrivateKey(pass);
+            compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(pgpPrivKey);
+            literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            Assert.AreEqual("test.txt", literalMessage.FileName);
+            byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(text, bytes);
 
             //
             // encrypt - short message
@@ -711,7 +616,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             MemoryStream cbOut = new UncloseableMemoryStream();
             PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
             PgpLiteralDataGenerator lPk = new PgpLiteralDataGenerator();
-            PgpPublicKey puK = pgpPriv.GetSecretKey(encP.KeyId).PublicKey;
+            PgpPublicKey puK = pgpPriv.GetSecretKey(encKeyId).PublicKey;
 
             cPk.AddMethod(puK);
             var writer = new PacketWriter(cbOut);
@@ -721,27 +626,21 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 literalStream.Write(shortText);
             }
 
-            pgpF = new PgpObjectFactory(cbOut.ToArray());
-            encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-            encP = (PgpPublicKeyEncryptedData)encList[0];
-            pgpPrivKey = pgpPriv.GetSecretKey(encP.KeyId).ExtractPrivateKey(pass);
-            Assert.AreEqual(SymmetricKeyAlgorithmTag.Cast5, encP.GetSymmetricAlgorithm(pgpPrivKey));
-            clear = encP.GetDataStream(pgpPrivKey);
-            pgpF = new PgpObjectFactory(clear);
-            ld = (PgpLiteralData)pgpF.NextPgpObject();
-            outBytes = Streams.ReadAll(ld.GetDataStream());
-
-            if (!AreEqual(outBytes, shortText))
-            {
-                Fail("wrong plain text in generated short text packet");
-            }
+            cbOut.Position = 0;
+            encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(cbOut);
+            pgpPrivKey = pgpPriv.GetSecretKey(encryptedMessage.Methods.OfType<PgpPublicKeyEncryptedData>().First().KeyId).ExtractPrivateKey(pass);
+            Assert.AreEqual(SymmetricKeyAlgorithmTag.Cast5, ((PgpPublicKeyEncryptedData)encryptedMessage.Methods[0]).GetSymmetricAlgorithm(pgpPrivKey));
+            literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(pgpPrivKey);
+            Assert.AreEqual("", literalMessage.FileName);
+            bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(shortText, bytes);
 
             //
             // encrypt
             //
             cbOut = new UncloseableMemoryStream();
             cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
-            puK = pgpPriv.GetSecretKey(encP.KeyId).PublicKey;
+            puK = pgpPriv.GetSecretKey(encKeyId).PublicKey;
 
             cPk.AddMethod(puK);
             writer = new PacketWriter(cbOut);
@@ -751,30 +650,23 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 literalStream.Write(text);
             }
 
-            pgpF = new PgpObjectFactory(cbOut.ToArray());
-            encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-            encP = (PgpPublicKeyEncryptedData)encList[0];
-            pgpPrivKey = pgpPriv.GetSecretKey(encP.KeyId).ExtractPrivateKey(pass);
-            clear = encP.GetDataStream(pgpPrivKey);
-            pgpF = new PgpObjectFactory(clear);
-            ld = (PgpLiteralData)pgpF.NextPgpObject();
-            outBytes = Streams.ReadAll(ld.GetDataStream());
-
-            if (!AreEqual(outBytes, text))
-            {
-                Fail("wrong plain text in generated packet");
-            }
+            cbOut.Position = 0;
+            encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(cbOut);
+            pgpPrivKey = pgpPriv.GetSecretKey(encryptedMessage.Methods.OfType<PgpPublicKeyEncryptedData>().First().KeyId).ExtractPrivateKey(pass);
+            literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(pgpPrivKey);
+            bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(text, bytes);
 
             //
             // read public key with sub key.
             //
-            pgpF = new PgpObjectFactory(subPubKey);
+            /*pgpF = new PgpObjectFactory(subPubKey);
             object o;
             while ((o = pgpFact.NextPgpObject()) != null)
             {
                 // TODO Should something be tested here?
                 // Console.WriteLine(o);
-            }
+            }*/
 
             //
             // key pair generation - CAST5 encryption
@@ -797,12 +689,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             enumerator = key.GetUserIds().GetEnumerator();
             enumerator.MoveNext();
-            uid = (string) enumerator.Current;
+            uid = (string)enumerator.Current;
 
 
             enumerator = key.GetSignaturesForId(uid).GetEnumerator();
             enumerator.MoveNext();
-            sig = (PgpSignature) enumerator.Current;
+            sig = (PgpSignature)enumerator.Current;
 
             sig.InitVerify(key);
 
@@ -840,7 +732,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             IEnumerator sgEnum = key.GetSignaturesOfType(PgpSignature.KeyRevocation).GetEnumerator();
             sgEnum.MoveNext();
-            sig = (PgpSignature) sgEnum.Current;
+            sig = (PgpSignature)sgEnum.Current;
 
             sig.InitVerify(key);
 
@@ -891,12 +783,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             enumerator = key.GetUserIds().GetEnumerator();
             enumerator.MoveNext();
-            uid = (string) enumerator.Current;
+            uid = (string)enumerator.Current;
 
 
             enumerator = key.GetSignaturesForId(uid).GetEnumerator();
             enumerator.MoveNext();
-            sig = (PgpSignature) enumerator.Current;
+            sig = (PgpSignature)enumerator.Current;
 
             sig.InitVerify(key);
 
@@ -930,29 +822,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // verify generated signature
             //
-            pgpFact = new PgpObjectFactory(bOut.ToArray());
-
-            c1 = (PgpCompressedData)pgpFact.NextPgpObject();
-
-            pgpFact = new PgpObjectFactory(c1.GetDataStream());
-
-            p1 = (PgpOnePassSignatureList)pgpFact.NextPgpObject();
-
-            ops = p1[0];
-
-            p2 = (PgpLiteralData)pgpFact.NextPgpObject();
-            if (!p2.ModificationTime.Equals(testDateTime))
-            {
-                Fail("Modification time not preserved");
-            }
-
-            dIn = p2.GetInputStream();
-
-            signatureCalculator = ops.GetSignatureCalculator(secretKey.PublicKey);
-            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
-
-            p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-            Assert.True(p3[0].Verify(signatureCalculator), "Failed generated signature check");
+            bOut.Position = 0;
+            compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(bOut);
+            signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            Assert.AreEqual(testDateTime, literalMessage.ModificationTime);
+            literalMessage.GetStream().CopyTo(Stream.Null);
+            Assert.IsTrue(signedMessage.Verify(secretKey.PublicKey));
 
             //
             // signature generation - version 3
@@ -974,30 +850,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // verify generated signature
             //
-            pgpFact = new PgpObjectFactory(bOut.ToArray());
-
-            c1 = (PgpCompressedData)pgpFact.NextPgpObject();
-
-            pgpFact = new PgpObjectFactory(c1.GetDataStream());
-
-            p1 = (PgpOnePassSignatureList)pgpFact.NextPgpObject();
-
-            ops = p1[0];
-
-            p2 = (PgpLiteralData)pgpFact.NextPgpObject();
-            if (!p2.ModificationTime.Equals(testDateTime))
-            {
-                Fail("Modification time not preserved");
-            }
-
-            dIn = p2.GetInputStream();
-
-            signatureCalculator = ops.GetSignatureCalculator(secretKey.PublicKey);
-            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
-
-            p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-            Assert.AreEqual(3, p3[0].Version);
-            Assert.True(p3[0].Verify(signatureCalculator), "Failed generated signature check");
+            bOut.Position = 0;
+            compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(bOut);
+            signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            Assert.AreEqual(testDateTime, literalMessage.ModificationTime);
+            literalMessage.GetStream().CopyTo(Stream.Null);
+            Assert.IsTrue(signedMessage.Verify(secretKey.PublicKey));
 
             //
             // extract PGP 8 private key
@@ -1020,9 +879,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         }
 
         private void PerformTestSig(
-            HashAlgorithmTag	hashAlgorithm,
-            PgpPublicKey		pubKey,
-            PgpPrivateKey		privKey)
+            HashAlgorithmTag hashAlgorithm,
+            PgpPublicKey pubKey,
+            PgpPrivateKey privKey)
         {
             const string data = "hello world!";
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
@@ -1041,32 +900,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 literalStream.Write(dataBytes);
             }
 
-            //
-            // verify generated signature
-            //
-            PgpObjectFactory pgpFact = new PgpObjectFactory(bOut.ToArray());
-
-            PgpCompressedData c1 = (PgpCompressedData)pgpFact.NextPgpObject();
-
-            pgpFact = new PgpObjectFactory(c1.GetDataStream());
-
-            PgpOnePassSignatureList p1 = (PgpOnePassSignatureList)pgpFact.NextPgpObject();
-
-            PgpOnePassSignature ops = p1[0];
-
-            PgpLiteralData p2 = (PgpLiteralData)pgpFact.NextPgpObject();
-            if (!p2.ModificationTime.Equals(testDateTime))
-            {
-                Fail("Modification time not preserved");
-            }
-
-            Stream dIn = p2.GetInputStream();
-
-            var signatureCalculator = ops.GetSignatureCalculator(pubKey);
-            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
-
-            var p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-            Assert.True(p3[0].Verify(signatureCalculator), "Failed generated signature check - " + hashAlgorithm);
+            // Verify generated signature
+            bOut.Position = 0;
+            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(bOut);
+            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            Assert.AreEqual(testDateTime, literalMessage.ModificationTime);
+            literalMessage.GetStream().CopyTo(Stream.Null);
+            Assert.IsTrue(signedMessage.Verify(pubKey));
         }
 
         private class UncloseableMemoryStream
@@ -1079,9 +920,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             }
 #else
             public override void Close()
-			{
-				throw new Exception("Close() called on underlying stream");
-			}
+            {
+                throw new Exception("Close() called on underlying stream");
+            }
 #endif
         }
 

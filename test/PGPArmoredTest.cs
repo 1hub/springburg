@@ -183,10 +183,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             ArmoredInputStream aIn = new ArmoredInputStream(
                 new MemoryStream(bOut.ToArray(), false));
 
-            PgpObjectFactory fact = new PgpObjectFactory(aIn);
+            var reader = new PacketReader(aIn);
             int count = 0;
 
-            while (fact.NextPgpObject() != null)
+            while (reader.ReadPacket() != null)
             {
                 count++;
             }
@@ -208,10 +208,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var aIn = new ArmoredInputStream(
                 new MemoryStream(bOut.ToArray(), false));
 
-            var fact = new PgpObjectFactory(aIn);
+            var reader = new PacketReader(aIn);
             int count = 0;
 
-            while (fact.NextPgpObject() != null)
+            while (reader.ReadPacket() != null)
             {
                 count++;
             }
@@ -242,9 +242,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             do
             {
                 atLeastOne = false;
-                fact = new PgpObjectFactory(aIn);
-
-                while (fact.NextPgpObject() != null)
+                
+                reader = new PacketReader(aIn);
+                while (reader.ReadPacket() != null)
                 {
                     atLeastOne = true;
                     count++;

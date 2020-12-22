@@ -40,87 +40,20 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             "o6Q0OO1vptIGxW8jClTD4N1sCNwNu9vKny8dKYDDHbCjE06DNTv7XYVW3+JqTL5E" +
             "BnidvGgOmA==");
 
-        /**
-        * decrypt the passed in message stream
-        */
-        private byte[] DecryptMessage(
-            byte[] message)
+        private byte[] DecryptMessage(byte[] message)
         {
-            PgpObjectFactory pgpF = new PgpObjectFactory(message);
-            PgpEncryptedDataList enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
-            PgpPbeEncryptedData pbe = (PgpPbeEncryptedData)enc[0];
-            Stream clear = pbe.GetDataStream(pass);
-
-            PgpObjectFactory pgpFact = new PgpObjectFactory(clear);
-            PgpCompressedData cData = (PgpCompressedData)pgpFact.NextPgpObject();
-            pgpFact = new PgpObjectFactory(cData.GetDataStream());
-
-            PgpLiteralData ld = (PgpLiteralData)pgpFact.NextPgpObject();
-
-            if (!ld.FileName.Equals("test.txt")
-                && !ld.FileName.Equals("_CONSOLE"))
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(message);
+            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(pass);
+            var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            Assert.IsTrue(literalMessage.FileName.Equals("test.txt") || literalMessage.FileName.Equals(PgpLiteralData.Console));
+            Assert.AreEqual(TestDateTime, literalMessage.ModificationTime);
+            byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
+            var pbe = (PgpPbeEncryptedData)encryptedMessage.Methods[0];
+            if (pbe.IsIntegrityProtected())
             {
-                Fail("wrong filename in packet");
+                Assert.IsTrue(pbe.Verify());
             }
-
-            if (!ld.ModificationTime.Equals(TestDateTime))
-            {
-                Fail("wrong modification time in packet: " + ld.ModificationTime + " vs " + TestDateTime);
-            }
-
-            Stream unc = ld.GetInputStream();
-            byte[] bytes = Streams.ReadAll(unc);
-
-            if (pbe.IsIntegrityProtected() && !pbe.Verify())
-            {
-                Fail("integrity check failed");
-            }
-
             return bytes;
-        }
-
-        private byte[] DecryptMessageBuffered(
-            byte[] message)
-        {
-            PgpObjectFactory pgpF = new PgpObjectFactory(message);
-            PgpEncryptedDataList enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
-            PgpPbeEncryptedData pbe = (PgpPbeEncryptedData)enc[0];
-
-            Stream clear = pbe.GetDataStream(pass);
-
-            PgpObjectFactory pgpFact = new PgpObjectFactory(clear);
-            PgpCompressedData cData = (PgpCompressedData)pgpFact.NextPgpObject();
-
-            pgpFact = new PgpObjectFactory(cData.GetDataStream());
-
-            PgpLiteralData ld = (PgpLiteralData)pgpFact.NextPgpObject();
-
-            MemoryStream bOut = new MemoryStream();
-            if (!ld.FileName.Equals("test.txt")
-                && !ld.FileName.Equals("_CONSOLE"))
-            {
-                Fail("wrong filename in packet");
-            }
-            if (!ld.ModificationTime.Equals(TestDateTime))
-            {
-                Fail("wrong modification time in packet: " + ld.ModificationTime.Ticks + " " + TestDateTime.Ticks);
-            }
-
-            Stream unc = ld.GetInputStream();
-            byte[] buf = new byte[1024];
-
-            int len;
-            while ((len = unc.Read(buf, 0, buf.Length)) > 0)
-            {
-                bOut.Write(buf, 0, len);
-            }
-
-            if (pbe.IsIntegrityProtected() && !pbe.Verify())
-            {
-                Fail("integrity check failed");
-            }
-
-            return bOut.ToArray();
         }
 
         private byte[] EncryptMessage(byte[] msg, bool withIntegrityPacket)
@@ -171,36 +104,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             }
 
             //
-            // decrypt with buffering
-            //
-            data = DecryptMessageBuffered(encryptedData);
-            if (!AreEqual(data, text))
-            {
-                Fail("wrong plain text in buffer generated packet");
-            }
-
-            //
             // sample message
             //
-            PgpObjectFactory pgpFact = new PgpObjectFactory(testPBEAsym);
-
-            PgpEncryptedDataList enc = (PgpEncryptedDataList)pgpFact.NextPgpObject();
-
-            PgpPbeEncryptedData pbe = (PgpPbeEncryptedData)enc[1];
-
-            Stream clear = pbe.GetDataStream("password".ToCharArray());
-
-            pgpFact = new PgpObjectFactory(clear);
-
-            PgpLiteralData ld = (PgpLiteralData)pgpFact.NextPgpObject();
-
-            Stream unc = ld.GetInputStream();
-            byte[] bytes = Streams.ReadAll(unc);
-
-            if (!AreEqual(bytes, new byte[] { 0x53, 0x61, 0x74, 0x20, 0x31, 0x30, 0x2e, 0x30, 0x32, 0x2e, 0x30, 0x37, 0x0d, 0x0a }))
-            {
-                Fail("data mismatch on combined PBE");
-            }
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(testPBEAsym);
+            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage("password".ToCharArray());
+            byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(Encoding.ASCII.GetBytes("Sat 10.02.07\r\n"), bytes);
 
             //
             // with integrity packet - one byte message
@@ -211,15 +120,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             if (!AreEqual(data, msg))
             {
                 Fail("wrong plain text in generated packet");
-            }
-
-            //
-            // decrypt with buffering
-            //
-            data = DecryptMessageBuffered(encryptedData);
-            if (!AreEqual(data, msg))
-            {
-                Fail("wrong plain text in buffer generated packet");
             }
         }
 

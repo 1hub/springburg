@@ -278,6 +278,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 foreach (EncMethod m in methods)
                 {
                     m.AddSessionInfo(sessionInfo);
+                    writer.WritePacket(m);
                 }
             }
 

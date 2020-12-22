@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    public abstract class PgpKeyRing : PgpEncodable, IPgpObject
+    public abstract class PgpKeyRing : PgpEncodable
     {
         private static TrustPacket ReadOptionalTrustPacket(PacketReader packetReader)
         {

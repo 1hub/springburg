@@ -345,9 +345,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                         + "QBHyOAAKCRAOtk6iUOgnkBStAJoCZBVM61B1LG2xip294MZecMtCwQCbBbsk"
                         + "JVCXP0/Szm05GB+WN+MOCT2wAgAA");
 
-            PgpObjectFactory pgpFact = new PgpObjectFactory(testPubKeyRing);
-
-            PgpPublicKeyRing pgpPub = (PgpPublicKeyRing)pgpFact.NextPgpObject();
+            PgpPublicKeyRing pgpPub = new PgpPublicKeyRing(testPubKeyRing);
 
             foreach (PgpSignature sig in pgpPub.GetPublicKey().GetSignatures())
             {
@@ -403,11 +401,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             sig = sGen.GenerateCertification(secretDSAKey.PublicKey, secretKey.PublicKey);
 
-            byte[] sigBytes = sig.GetEncoded();
+            /*byte[] sigBytes = sig.GetEncoded();
 
             PgpObjectFactory f = new PgpObjectFactory(sigBytes);
 
-            sig = ((PgpSignatureList)f.NextPgpObject())[0];
+            sig = ((PgpSignatureList)f.NextPgpObject())[0];*/
 
             sig.InitVerify(secretDSAKey.PublicKey);
 
@@ -679,6 +677,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private void doTestMissingSubpackets(byte[] signature)
         {
+            /*
             PgpObjectFactory f = new PgpObjectFactory(signature);
             object obj = f.NextPgpObject();
 
@@ -724,7 +723,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 {
                     Fail("HasSubpackets property was true with no packets");
                 }
-            }
+            }*/
         }
 
         private void preferredAlgorithmCheck<T>(
@@ -812,37 +811,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpPublicKey pubKey,
             byte[] original)
         {
-            PgpObjectFactory pgpFact = new PgpObjectFactory(encodedSig);
-            PgpOnePassSignatureList p1 = (PgpOnePassSignatureList)pgpFact.NextPgpObject();
-            PgpOnePassSignature ops = p1[0];
-            PgpLiteralData p2 = (PgpLiteralData)pgpFact.NextPgpObject();
-            Stream dIn = p2.GetInputStream();
-
-            var signatureCalculator = ops.GetSignatureCalculator(pubKey);
-            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
-
-            PgpSignatureList p3 = (PgpSignatureList)pgpFact.NextPgpObject();
-            PgpSignature sig = p3[0];
-
-            DateTime creationTime = sig.CreationTime;
-
-            // Check creationTime is recent
-            if (creationTime.CompareTo(DateTime.UtcNow) > 0
-                || creationTime.CompareTo(DateTime.UtcNow.AddMinutes(-10)) < 0)
-            {
-                Fail("bad creation time in signature: " + creationTime);
-            }
-
-            if (sig.KeyId != pubKey.KeyId)
-            {
-                Fail("key id mismatch in signature");
-            }
-
-            if (!sig.Verify(signatureCalculator))
-            {
-                Fail("Failed generated signature check - " + hashAlgorithm);
-            }
-
+            var now = DateTime.UtcNow;
+            var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(encodedSig);
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            literalMessage.GetStream().CopyTo(Stream.Null);
+            Assert.IsTrue(signedMessage.Verify(pubKey, out DateTime creationTime));
+            Assert.IsTrue(Math.Abs((creationTime - now).TotalMinutes) < 10);
+            Assert.AreEqual(pubKey.KeyId, signedMessage.KeyId);
+            /*
             sig.InitVerify(pubKey);
 
             sig.Update(original);
@@ -851,7 +827,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             if (!sig.Verify())
             {
                 Fail("Failed generated signature check against original data");
-            }
+            }*/
         }
 
         public override string Name

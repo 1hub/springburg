@@ -1,37 +1,34 @@
-using InflatablePalace.Cryptography.Algorithms;
+﻿using InflatablePalace.Cryptography.Algorithms;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    /// <summary>Compressed data objects</summary>
-    public class PgpCompressedData : IPgpObject
+    public class PgpCompressedMessage : PgpMessage
     {
-        private readonly CompressedDataPacket data;
-
-        internal PgpCompressedData(CompressedDataPacket data)
+        private CompressedDataPacket compressedDataPacket;
+        private IPacketReader packetReader;
+        
+        internal PgpCompressedMessage(IPacketReader packetReader)
         {
-            this.data = data;
+            this.compressedDataPacket = (CompressedDataPacket)packetReader.ReadPacket();
+            this.packetReader = packetReader;
         }
 
-        /// <summary>The algorithm used for compression</summary>
-        public CompressionAlgorithmTag Algorithm => data.Algorithm;
-
-        /// <summary>Get the raw input stream contained in the object.</summary>
-        public Stream GetInputStream() => data.GetInputStream();
-
-        /// <summary>Return an uncompressed input stream which allows reading of the compressed data.</summary>
-        public Stream GetDataStream()
+        private Stream GetDataStream()
         {
-            switch (Algorithm)
+            var inputStream = this.compressedDataPacket.GetInputStream();
+
+            switch (this.compressedDataPacket.Algorithm)
             {
                 case CompressionAlgorithmTag.Uncompressed:
-                    return GetInputStream();
+                    return inputStream;
+
                 case CompressionAlgorithmTag.Zip:
-                    return new DeflateStream(GetInputStream(), CompressionMode.Decompress);
+                    return new DeflateStream(inputStream, CompressionMode.Decompress);
+
                 case CompressionAlgorithmTag.ZLib:
-                    var inputStream = GetInputStream();
                     var cmf = inputStream.ReadByte();
                     var flg = inputStream.ReadByte();
                     if ((flg & 0x20) != 0)
@@ -46,12 +43,18 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     var adler32 = new Adler32();
                     var truncatedStream = new CryptoStream(inputStream, new TailEndCryptoTransform(adler32, adler32.HashSize / 8), CryptoStreamMode.Read);
                     return new DeflateStream(truncatedStream, CompressionMode.Decompress);
+
                 // FIXME
                 //case CompressionAlgorithmTag.BZip2:
                 //   return new CBZip2InputStream(GetInputStream());
                 default:
-                    throw new PgpException("can't recognise compression algorithm: " + Algorithm);
+                    throw new PgpException("can't recognise compression algorithm: " + this.compressedDataPacket.Algorithm);
             }
+        }
+
+        public PgpMessage ReadMessage()
+        {
+            return ReadMessage(packetReader.CreateNestedReader(GetDataStream()));
         }
     }
 }

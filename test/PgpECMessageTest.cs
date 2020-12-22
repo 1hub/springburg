@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using Org.BouncyCastle.Utilities.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
@@ -70,69 +72,34 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [Test]
         public void DoTestEncMessage()
         {
-            PgpObjectFactory pgpFact = new PgpObjectFactory(encMessage);
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(encMessage);
 
-            PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpFact.NextPgpObject();
+            var publicKeyRing = new PgpPublicKeyRing(testPubKey);
+            var publicKey = publicKeyRing.GetPublicKey(encryptedMessage.Methods.OfType<PgpPublicKeyEncryptedData>().First().KeyId);
+            var secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false), "test".ToCharArray(), publicKey);
+            var privateKey = secretKey.ExtractPrivateKey(null);
 
-            PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
-
-            PgpPublicKey publicKey = new PgpPublicKeyRing(testPubKey).GetPublicKey(encP.KeyId);
-
-            PgpSecretKey secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false),
-                "test".ToCharArray(), publicKey);
-
-            Stream clear = encP.GetDataStream(secretKey.ExtractPrivateKey(null));
-
-            PgpObjectFactory plainFact = new PgpObjectFactory(clear);
-
-            PgpCompressedData cData = (PgpCompressedData)plainFact.NextPgpObject();
-
-            PgpObjectFactory compFact = new PgpObjectFactory(cData.GetDataStream());
-
-            PgpLiteralData lData = (PgpLiteralData)compFact.NextPgpObject();
-
-            Assert.AreEqual("test.txt", lData.FileName);
+            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(privateKey);
+            var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            Assert.AreEqual("test.txt", literalMessage.FileName);
         }
 
         [Test]
         public void DoTestSignedEncMessage()
         {
-            PgpObjectFactory pgpFact = new PgpObjectFactory(signedEncMessage);
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(signedEncMessage);
 
-            PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpFact.NextPgpObject();
+            var publicKeyRing = new PgpPublicKeyRing(testPubKey);
+            var publicKey = publicKeyRing.GetPublicKey(encryptedMessage.Methods.OfType<PgpPublicKeyEncryptedData>().First().KeyId);
+            var secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false), "test".ToCharArray(), publicKey);
+            var privateKey = secretKey.ExtractPrivateKey(null);
 
-            PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
-
-            PgpPublicKeyRing publicKeyRing = new PgpPublicKeyRing(testPubKey);
-
-            PgpPublicKey publicKey = publicKeyRing.GetPublicKey(encP.KeyId);
-
-            PgpSecretKey secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false),
-                "test".ToCharArray(), publicKey);
-
-            Stream clear = encP.GetDataStream(secretKey.ExtractPrivateKey(null));
-
-            PgpObjectFactory plainFact = new PgpObjectFactory(clear);
-
-            PgpCompressedData cData = (PgpCompressedData)plainFact.NextPgpObject();
-
-            PgpObjectFactory compFact = new PgpObjectFactory(cData.GetDataStream());
-
-            PgpOnePassSignatureList sList = (PgpOnePassSignatureList)compFact.NextPgpObject();
-
-            PgpOnePassSignature ops = sList[0];
-
-            PgpLiteralData lData  = (PgpLiteralData)compFact.NextPgpObject();
-
-            Assert.AreEqual("test.txt", lData.FileName);
-
-            Stream dIn = lData .GetInputStream();
-
-            var signatureCalculator = ops.GetSignatureCalculator(publicKeyRing.GetPublicKey(ops.KeyId));
-            signatureCalculator.WrapReadStream(dIn).CopyTo(Stream.Null);
-
-            PgpSignatureList p3 = (PgpSignatureList)compFact.NextPgpObject();
-            Assert.IsTrue(p3[0].Verify(signatureCalculator), "Failed signature check");
+            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(privateKey);
+            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            Assert.AreEqual("test.txt", literalMessage.FileName);
+            literalMessage.GetStream().CopyTo(Stream.Null);
+            Assert.IsTrue(signedMessage.Verify(publicKeyRing.GetPublicKey(signedMessage.KeyId)));
         }
     }
 }

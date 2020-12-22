@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    public class PacketReader
+    public class PacketReader : IPacketReader
     {
         private Stream inputStream;
         private bool next = false;
@@ -12,6 +12,16 @@ namespace Org.BouncyCastle.Bcpg
         public PacketReader(Stream inputStream)
         {
             this.inputStream = inputStream;
+        }
+
+        public void Dispose()
+        {
+            this.inputStream.Close();
+        }
+
+        public IPacketReader CreateNestedReader(Stream stream)
+        {
+            return new PacketReader(stream);
         }
 
         /// <summary>Returns the next packet tag in the stream.</summary>

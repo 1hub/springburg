@@ -15,13 +15,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var signGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, privateKey, HashAlgorithmTag.Sha256);
             var literalGen = new PgpLiteralDataGenerator();
             var writer = new PacketWriter(encodedStream);
-            using (var signedWriter = signGen.Open(writer, generateOnePass: false))
+            using (var signedWriter = signGen.Open(writer))
             using (var literalStram = literalGen.Open(signedWriter, PgpLiteralData.Binary, "", DateTime.UtcNow))
             {
                 literalStram.Write(msg);
             }
 
             encodedStream.Position = 0;
+            var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(encodedStream);
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            // Skip over literal data
+            literalMessage.GetStream().CopyTo(Stream.Null);
+            Assert.IsTrue(signedMessage.Verify(publicKey), "signature failed to verify!");
+            /*
             PgpObjectFactory objectFactory = new PgpObjectFactory(encodedStream);
             PgpLiteralData literalData = (PgpLiteralData)objectFactory.NextPgpObject();
             // Skip over literal data
@@ -29,7 +35,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpSignatureList signatureList = (PgpSignatureList)objectFactory.NextPgpObject();
             signatureList[0].InitVerify(publicKey);
             signatureList[0].Update(msg);
-            Assert.IsTrue(signatureList[0].Verify(), "signature failed to verify!");
+            Assert.IsTrue(signatureList[0].Verify(), "signature failed to verify!");*/
         }
     }
 }

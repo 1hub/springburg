@@ -49,13 +49,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Read it back
             bOut.Position = 0;
-            PgpObjectFactory pgpFact = new PgpObjectFactory(bOut);
-            PgpCompressedData c1 = (PgpCompressedData)pgpFact.NextPgpObject();
-            Stream pIn = c1.GetDataStream();
-            pgpFact = new PgpObjectFactory(pIn);
-            PgpLiteralData l1 = (PgpLiteralData)pgpFact.NextPgpObject();
-            byte[] bytes = Streams.ReadAll(l1.GetDataStream());
-
+            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(bOut);
+            var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
             Assert.That(bytes, Is.EqualTo(Data));
         }
     }

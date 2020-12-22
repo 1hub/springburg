@@ -156,31 +156,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private void TestDecrypt(PgpSecretKeyRing secretKeyRing)
         {
-            PgpObjectFactory pgpF = new PgpObjectFactory(testMessage);
-
-            PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-
-            PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
-
-            PgpSecretKey secretKey = secretKeyRing.GetSecretKey(); // secretKeyRing.GetSecretKey(encP.KeyId);
-
-            //        PgpPrivateKey pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyEncryptorBuilder());
-
-            //        clear = encP.getDataStream(pgpPrivKey, "BC");
-            //
-            //        bOut.reset();
-            //
-            //        while ((ch = clear.read()) >= 0)
-            //        {
-            //            bOut.write(ch);
-            //        }
-            //
-            //        out = bOut.toByteArray();
-            //
-            //        if (!AreEqual(out, text))
-            //        {
-            //            fail("wrong plain text in Generated packet");
-            //        }
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(testMessage);
+            var encP = (PgpPublicKeyEncryptedData)encryptedMessage.Methods[0];
+            var secretKey = secretKeyRing.GetSecretKey(encP.KeyId);
+            //Assert.NotNull(secretKey);
+            /*var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(secretKey.ExtractPrivateKey("test".ToCharArray()));
+            var bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(text, bytes);*/
         }
 
         private void EncryptDecryptTest(ECDiffieHellman ecdh)
@@ -201,15 +183,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Read it back
             cbOut.Position = 0;
-            PgpObjectFactory pgpF = new PgpObjectFactory(cbOut);
-            PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-            PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
-            Stream clear = encP.GetDataStream(ecdhKeyPair.PrivateKey);
-            pgpF = new PgpObjectFactory(clear);
-            PgpLiteralData ld = (PgpLiteralData)pgpF.NextPgpObject();
-            MemoryStream bOut = new MemoryStream();
-            ld.GetInputStream().CopyTo(bOut);
-            Assert.That(bOut.ToArray(), Is.EqualTo(text), "wrong plain text in Generated packet");
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(cbOut);
+            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(ecdhKeyPair.PrivateKey);
+            var bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(text, bytes);
         }
 
         [Test]
@@ -232,34 +209,23 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Read it back
             cbOut.Position = 0;
-            PgpObjectFactory pgpF = new PgpObjectFactory(cbOut);
-            PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-            PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
-            Stream clear = encP.GetDataStream(secretKey.ExtractPrivateKey("test".ToCharArray()));
-            pgpF = new PgpObjectFactory(clear);
-            PgpLiteralData ld = (PgpLiteralData)pgpF.NextPgpObject();
-            MemoryStream bOut = new MemoryStream();
-            ld.GetInputStream().CopyTo(bOut);
-            Assert.That(bOut.ToArray(), Is.EqualTo(text), "wrong plain text in Generated packet");
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(cbOut);
+            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(secretKey.ExtractPrivateKey("test".ToCharArray()));
+            var bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(text, bytes);
         }
 
         [Test]
         public void GnuPGCrossCheck()
         {
-            PgpSecretKeyRing secretKeyRing = new PgpSecretKeyRing(testX25519PrivKey);
-            PgpObjectFactory pgpF = new PgpObjectFactory(testX25519Message);
-            PgpEncryptedDataList encList = (PgpEncryptedDataList)pgpF.NextPgpObject();
-            PgpPublicKeyEncryptedData encP = (PgpPublicKeyEncryptedData)encList[0];
-            PgpSecretKey secretKey = secretKeyRing.GetSecretKey(0x6c37367cd2f455c5);
-            PgpPrivateKey pgpPrivKey = secretKey.ExtractPrivateKey("test".ToCharArray());
-            Stream clear = encP.GetDataStream(pgpPrivKey);
-            pgpF = new PgpObjectFactory(clear);
-            PgpCompressedData c1 = (PgpCompressedData)pgpF.NextPgpObject();
-            pgpF = new PgpObjectFactory(c1.GetDataStream());
-            PgpLiteralData ld = (PgpLiteralData)pgpF.NextPgpObject();
-            Stream inLd = ld.GetDataStream();
-            byte[] bytes = Streams.ReadAll(inLd);
-            Assert.That(bytes, Is.EqualTo(Encoding.ASCII.GetBytes("hello world!")), "wrong plain text in decrypted packet");
+            var secretKeyRing = new PgpSecretKeyRing(testX25519PrivKey);
+            var secretKey = secretKeyRing.GetSecretKey(0x6c37367cd2f455c5);
+            var pgpPrivKey = secretKey.ExtractPrivateKey("test".ToCharArray());
+            var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(testX25519Message);
+            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(pgpPrivKey);
+            var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(Encoding.ASCII.GetBytes("hello world!"), bytes);
         }
 
         [Test]
