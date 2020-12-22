@@ -14,7 +14,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [TestCase(false)]
         public void ReadBackTest(bool oldFormat)
         {
-            var generator = new PgpLiteralDataGenerator();
+            var generator = new PgpLiteralMessageGenerator();
             Random rand = new Random();
             byte[] buf = new byte[MAX];
             byte[] buf2 = new byte[MAX];

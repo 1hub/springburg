@@ -10,7 +10,7 @@ using System.Text;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>Generator for encrypted objects.</summary>
-    public class PgpEncryptedDataGenerator : IStreamGenerator
+    public class PgpEncryptedMessagGenerator : IStreamGenerator
     {
         private Stream pOut;
         private CryptoStream cOut;
@@ -140,7 +140,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Base constructor.</summary>
         /// <param name="encAlgorithm">The symmetric algorithm to use.</param>
         /// <param name="withIntegrityPacket">Use integrity packet.</param>
-        public PgpEncryptedDataGenerator(
+        public PgpEncryptedMessagGenerator(
             SymmetricKeyAlgorithmTag encAlgorithm,
             bool withIntegrityPacket = false)
         {

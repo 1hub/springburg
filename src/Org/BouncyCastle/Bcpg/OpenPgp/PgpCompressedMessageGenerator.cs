@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>Class for producing compressed data packets.</summary>
-    public class PgpCompressedDataGenerator
+    public class PgpCompressedMessageGenerator
         : IStreamGenerator
     {
         private readonly CompressionAlgorithmTag algorithm;
@@ -18,13 +18,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private Stream pkOut;
         private Adler32 checksum;
 
-        public PgpCompressedDataGenerator(
+        public PgpCompressedMessageGenerator(
             CompressionAlgorithmTag algorithm)
             : this(algorithm, CompressionLevel.Optimal)
         {
         }
 
-        public PgpCompressedDataGenerator(
+        public PgpCompressedMessageGenerator(
             CompressionAlgorithmTag algorithm,
             CompressionLevel compression)
         {

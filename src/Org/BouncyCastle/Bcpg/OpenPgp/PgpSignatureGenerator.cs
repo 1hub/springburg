@@ -11,15 +11,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     /// <summary>Generator for PGP signatures.</summary>
     public class PgpSignatureGenerator
     {
-        private HashAlgorithmTag hashAlgorithm;
+        protected HashAlgorithmTag hashAlgorithm;
 
-        private SignatureSubpacket[] unhashed = Array.Empty<SignatureSubpacket>();
-        private SignatureSubpacket[] hashed = Array.Empty<SignatureSubpacket>();
+        protected SignatureSubpacket[] unhashed = Array.Empty<SignatureSubpacket>();
+        protected SignatureSubpacket[] hashed = Array.Empty<SignatureSubpacket>();
 
-        private PgpSignatureHelper helper;
-        private PgpPrivateKey privateKey;
+        private protected PgpSignatureHelper helper;
+        protected PgpPrivateKey privateKey;
 
-        private int version;
+        protected int version;
 
         /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
         public PgpSignatureGenerator(int signatureType, PgpPrivateKey privateKey, HashAlgorithmTag hashAlgorithm, int version = 4)
@@ -51,7 +51,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>Return a signature object containing the current signature state.</summary>
-        private PgpSignature Generate()
+        protected PgpSignature Generate()
         {
             if (version >= 4)
             {
@@ -192,62 +192,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             this.helper.UpdateWithPublicKey(pubKey);
             return Generate();
-        }
-
-        public IPacketWriter Open(IPacketWriter writer)
-        {
-            // FIXME: Nesting
-            var onePassPacket = new OnePassSignaturePacket(helper.SignatureType, hashAlgorithm, privateKey.PublicKeyPacket.Algorithm, privateKey.KeyId, /*isNested*/ false);
-            writer.WritePacket(onePassPacket);
-            if (writer is ArmoredPacketWriter)
-            {
-                helper.IgnoreTrailingWhitespace = true;
-            }
-            return new SigningPacketWriter(writer, helper, this);
-        }
-
-        class SigningPacketWriter : IPacketWriter
-        {
-            IPacketWriter innerWriter;
-            ICryptoTransform hashTransform;
-            PgpSignatureGenerator generator;
-            bool literalDataWritten;
-
-            public SigningPacketWriter(IPacketWriter innerWriter, ICryptoTransform hashTransform, PgpSignatureGenerator generator)
-            {
-                this.innerWriter = innerWriter;
-                this.hashTransform = hashTransform;
-                this.generator = generator;
-            }
-
-            public IPacketWriter CreateNestedWriter(Stream stream)
-            {
-                return new SigningPacketWriter(innerWriter.CreateNestedWriter(stream), hashTransform, generator);
-            }
-
-            public void Dispose()
-            {
-                Debug.Assert(literalDataWritten);
-                generator.Generate().Encode(innerWriter);
-                // DO NOT DISPOSE THE INNER WRITER
-            }
-
-            public Stream GetPacketStream(StreamablePacket packet)
-            {
-                if (packet is LiteralDataPacket)
-                {
-                    // TODO: Version 5 signatures
-                    var packetStream = innerWriter.GetPacketStream(packet);
-                    literalDataWritten = true;
-                    return new CryptoStream(packetStream, hashTransform, CryptoStreamMode.Write);
-                }
-                else
-                {
-                    return innerWriter.GetPacketStream(packet);
-                }
-            }
-
-            public void WritePacket(ContainedPacket packet) => innerWriter.WritePacket(packet);
         }
     }
 }

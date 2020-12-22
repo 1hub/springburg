@@ -172,12 +172,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Encrypt text
             MemoryStream cbOut = new MemoryStream();
-            PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
+            PgpEncryptedMessagGenerator cPk = new PgpEncryptedMessagGenerator(SymmetricKeyAlgorithmTag.Cast5);
             cPk.AddMethod(ecdhKeyPair.PublicKey);
-            PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
+            PgpLiteralMessageGenerator lData = new PgpLiteralMessageGenerator();
             var writer = new PacketWriter(cbOut);
             using (var cOut = cPk.Open(writer))
-            using (var pOut = lData.Open(cOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
+            using (var pOut = lData.Open(cOut, PgpLiteralMessageGenerator.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
                 pOut.Write(text);
 
             // Read it back
@@ -198,12 +198,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Encrypt text
             MemoryStream cbOut = new MemoryStream();
-            PgpEncryptedDataGenerator cPk = new PgpEncryptedDataGenerator(SymmetricKeyAlgorithmTag.Cast5);
+            PgpEncryptedMessagGenerator cPk = new PgpEncryptedMessagGenerator(SymmetricKeyAlgorithmTag.Cast5);
             cPk.AddMethod(publicKeyRing.GetPublicKey(0x6c37367cd2f455c5));
-            PgpLiteralDataGenerator lData = new PgpLiteralDataGenerator();
+            PgpLiteralMessageGenerator lData = new PgpLiteralMessageGenerator();
             var writer = new PacketWriter(cbOut);
             using (var cOut = cPk.Open(writer))
-            using (var pOut = lData.Open(cOut, PgpLiteralDataGenerator.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
+            using (var pOut = lData.Open(cOut, PgpLiteralMessageGenerator.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
                 pOut.Write(text);
 
             // Read it back

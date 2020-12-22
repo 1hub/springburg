@@ -286,7 +286,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             MemoryStream bOut = new MemoryStream();
 
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, pgpPrivKey, HashAlgorithmTag.Sha1);
+            PgpSignedMessageGenerator sGen = new PgpSignedMessageGenerator(PgpSignature.BinaryDocument, pgpPrivKey, HashAlgorithmTag.Sha1);
             PgpSignatureSubpacketGenerator spGen = new PgpSignatureSubpacketGenerator();
 
             string primaryUserId = (string)secretKey.PublicKey.GetUserIds().First();
@@ -294,8 +294,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             spGen.SetSignerUserId(true, primaryUserId);
             sGen.SetHashedSubpackets(spGen.Generate());
 
-            PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
-            PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
+            PgpCompressedMessageGenerator cGen = new PgpCompressedMessageGenerator(CompressionAlgorithmTag.Zip);
+            PgpLiteralMessageGenerator lGen = new PgpLiteralMessageGenerator();
             DateTime testDateTime = new DateTime(1973, 7, 27);
 
             var writer = new PacketWriter(bOut);
@@ -320,9 +320,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             const string data = "hello world!";
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
             MemoryStream bOut = new MemoryStream();
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.CanonicalTextDocument, pgpPrivKey, HashAlgorithmTag.Sha1);
-            PgpCompressedDataGenerator cGen = new PgpCompressedDataGenerator(CompressionAlgorithmTag.Zip);
-            PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
+            PgpSignedMessageGenerator sGen = new PgpSignedMessageGenerator(PgpSignature.CanonicalTextDocument, pgpPrivKey, HashAlgorithmTag.Sha1);
+            PgpCompressedMessageGenerator cGen = new PgpCompressedMessageGenerator(CompressionAlgorithmTag.Zip);
+            PgpLiteralMessageGenerator lGen = new PgpLiteralMessageGenerator();
             DateTime testDateTime = new DateTime(1973, 7, 27);
 
             var writer = new PacketWriter(bOut);

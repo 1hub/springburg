@@ -5,7 +5,7 @@ using System.Text;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>Class for producing literal data packets.</summary>
-    public class PgpLiteralDataGenerator
+    public class PgpLiteralMessageGenerator
         : IStreamGenerator
     {
         public const char Binary = PgpLiteralData.Binary;
@@ -22,7 +22,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// This is important if you need compatibility with PGP 2.6.x.
         /// </summary>
         /// <param name="oldFormat">If true, uses old format.</param>
-        public PgpLiteralDataGenerator()
+        public PgpLiteralMessageGenerator()
         {
         }
 

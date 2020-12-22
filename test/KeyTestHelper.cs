@@ -12,8 +12,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             byte[] msg = Encoding.ASCII.GetBytes("hello world!");
             var encodedStream = new MemoryStream();
 
-            var signGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, privateKey, HashAlgorithmTag.Sha256);
-            var literalGen = new PgpLiteralDataGenerator();
+            var signGen = new PgpSignedMessageGenerator(PgpSignature.BinaryDocument, privateKey, HashAlgorithmTag.Sha256);
+            var literalGen = new PgpLiteralMessageGenerator();
             var writer = new PacketWriter(encodedStream);
             using (var signedWriter = signGen.Open(writer))
             using (var literalStram = literalGen.Open(signedWriter, PgpLiteralData.Binary, "", DateTime.UtcNow))

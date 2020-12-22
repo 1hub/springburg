@@ -750,8 +750,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             int version = 4)
         {
             MemoryStream bOut = new MemoryStream();
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, privKey, hashAlgorithm, version);
-            PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
+            PgpSignedMessageGenerator sGen = new PgpSignedMessageGenerator(PgpSignature.BinaryDocument, privKey, hashAlgorithm, version);
+            PgpLiteralMessageGenerator lGen = new PgpLiteralMessageGenerator();
 
             var writer = new PacketWriter(bOut);
             using (var signingWriter = sGen.Open(writer))
@@ -773,8 +773,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             int version = 4)
         {
             MemoryStream bOut = new MemoryStream();
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.CanonicalTextDocument, privKey, HashAlgorithmTag.Sha1, version);
-            PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
+            PgpSignedMessageGenerator sGen = new PgpSignedMessageGenerator(PgpSignature.CanonicalTextDocument, privKey, HashAlgorithmTag.Sha1, version);
+            PgpLiteralMessageGenerator lGen = new PgpLiteralMessageGenerator();
 
             var writer = new PacketWriter(bOut);
             using (var signingWriter = sGen.Open(writer))

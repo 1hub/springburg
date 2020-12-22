@@ -247,14 +247,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             PgpSecretKey pgpSecKey = ReadSecretKey(new MemoryStream(secretKey));
             PgpPrivateKey pgpPrivKey = pgpSecKey.ExtractPrivateKey("");
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.CanonicalTextDocument, pgpPrivKey, HashAlgorithmTag.Sha256);
+            PgpSignedMessageGenerator sGen = new PgpSignedMessageGenerator(PgpSignature.CanonicalTextDocument, pgpPrivKey, HashAlgorithmTag.Sha256);
             PgpSignatureSubpacketGenerator spGen = new PgpSignatureSubpacketGenerator();
             spGen.SetSignerUserId(false, (string)pgpSecKey.PublicKey.GetUserIds().First());
             sGen.SetHashedSubpackets(spGen.Generate());
             MemoryStream bOut = new MemoryStream();
             using (var writer = new ArmoredPacketWriter(bOut))
             using (var signerWriter = sGen.Open(writer))
-            using (var literalStream = new PgpLiteralDataGenerator().Open(signerWriter, PgpLiteralData.Text, "", DateTime.MinValue))
+            using (var literalStream = new PgpLiteralMessageGenerator().Open(signerWriter, PgpLiteralData.Text, "", DateTime.MinValue))
             {
                 literalStream.Write(Encoding.UTF8.GetBytes(message));
             }
