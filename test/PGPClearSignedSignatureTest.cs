@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using Org.BouncyCastle.Utilities.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
@@ -206,6 +207,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             sig.Update(clearText, 0, clearTextLength);
 
             Assert.IsTrue(sig.Verify(), "signature failed to verify m_in " + type);
+
+            var reader = new ArmoredPacketReader(new MemoryStream(Encoding.ASCII.GetBytes(message)));
+            var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(reader);
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            var bytes = Streams.ReadAll(literalMessage.GetStream());
+            //Assert.IsTrue(signedMessage.Verify(pgpRings.GetPublicKey(sig.KeyId)));
         }
 
         private PgpSecretKey ReadSecretKey(Stream inputStream)

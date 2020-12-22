@@ -64,7 +64,6 @@ namespace Org.BouncyCastle.Bcpg
                 (byte)(modificationTime >> 16),
                 (byte)(modificationTime >> 8),
                 (byte)modificationTime });
-
         }
     }
 }

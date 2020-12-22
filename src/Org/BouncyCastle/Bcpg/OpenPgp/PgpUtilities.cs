@@ -358,6 +358,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return new MPInteger(pointBytes);
         }
 
+        public static HashAlgorithmTag GetHashAlgorithm(string name)
+        {
+            return name switch
+            {
+                "SHA1" => HashAlgorithmTag.Sha1,
+                "MD2" => HashAlgorithmTag.MD2,
+                "MD5" => HashAlgorithmTag.MD5,
+                "RIPEMD160" => HashAlgorithmTag.RipeMD160,
+                "SHA224" => HashAlgorithmTag.Sha224,
+                "SHA256" => HashAlgorithmTag.Sha256,
+                "SHA384" => HashAlgorithmTag.Sha384,
+                "SHA512" => HashAlgorithmTag.Sha512,
+                _ => throw new PgpException("unknown hash algorithm name in GetHashAlgorithm: " + name)
+            };
+        }
+
         internal static HashAlgorithm GetHashAlgorithm(HashAlgorithmTag hashAlgorithmTag)
         {
             switch (hashAlgorithmTag)

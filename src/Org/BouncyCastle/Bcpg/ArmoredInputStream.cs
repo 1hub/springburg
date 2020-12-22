@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-
+using InflatablePalace.Cryptography.Algorithms;
 using Org.BouncyCastle.Utilities.IO;
 
 namespace Org.BouncyCastle.Bcpg
@@ -359,7 +359,7 @@ namespace Org.BouncyCastle.Bcpg
             try
             {
                 int end = offset + count;
-                while (pos < end)
+                while (pos < end && clearText)
                 {
                     int c = ReadByteClearText();
                     if (c == -1)

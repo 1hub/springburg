@@ -13,6 +13,10 @@ namespace Org.BouncyCastle.Bcpg
             Streams.ReadFully(bcpgIn, marker);
         }
 
+        public MarkerPacket()
+        {
+        }
+
         public override PacketTag Tag => PacketTag.Marker;
 
         public override void Encode(Stream bcpgOut)
