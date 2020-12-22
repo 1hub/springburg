@@ -64,9 +64,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [Test]
         public void DoTestMasterKey()
         {
-            PgpSecretKey key = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeyMaster, false), "test".ToCharArray());
+            PgpSecretKey key = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeyMaster, false), "test");
             PgpPublicKey publicKey = new PgpPublicKeyRing(testPubKey).GetPublicKey();
-            KeyTestHelper.SignAndVerifyTestMessage(key.ExtractPrivateKey(null), publicKey);
+            KeyTestHelper.SignAndVerifyTestMessage(key.ExtractPrivateKey(""), publicKey);
         }
 
         [Test]
@@ -76,8 +76,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             var publicKeyRing = new PgpPublicKeyRing(testPubKey);
             var publicKey = publicKeyRing.GetPublicKey(encryptedMessage.KeyIds.First());
-            var secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false), "test".ToCharArray(), publicKey);
-            var privateKey = secretKey.ExtractPrivateKey(null);
+            var secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false), "test", publicKey);
+            var privateKey = secretKey.ExtractPrivateKey("");
 
             var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(privateKey);
             var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
@@ -91,8 +91,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             var publicKeyRing = new PgpPublicKeyRing(testPubKey);
             var publicKey = publicKeyRing.GetPublicKey(encryptedMessage.KeyIds.First());
-            var secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false), "test".ToCharArray(), publicKey);
-            var privateKey = secretKey.ExtractPrivateKey(null);
+            var secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false), "test", publicKey);
+            var privateKey = secretKey.ExtractPrivateKey("");
 
             var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(privateKey);
             var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();

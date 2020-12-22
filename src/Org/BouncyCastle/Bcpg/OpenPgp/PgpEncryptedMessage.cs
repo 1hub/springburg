@@ -214,7 +214,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             byte[] key = Array.Empty<byte>();
             try
             {
-                key = PgpUtilities.DoMakeKeyFromPassPhrase(keyData.EncAlgorithm, keyData.S2k, rawPassword, false);
+                key = PgpUtilities.DoMakeKeyFromPassPhrase(keyData.EncAlgorithm, keyData.S2k, rawPassword);
                 if (keyData.SecKeyData?.Length > 0)
                 {
                     using var keyCipher = PgpUtilities.GetSymmetricAlgorithm(keyData.EncAlgorithm);

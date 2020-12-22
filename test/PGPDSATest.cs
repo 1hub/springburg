@@ -259,7 +259,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "dtIECwcDAgMVAgMDFgIBAh4BAheAAAoJEGggjGh4fc0dvkUAn2QGdNk8Wrrd"
             + "+DvKECrO5+yoPRx3AJ91DhCMme6uMrQorKSDYxHlgc7iT7ACAAA=");
 
-        private static readonly char[] pass = "hello world".ToCharArray();
+        private static readonly string pass = "hello world";
 
         private PgpPublicKey pubKey;
         private PgpSecretKey secretKey;
@@ -366,7 +366,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         public void ReadSecretKey()
         {
             // reading test extra data - key with edge condition for DSA key password.
-            char[] passPhrase = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+            string passPhrase = "0123456789";
 
             var sKey = new PgpSecretKeyRing(testPrivKey2);
             var pgpPrivKey = sKey.GetSecretKey().ExtractPrivateKey(passPhrase);

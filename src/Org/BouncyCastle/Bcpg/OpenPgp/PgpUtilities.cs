@@ -91,16 +91,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        internal static byte[] EncodePassPhrase(char[] passPhrase, bool utf8)
-        {
-            return passPhrase == null
-                ? null
-                : utf8
-                ? Encoding.UTF8.GetBytes(passPhrase)
-                : Encoding.ASCII.GetBytes(passPhrase);
-        }
-
-        internal static byte[] DoMakeKeyFromPassPhrase(SymmetricKeyAlgorithmTag algorithm, S2k s2k, byte[] rawPassPhrase, bool clearPassPhrase)
+        internal static byte[] DoMakeKeyFromPassPhrase(SymmetricKeyAlgorithmTag algorithm, S2k s2k, byte[] rawPassPhrase)
         {
             int keySize = GetKeySize(algorithm);
             byte[] pBytes = rawPassPhrase;
@@ -210,11 +201,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 generatedBytes += dig.Length;
 
                 loopCount++;
-            }
-
-            if (clearPassPhrase && rawPassPhrase != null)
-            {
-                Array.Clear(rawPassPhrase, 0, rawPassPhrase.Length);
             }
 
             return keyBytes;// MakeKey(algorithm, keyBytes);

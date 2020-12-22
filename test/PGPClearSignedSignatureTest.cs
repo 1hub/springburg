@@ -246,7 +246,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         public void GenerateTest(string type, string message)
         {
             PgpSecretKey pgpSecKey = ReadSecretKey(new MemoryStream(secretKey));
-            PgpPrivateKey pgpPrivKey = pgpSecKey.ExtractPrivateKey("".ToCharArray());
+            PgpPrivateKey pgpPrivKey = pgpSecKey.ExtractPrivateKey("");
             PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.CanonicalTextDocument, pgpPrivKey, HashAlgorithmTag.Sha256);
             PgpSignatureSubpacketGenerator spGen = new PgpSignatureSubpacketGenerator();
             spGen.SetSignerUserId(false, (string)pgpSecKey.PublicKey.GetUserIds().First());

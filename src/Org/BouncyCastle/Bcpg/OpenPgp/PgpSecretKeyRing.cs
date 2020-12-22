@@ -133,8 +133,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <param name="rand">Source of randomness.</param>
         public static PgpSecretKeyRing CopyWithNewPassword(
             PgpSecretKeyRing ring,
-            char[] oldPassPhrase,
-            char[] newPassPhrase,
+            string oldPassPhrase,
+            string newPassPhrase,
             SymmetricKeyAlgorithmTag newEncAlgorithm)
         {
             IList<PgpSecretKey> newKeys = new List<PgpSecretKey>(ring.keys.Count);

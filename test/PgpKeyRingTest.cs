@@ -206,8 +206,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "RdanignRjpqSu3vTn8r/VO63+meZfKvmpI6i2b3o/UZ8Xh9lJu1vrRoNpnuP"
             + "Nifs+ljmsAFn");
 
-        private static readonly char[] sec2pass1 = "sandhya".ToCharArray();
-        private static readonly char[] sec2pass2 = "psai".ToCharArray();
+        private static readonly string sec2pass1 = "sandhya";
+        private static readonly string sec2pass2 = "psai";
 
         private static readonly byte[] pub3 = Convert.FromBase64String(
             "mQGiBEB9BH0RBACtYQtE7tna6hgGyGLpq+ds3r2cLC0ISn5dNw7tm9vwiNVF"
@@ -284,7 +284,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "AAYFAkB9BH4ACgkQqcxXy+NlA6mtMgCgvccZA/Sg7BXVpxli47SYhxSHoM4A"
             + "oNCOMplSnYTuh5ikKeBWtz36gC1psAIAAA==");
 
-        private static readonly char[] sec3pass1 = "123456".ToCharArray();
+        private static readonly string sec3pass1 = "123456";
 
         //
         // GPG comment packets.
@@ -387,7 +387,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "XctWqNd1EQas7rUN728u7bk8G7m37MGqQuKCpNvOScH4TnPROBY8get0G3bC4mWz"
             + "6emPeENnuyElfWQiHEtCZr1InjnNbb/C97O+vWu9PfsE");
 
-        private static readonly char[] sec5pass1 = "12345678".ToCharArray();
+        private static readonly string sec5pass1 = "12345678";
 
         //
         // Werner Koch "odd keys"
@@ -777,7 +777,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "uPetUqEviPiwAYeJAEwEGBECAAwFAkEcraYFGwwAAAAACgkQ9P5W+Cv/YhShrgCg"
             + "+JW8m5nF3R/oZGuG87bXQBszkjMAoLhGPncuGKowJXMRVc70/8qwXQJLsAFn");
 
-        private static readonly char[] sec8pass = "qwertyui".ToCharArray();
+        public static readonly string sec8pass = "qwertyui";
 
         private static readonly byte[] sec9 = Convert.FromBase64String(
             "lQGqBEHCokERBAC9rh5SzC1sX1y1zoFuBB/v0SGhoKMEvLYf8Qv/j4deAMrc"
@@ -816,7 +816,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "Xvehtw4afisAoME/t8xz/rj/N7QRN9p8Ji8VPGSqAJ9K8eFJ+V0mxR+octJr"
             + "6neEEX/i1Q==");
 
-        public char[] sec9pass = "foo".ToCharArray();
+        public static readonly string sec9pass = "foo";
 
         // version 4 keys with expiry dates
         private static readonly byte[] pub10 = Convert.FromBase64String(
@@ -924,7 +924,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "6o6mojUQxnHr+ZFKUpo6ocvTgBDlC57d8IpwJeZ2TvqD6EdA8rZ0YriVjxGMDrX1"
             + "8esfw+iLchfEwXtBIRwS");
 
-        private static readonly char[] rewrapPass = "voltage123".ToCharArray();
+        private static readonly string rewrapPass = "voltage123";
 
         private static readonly byte[] pubWithX509 = Convert.FromBase64String(
               "mQENBERabjABCACtmfyo6Nph9MQjv4nmCWjZrRYnhXbivomAdIwYkLZUj1bjqE+j"
@@ -1076,7 +1076,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "ucOcxTeGIUViANWXyTIKkHfo7HfigixJIL8nsAFn");
 
         // Key from http://www.angelfire.com/pr/pgpf/pgpoddities.html
-        private static readonly char[] v3KeyPass = "test@key.test".ToCharArray();
+        private static readonly string v3KeyPass = "test@key.test";
 
         private static readonly byte[] pubv3 = Convert.FromBase64String(
             "mQENAzroPPgAAAEIANnTx/gHfag7qRMG6cVUnYZJjLcsdF6JSaVs+PUDCZ8l2+Z2" +
@@ -2089,7 +2089,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [Test]
         public void GenerateTest()
         {
-            char[] passPhrase = "hello".ToCharArray();
+            var passPhrase = "hello";
             /*DsaParametersGenerator pGen = new DsaParametersGenerator();
             pGen.Init(512, 80, Random);
             DsaParameters dsaParams = pGen.GenerateParameters();
@@ -2163,7 +2163,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [Test]
         public void InsertMasterTest()
         {
-            char[] passPhrase = "hello".ToCharArray();
+            var passPhrase = "hello";
 
             //
             // this is quicker because we are using pregenerated parameters.
@@ -2212,7 +2212,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [Test]
         public void GenerateSha1Test()
         {
-            char[] passPhrase = "hello".ToCharArray();
+            var passPhrase = "hello";
 
             /*IAsymmetricCipherKeyPairGenerator dsaKpg = GeneratorUtilities.GetKeyPairGenerator("DSA");
             DsaParametersGenerator pGen = new DsaParametersGenerator();
@@ -2295,7 +2295,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpSecretKeyRingBundle privRings = new PgpSecretKeyRingBundle(
                 new MemoryStream(rewrapKey, false));
 
-            char[] newPass = "fred".ToCharArray();
+            var newPass = "fred";
 
             foreach (PgpSecretKeyRing pgpPrivEnum in privRings.GetKeyRings())
             {
@@ -2310,12 +2310,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(
                         pgpKeyEnum,
                         rewrapPass,
-                        null,
+                        "",
                         SymmetricKeyAlgorithmTag.Null);
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);
 
                     // this should succeed
-                    PgpPrivateKey privTmp = pgpKey.ExtractPrivateKey(null);
+                    PgpPrivateKey privTmp = pgpKey.ExtractPrivateKey("");
 
                     if (pgpKey.KeyId != oldKeyID || pgpKey.S2kUsage != SecretKeyPacket.UsageNone)
                     {
@@ -2331,7 +2331,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     pgpPriv = PgpSecretKeyRing.RemoveSecretKey(pgpPriv, pgpKeyEnum);
                     PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(
                         pgpKeyEnum,
-                        null,
+                        "",
                         newPass,
                         SymmetricKeyAlgorithmTag.Cast5);
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);
@@ -2354,7 +2354,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpSecretKeyRingBundle privRings = new PgpSecretKeyRingBundle(
                 new MemoryStream(privv3, false));
 
-            char[] newPass = "fred".ToCharArray();
+            var newPass = "fred";
 
             foreach (PgpSecretKeyRing pgpPrivEnum in privRings.GetKeyRings())
             {
@@ -2369,12 +2369,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(
                         pgpKeyEnum,
                         v3KeyPass,
-                        null,
+                        "",
                         SymmetricKeyAlgorithmTag.Null);
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);
 
                     // this should succeed
-                    PgpPrivateKey privTmp = pgpKey.ExtractPrivateKey(null);
+                    PgpPrivateKey privTmp = pgpKey.ExtractPrivateKey("");
 
                     if (pgpKey.KeyId != oldKeyID)
                     {
@@ -2390,7 +2390,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     pgpPriv = PgpSecretKeyRing.RemoveSecretKey(pgpPriv, pgpKeyEnum);
                     PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(
                         pgpKeyEnum,
-                        null,
+                        "",
                         newPass,
                         SymmetricKeyAlgorithmTag.Cast5);
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);

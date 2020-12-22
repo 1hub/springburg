@@ -199,9 +199,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "8D9QvWsPOOso81KU2axUY8zIer64Uzqc4szMIlLw06c8vea27RfgjBpSCryw"
             + "AgAA");
 
-        private static readonly char[] pgp8Pass = "2002 Buffalo Sabres".ToCharArray();
+        private static readonly string pgp8Pass = "2002 Buffalo Sabres";
 
-        private static readonly char[] pass = "hello world".ToCharArray();
+        private static readonly string pass = "hello world";
 
         private static readonly byte[] fingerprintKey = Convert.FromBase64String(
               "mQEPA0CiJdUAAAEIAMI+znDlPd2kQoEcnxqxLcRz56Z7ttFKHpnYp0UkljZdquVc"
@@ -489,7 +489,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // Read a v3 private key
             //
-            char[] passP = "FIXCITY_QA".ToCharArray();
+            var passP = "FIXCITY_QA";
 
             {
                 PgpSecretKeyRing pgpPriv2 = new PgpSecretKeyRing(testPrivKeyV3);
@@ -629,7 +629,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // key pair generation - CAST5 encryption
             //
-            char[] passPhrase = "hello".ToCharArray();
+            var passPhrase = "hello";
             var rsa = RSA.Create(1024);
 
             PgpSecretKey secretKey = new PgpSecretKey(
@@ -716,9 +716,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             const string newPass = "newPass";
 
-            secretKey = PgpSecretKey.CopyWithNewPassword(secretKey, passPhrase, newPass.ToCharArray(), secretKey.KeyEncryptionAlgorithm);
+            secretKey = PgpSecretKey.CopyWithNewPassword(secretKey, passPhrase, newPass, secretKey.KeyEncryptionAlgorithm);
 
-            secretKey.ExtractPrivateKey(newPass.ToCharArray());
+            secretKey.ExtractPrivateKey(newPass);
 
             secretKey.Encode(new MemoryStream());
 
@@ -739,7 +739,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             sig.InitVerify(key);
             Assert.IsTrue(sig.VerifyCertification(uid, key));
 
-            pgpPrivKey = secretKey.ExtractPrivateKey(newPass.ToCharArray());
+            pgpPrivKey = secretKey.ExtractPrivateKey(newPass);
 
             //
             // signature generation

@@ -11,7 +11,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
     [TestFixture]
     public class PgpUnicodeTest
     {
-        private void DoTestKey(long keyId, string passphrase, bool utf8)
+        private void DoTestKey(long keyId, string passphrase)
         {
             PgpSecretKeyRingBundle secretKeyRing = LoadSecretKeyCollection("secring.gpg");
 
@@ -23,12 +23,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             try
             {
-                char[] pass = passphrase.ToCharArray();
-
-                PgpPrivateKey privateKey = utf8
-                    ?   key.ExtractPrivateKeyUtf8(pass)
-                    :   key.ExtractPrivateKey(pass);
-
+                PgpPrivateKey privateKey = key.ExtractPrivateKey(passphrase);
                 Assert.IsTrue(privateKey.KeyId == keyId);
             }
             catch (PgpException e)
@@ -49,7 +44,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
                 string passphrase = Encoding.Unicode.GetString(Encoding.Unicode.GetBytes("Händle"));
 
-                DoTestKey(keyId, passphrase, true);
+                DoTestKey(keyId, passphrase);
 
                 // all fine!
 
@@ -71,8 +66,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
                 string passphrase = "Admin123";
 
-                DoTestKey(keyId, passphrase, false);
-                DoTestKey(keyId, passphrase, true);
+                DoTestKey(keyId, passphrase);
 
                 // all fine!
             }
@@ -99,7 +93,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 string passphrase = reader.ReadLine();
                 passwordFile.Close();
 
-                DoTestKey(keyId, passphrase, true);
+                DoTestKey(keyId, passphrase);
 
                 // all fine!
             }

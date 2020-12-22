@@ -28,7 +28,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 "+94KoXpdAQDZLTx9vRnosJ30/55qM80ObVat//L/ueQ3CFsO/CJTmQEAzXpS8evN" +
                 "foK9AW9ztoq88f7jCu9F7C8AYrXprh8EcQQ=");
 
-        private static readonly char[] testPasswd = "test".ToCharArray();
+        private static readonly string testPasswd = "test";
 
         private static readonly byte[] sExprKey =
             Convert.FromBase64String(
@@ -72,7 +72,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             KeyTestHelper.SignAndVerifyTestMessage(eddsaKeyPair.PrivateKey, eddsaKeyPair.PublicKey);
 
             // generate a key ring
-            char[] passPhrase = "test".ToCharArray();
+            var passPhrase = "test";
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, eddsaKeyPair,
                 "test@bouncycastle.org", SymmetricKeyAlgorithmTag.Aes256, passPhrase, true, null, null);
 

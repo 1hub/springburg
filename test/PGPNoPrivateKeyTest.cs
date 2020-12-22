@@ -125,7 +125,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             try
             {
                 PgpSecretKey pgpChangedKey = PgpSecretKey.CopyWithNewPassword(pgpSecKey,
-                    pgpOldPass.ToCharArray(), pgpNewPass.ToCharArray(), pgpSecKey.KeyEncryptionAlgorithm);
+                    pgpOldPass, pgpNewPass, pgpSecKey.KeyEncryptionAlgorithm);
             }
             catch (PgpException e)
             {

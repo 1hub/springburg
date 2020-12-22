@@ -148,35 +148,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             this.withIntegrityPacket = withIntegrityPacket;
         }
 
-        /// <summary>
-        /// Add a PBE encryption method to the encrypted object using the default algorithm (S2K_SHA1).
-        /// </summary>
-        /// <remarks>
-        /// Conversion of the passphrase characters to bytes is performed using Convert.ToByte(), which is
-        /// the historical behaviour of the library (1.7 and earlier).
-        /// </remarks>
-        [Obsolete("Use version that takes an explicit s2kDigest parameter")]
-        public void AddMethod(string passPhrase)
-        {
-            AddMethod(passPhrase, HashAlgorithmTag.Sha1);
-        }
-
         /// <summary>Add a PBE encryption method to the encrypted object.</summary>
         public void AddMethod(string passPhrase, HashAlgorithmTag s2kDigest)
         {
-            DoAddMethod(Encoding.UTF8.GetBytes(passPhrase), true, s2kDigest);
+            AddMethod(Encoding.UTF8.GetBytes(passPhrase), s2kDigest);
         }
 
         /// <summary>Add a PBE encryption method to the encrypted object.</summary>
         public void AddMethod(byte[] rawPassPhrase, HashAlgorithmTag s2kDigest)
         {
-            DoAddMethod(rawPassPhrase, true, s2kDigest);
-        }
-
-        internal void DoAddMethod(byte[] rawPassPhrase, bool clearPassPhrase, HashAlgorithmTag s2kDigest)
-        {
             S2k s2k = PgpUtilities.GenerateS2k(s2kDigest, 0x60);
-            methods.Add(new PbeMethod(defAlgorithm, s2k, PgpUtilities.DoMakeKeyFromPassPhrase(defAlgorithm, s2k, rawPassPhrase, clearPassPhrase)));
+            methods.Add(new PbeMethod(defAlgorithm, s2k, PgpUtilities.DoMakeKeyFromPassPhrase(defAlgorithm, s2k, rawPassPhrase)));
         }
 
         /// <summary>Add a public key encrypted session key to the encrypted object.</summary>

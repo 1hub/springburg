@@ -91,7 +91,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpKeyPair ecdhKeyPair = new PgpKeyPair(ecdh, DateTime.UtcNow);
 
             // Generate a key ring
-            char[] passPhrase = "test".ToCharArray();
+            var passPhrase = "test";
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, ecdsaKeyPair,
                 "test@bouncycastle.org", SymmetricKeyAlgorithmTag.Aes256, passPhrase, true, null, null);
             keyRingGen.AddSubKey(ecdhKeyPair);
@@ -122,7 +122,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpKeyPair ecdhKeyPair = new PgpKeyPair(new X25519(), DateTime.UtcNow);
 
             // Generate a key ring
-            char[] passPhrase = "test".ToCharArray();
+            var passPhrase = "test";
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, ecdsaKeyPair,
                 "test@bouncycastle.org", SymmetricKeyAlgorithmTag.Aes256, passPhrase, true, null, null);
             keyRingGen.AddSubKey(ecdhKeyPair);
@@ -209,7 +209,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // Read it back
             cbOut.Position = 0;
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(cbOut);
-            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(secretKey.ExtractPrivateKey("test".ToCharArray()));
+            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(secretKey.ExtractPrivateKey("test"));
             var bytes = Streams.ReadAll(literalMessage.GetStream());
             Assert.AreEqual(text, bytes);
         }
@@ -219,7 +219,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             var secretKeyRing = new PgpSecretKeyRing(testX25519PrivKey);
             var secretKey = secretKeyRing.GetSecretKey(0x6c37367cd2f455c5);
-            var pgpPrivKey = secretKey.ExtractPrivateKey("test".ToCharArray());
+            var pgpPrivKey = secretKey.ExtractPrivateKey("test");
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(testX25519Message);
             var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(pgpPrivKey);
             var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();

@@ -25,7 +25,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             string data = "hello world!";
             byte[] dataBytes = Encoding.ASCII.GetBytes(data);
             MemoryStream bOut = new MemoryStream();
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test".ToCharArray()), digest);
+            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test"), digest);
             PgpLiteralDataGenerator lGen = new PgpLiteralDataGenerator();
             DateTime testDate = new DateTime((DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond) * TimeSpan.TicksPerSecond);
 
