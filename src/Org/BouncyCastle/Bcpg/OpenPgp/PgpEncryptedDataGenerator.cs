@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Collections.Generic;
 using InflatablePalace.Cryptography.Algorithms;
 using Org.BouncyCastle.Utilities.IO;
+using System.Text;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
@@ -155,37 +156,21 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// the historical behaviour of the library (1.7 and earlier).
         /// </remarks>
         [Obsolete("Use version that takes an explicit s2kDigest parameter")]
-        public void AddMethod(char[] passPhrase)
+        public void AddMethod(string passPhrase)
         {
             AddMethod(passPhrase, HashAlgorithmTag.Sha1);
         }
 
         /// <summary>Add a PBE encryption method to the encrypted object.</summary>
-        /// <remarks>
-        /// Conversion of the passphrase characters to bytes is performed using Convert.ToByte(), which is
-        /// the historical behaviour of the library (1.7 and earlier).
-        /// </remarks>
-        public void AddMethod(char[] passPhrase, HashAlgorithmTag s2kDigest)
+        public void AddMethod(string passPhrase, HashAlgorithmTag s2kDigest)
         {
-            DoAddMethod(PgpUtilities.EncodePassPhrase(passPhrase, false), true, s2kDigest);
+            DoAddMethod(Encoding.UTF8.GetBytes(passPhrase), true, s2kDigest);
         }
 
         /// <summary>Add a PBE encryption method to the encrypted object.</summary>
-        /// <remarks>
-        /// The passphrase is encoded to bytes using UTF8 (Encoding.UTF8.GetBytes).
-        /// </remarks>
-        public void AddMethodUtf8(char[] passPhrase, HashAlgorithmTag s2kDigest)
+        public void AddMethod(byte[] rawPassPhrase, HashAlgorithmTag s2kDigest)
         {
-            DoAddMethod(PgpUtilities.EncodePassPhrase(passPhrase, true), true, s2kDigest);
-        }
-
-        /// <summary>Add a PBE encryption method to the encrypted object.</summary>
-        /// <remarks>
-        /// Allows the caller to handle the encoding of the passphrase to bytes.
-        /// </remarks>
-        public void AddMethodRaw(byte[] rawPassPhrase, HashAlgorithmTag s2kDigest)
-        {
-            DoAddMethod(rawPassPhrase, false, s2kDigest);
+            DoAddMethod(rawPassPhrase, true, s2kDigest);
         }
 
         internal void DoAddMethod(byte[] rawPassPhrase, bool clearPassPhrase, HashAlgorithmTag s2kDigest)

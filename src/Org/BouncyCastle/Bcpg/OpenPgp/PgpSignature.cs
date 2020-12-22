@@ -203,8 +203,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return pcks == null ? null : new PgpSignatureSubpacketVector(pcks);
         }
 
-        internal MPInteger[] GetDecodedSignature() => sigPck.GetSignature();
-
         public byte[] GetSignature() => sigPck.GetSignatureBytes();
 
         public override void Encode(IPacketWriter outStream)

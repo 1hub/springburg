@@ -100,31 +100,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 : Encoding.ASCII.GetBytes(passPhrase);
         }
 
-        /// <remarks>
-        /// Conversion of the passphrase characters to bytes is performed using Convert.ToByte(), which is
-        /// the historical behaviour of the library (1.7 and earlier).
-        /// </remarks>
-        public static byte[] MakeKeyFromPassPhrase(SymmetricKeyAlgorithmTag algorithm, S2k s2k, char[] passPhrase)
-        {
-            return DoMakeKeyFromPassPhrase(algorithm, s2k, EncodePassPhrase(passPhrase, false), true);
-        }
-
-        /// <remarks>
-        /// The passphrase is encoded to bytes using UTF8 (Encoding.UTF8.GetBytes).
-        /// </remarks>
-        public static byte[] MakeKeyFromPassPhraseUtf8(SymmetricKeyAlgorithmTag algorithm, S2k s2k, char[] passPhrase)
-        {
-            return DoMakeKeyFromPassPhrase(algorithm, s2k, EncodePassPhrase(passPhrase, true), true);
-        }
-
-        /// <remarks>
-        /// Allows the caller to handle the encoding of the passphrase to bytes.
-        /// </remarks>
-        public static byte[] MakeKeyFromPassPhraseRaw(SymmetricKeyAlgorithmTag algorithm, S2k s2k, byte[] rawPassPhrase)
-        {
-            return DoMakeKeyFromPassPhrase(algorithm, s2k, rawPassPhrase, false);
-        }
-
         internal static byte[] DoMakeKeyFromPassPhrase(SymmetricKeyAlgorithmTag algorithm, S2k s2k, byte[] rawPassPhrase, bool clearPassPhrase)
         {
             int keySize = GetKeySize(algorithm);

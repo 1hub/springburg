@@ -157,8 +157,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         private void TestDecrypt(PgpSecretKeyRing secretKeyRing)
         {
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(testMessage);
-            var encP = (PgpPublicKeyEncryptedData)encryptedMessage.Methods[0];
-            var secretKey = secretKeyRing.GetSecretKey(encP.KeyId);
+            var secretKey = secretKeyRing.GetSecretKey(encryptedMessage.KeyIds.First());
             //Assert.NotNull(secretKey);
             /*var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(secretKey.ExtractPrivateKey("test".ToCharArray()));
             var bytes = Streams.ReadAll(literalMessage.GetStream());

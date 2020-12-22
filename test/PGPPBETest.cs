@@ -19,7 +19,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             "jA0EAwMC5M5wWBP2HBZgySvUwWFAmMRLn7dWiZN6AkQMvpE3b6qwN3SSun7zInw2"
             + "hxxdgFzVGfbjuB8w");
         //        private static readonly byte[] enc1crc = Convert.FromBase64String("H66L");
-        private static readonly char[] pass = "hello world".ToCharArray();
+        private static readonly string pass = "hello world";
 
         /**
 		 * Message with both PBE and symmetric
@@ -48,10 +48,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             Assert.IsTrue(literalMessage.FileName.Equals("test.txt") || literalMessage.FileName.Equals(PgpLiteralData.Console));
             Assert.AreEqual(TestDateTime, literalMessage.ModificationTime);
             byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
-            var pbe = (PgpPbeEncryptedData)encryptedMessage.Methods[0];
-            if (pbe.IsIntegrityProtected())
+            if (encryptedMessage.IsIntegrityProtected)
             {
-                Assert.IsTrue(pbe.Verify());
+                Assert.IsTrue(encryptedMessage.Verify());
             }
             return bytes;
         }
@@ -107,7 +106,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // sample message
             //
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(testPBEAsym);
-            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage("password".ToCharArray());
+            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage("password");
             byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
             Assert.AreEqual(Encoding.ASCII.GetBytes("Sat 10.02.07\r\n"), bytes);
 

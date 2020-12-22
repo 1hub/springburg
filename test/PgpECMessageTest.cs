@@ -75,7 +75,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(encMessage);
 
             var publicKeyRing = new PgpPublicKeyRing(testPubKey);
-            var publicKey = publicKeyRing.GetPublicKey(encryptedMessage.Methods.OfType<PgpPublicKeyEncryptedData>().First().KeyId);
+            var publicKey = publicKeyRing.GetPublicKey(encryptedMessage.KeyIds.First());
             var secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false), "test".ToCharArray(), publicKey);
             var privateKey = secretKey.ExtractPrivateKey(null);
 
@@ -90,7 +90,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(signedEncMessage);
 
             var publicKeyRing = new PgpPublicKeyRing(testPubKey);
-            var publicKey = publicKeyRing.GetPublicKey(encryptedMessage.Methods.OfType<PgpPublicKeyEncryptedData>().First().KeyId);
+            var publicKey = publicKeyRing.GetPublicKey(encryptedMessage.KeyIds.First());
             var secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false), "test".ToCharArray(), publicKey);
             var privateKey = secretKey.ExtractPrivateKey(null);
 
