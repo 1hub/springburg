@@ -48,8 +48,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PacketTag initialTag = packetReader.NextPacketTag();
             if (initialTag != PacketTag.SecretKey && initialTag != PacketTag.SecretSubkey)
             {
-                throw new IOException("secret key ring doesn't start with secret key tag: "
-                    + "tag 0x" + ((int)initialTag).ToString("X"));
+                throw new PgpUnexpectedPacketException();
             }
 
             SecretKeyPacket secret = (SecretKeyPacket)packetReader.ReadContainedPacket();

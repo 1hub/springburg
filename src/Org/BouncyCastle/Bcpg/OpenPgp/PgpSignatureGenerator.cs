@@ -222,8 +222,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             public IPacketWriter CreateNestedWriter(Stream stream)
             {
-                // FIXME: Better exception
-                throw new NotSupportedException();
+                return new SigningPacketWriter(innerWriter.CreateNestedWriter(stream), hashTransform, generator);
             }
 
             public void Dispose()
@@ -244,8 +243,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 }
                 else
                 {
-                    // FIXME: Better exception
-                    throw new NotSupportedException();
+                    return innerWriter.GetPacketStream(packet);
                 }
             }
 

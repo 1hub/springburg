@@ -40,8 +40,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     return new PgpEncryptedMessage(packetReader);
 
                 default:
-                    // TODO: Better exception
-                    throw new NotSupportedException();
+                    throw new PgpUnexpectedPacketException();
             }
         }
 

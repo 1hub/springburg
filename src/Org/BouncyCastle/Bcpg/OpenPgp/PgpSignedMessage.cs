@@ -68,8 +68,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             public IPacketReader CreateNestedReader(Stream stream)
             {
-                // FIXME: Better exception
-                throw new NotSupportedException();
+                return new SigningPacketReader(innerReader.CreateNestedReader(stream), hashTransform);
             }
 
             public void Dispose()

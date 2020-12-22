@@ -53,7 +53,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             var packetReader = new PacketReader(detachedSignature);
             if (packetReader.NextPacketTag() != PacketTag.Signature)
-                throw new PgpException("Not a signature");
+            {
+                throw new PgpUnexpectedPacketException();
+            }
             this.sigPck = (SignaturePacket)packetReader.ReadContainedPacket();
         }
 

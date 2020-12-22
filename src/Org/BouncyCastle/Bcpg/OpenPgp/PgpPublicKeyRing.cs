@@ -38,8 +38,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PacketTag initialTag = packetReader.NextPacketTag();
             if (initialTag != PacketTag.PublicKey && initialTag != PacketTag.PublicSubkey)
             {
-                throw new IOException("public key ring doesn't start with public key tag: "
-                    + "tag 0x" + ((int)initialTag).ToString("X"));
+                throw new PgpUnexpectedPacketException();
             }
 
             PublicKeyPacket pubPk = (PublicKeyPacket)packetReader.ReadContainedPacket();
