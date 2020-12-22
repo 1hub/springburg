@@ -172,7 +172,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Encrypt text
             MemoryStream cbOut = new MemoryStream();
-            PgpEncryptedMessagGenerator cPk = new PgpEncryptedMessagGenerator(SymmetricKeyAlgorithmTag.Cast5);
+            PgpEncryptedMessageGenerator cPk = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.Cast5);
             cPk.AddMethod(ecdhKeyPair.PublicKey);
             PgpLiteralMessageGenerator lData = new PgpLiteralMessageGenerator();
             var writer = new PacketWriter(cbOut);
@@ -198,7 +198,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Encrypt text
             MemoryStream cbOut = new MemoryStream();
-            PgpEncryptedMessagGenerator cPk = new PgpEncryptedMessagGenerator(SymmetricKeyAlgorithmTag.Cast5);
+            PgpEncryptedMessageGenerator cPk = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.Cast5);
             cPk.AddMethod(publicKeyRing.GetPublicKey(0x6c37367cd2f455c5));
             PgpLiteralMessageGenerator lData = new PgpLiteralMessageGenerator();
             var writer = new PacketWriter(cbOut);

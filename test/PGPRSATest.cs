@@ -350,7 +350,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             MemoryStream bcOut = new MemoryStream();
             PgpLiteralMessageGenerator lGen = new PgpLiteralMessageGenerator();
-            PgpEncryptedMessagGenerator encGen = new PgpEncryptedMessagGenerator(SymmetricKeyAlgorithmTag.Aes128, withIntegrityPacket: true);
+            PgpEncryptedMessageGenerator encGen = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.Aes128, withIntegrityPacket: true);
             encGen.AddMethod(pgpPubKey);
             encGen.AddMethod("password", HashAlgorithmTag.Sha1);
             var writer = new PacketWriter(bcOut);
@@ -572,7 +572,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             byte[] shortText = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o' };
 
             MemoryStream cbOut = new MemoryStream();
-            PgpEncryptedMessagGenerator cPk = new PgpEncryptedMessagGenerator(SymmetricKeyAlgorithmTag.Cast5);
+            PgpEncryptedMessageGenerator cPk = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.Cast5);
             PgpLiteralMessageGenerator lPk = new PgpLiteralMessageGenerator();
             PgpPublicKey puK = pgpPriv.GetSecretKey(encKeyId).PublicKey;
 
@@ -597,7 +597,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // encrypt
             //
             cbOut = new MemoryStream();
-            cPk = new PgpEncryptedMessagGenerator(SymmetricKeyAlgorithmTag.Cast5);
+            cPk = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.Cast5);
             puK = pgpPriv.GetSecretKey(encKeyId).PublicKey;
 
             cPk.AddMethod(puK);

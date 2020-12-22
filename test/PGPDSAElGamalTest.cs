@@ -155,7 +155,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var privateKey = secretKey.ExtractPrivateKey(pass);
 
             MemoryStream cbOut = new MemoryStream();
-            PgpEncryptedMessagGenerator cPk = new PgpEncryptedMessagGenerator(SymmetricKeyAlgorithmTag.TripleDes);
+            PgpEncryptedMessageGenerator cPk = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.TripleDes);
             cPk.AddMethod(secretKey.PublicKey);
             var writer = new PacketWriter(cbOut);
             using (var cOut = cPk.Open(writer))
@@ -197,7 +197,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 PgpKeyPair elGamalKeyPair = new PgpKeyPair(ElGamal.Create(pSize), DateTime.UtcNow);
 
-                var cPk = new PgpEncryptedMessagGenerator(SymmetricKeyAlgorithmTag.Cast5);
+                var cPk = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.Cast5);
                 cPk.AddMethod(elGamalKeyPair.PublicKey);
 
                 var cbOut = new MemoryStream();

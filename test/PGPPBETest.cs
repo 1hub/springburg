@@ -53,7 +53,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             MemoryStream bOut = new MemoryStream();
 
-            PgpEncryptedMessagGenerator encryptedGenerator = new PgpEncryptedMessagGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityPacket);
+            PgpEncryptedMessageGenerator encryptedGenerator = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityPacket);
             PgpCompressedMessageGenerator comData = new PgpCompressedMessageGenerator(CompressionAlgorithmTag.Zip);
             PgpLiteralMessageGenerator lData = new PgpLiteralMessageGenerator();
             encryptedGenerator.AddMethod(pass, HashAlgorithmTag.Sha1);
