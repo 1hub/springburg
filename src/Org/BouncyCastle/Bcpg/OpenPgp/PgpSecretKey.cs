@@ -537,12 +537,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 case PublicKeyAlgorithmTag.Dsa:
                     DsaPublicBcpgKey dsaPub = (DsaPublicBcpgKey)pubPk.Key;
                     DsaSecretBcpgKey dsaPriv = new DsaSecretBcpgKey(bcpgIn);
+                    int xqSize = Math.Max(dsaPriv.X.Value.Length, dsaPub.Q.Value.Length);
                     privateKey = DSA.Create(new DSAParameters
                     {
-                        X = dsaPriv.X.Value,
+                        X = ExportKeyParameter(dsaPriv.X.Value, xqSize),
                         Y = dsaPub.Y.Value,
                         P = dsaPub.P.Value,
-                        Q = dsaPub.Q.Value,
+                        Q = ExportKeyParameter(dsaPub.Q.Value, xqSize),
                         G = dsaPub.G.Value,
                     });
                     break;

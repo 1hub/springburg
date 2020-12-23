@@ -60,7 +60,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "BQkB4TOAAAoJEJh8Njfhe8KmG7kAniuRkaFFv1pdCBN8JJXpcorHmyouAJ9L"
             + "xxmusffR6OI7WgD3XZ0AL8zUC7ACAAA=");
 
-//		private static readonly char[] pass1 = "qwertzuiop".ToCharArray();
+        //		private static readonly char[] pass1 = "qwertzuiop".ToCharArray();
 
         private static readonly byte[] pub2 = Convert.FromBase64String(
             "mQGiBEBtfW8RBADfWjTxFedIbGBNVgh064D/OCf6ul7x4PGsCl+BkAyheYkr"
@@ -862,7 +862,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "AkKqia4CGwwFCQAk6gAACgkQ4w0TkGUaiMzdqgCgl2jw5hfk/JsyjulQqe1Nps1q"
             + "Lx0AoMdnFMZmTMLHn8scUW2j9XO312tmsAIAAA==");
 
-//		private static readonly char[] sec10pass = "test".ToCharArray();
+        //		private static readonly char[] sec10pass = "test".ToCharArray();
 
         private static readonly byte[] subKeyBindingKey = Convert.FromBase64String(
             "mQGiBDWagYwRBAD7UcH4TAIp7tmUoHBNxVxCVz2ZrNo79M6fV63riOiH2uDxfIpr"
@@ -890,7 +890,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             + "gXxbBCVSTxYMJheXt2xMXsuJAD8DBRg1moGU8gBo4j+O/10RAgWdAKCPhaFIXuC8"
             + "/cdiNMxTDw9ug3De5QCfYXmDzRSFUu/nrCi8yz/l09wsnxo=");
 
-//		private static readonly byte[] subKeyBindingCheckSum = Convert.FromBase64String("3HU+");
+        //		private static readonly byte[] subKeyBindingCheckSum = Convert.FromBase64String("3HU+");
 
         //
         // PGP8 with SHA1 checksum.
@@ -2214,34 +2214,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             var passPhrase = "hello";
 
-            /*IAsymmetricCipherKeyPairGenerator dsaKpg = GeneratorUtilities.GetKeyPairGenerator("DSA");
-            DsaParametersGenerator pGen = new DsaParametersGenerator();
-            pGen.Init(512, 80, Random);
-            DsaParameters dsaParams = pGen.GenerateParameters();
-            DsaKeyGenerationParameters kgp = new DsaKeyGenerationParameters(Random, dsaParams);
-            dsaKpg.Init(kgp);*/
-
-            //
-            // this takes a while as the key generator has to generate some DSA params
-            // before it generates the key.
-            //
-            //AsymmetricCipherKeyPair dsaKp = dsaKpg.GenerateKeyPair();
-
-
-            /*IAsymmetricCipherKeyPairGenerator elgKpg = GeneratorUtilities.GetKeyPairGenerator("ELGAMAL");
-
-            BigInteger g = new BigInteger("153d5d6172adb43045b68ae8e1de1070b6137005686d29d3d73a7749199681ee5b212c9b96bfdcfa5b20cd5e3fd2044895d609cf9b410b7a0f12ca1cb9a428cc", 16);
-            BigInteger p = new BigInteger("9494fec095f3b85ee286542b3836fc81a5dd0a0349b4c239dd38744d488cf8e31db8bcb7d33b41abb9e5a33cca9144b1cef332c94bf0573bf047a3aca98cdf3b", 16);
-
-            ElGamalParameters elParams = new ElGamalParameters(p, g);
-            ElGamalKeyGenerationParameters elKgp = new ElGamalKeyGenerationParameters(Random, elParams);
-            elgKpg.Init(elKgp);
-
-            //
-            // this is quicker because we are using preGenerated parameters.
-            //
-            AsymmetricCipherKeyPair elgKp = elgKpg.GenerateKeyPair();*/
-
             var elGamal = ElGamal.Create(1024);
 
             PgpKeyPair dsaKeyPair = new PgpKeyPair(DSA.Create(), DateTime.UtcNow);
@@ -2454,13 +2426,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             if (en.MoveNext())
             {
-                PgpPublicKey key = (PgpPublicKey) en.Current;
+                PgpPublicKey key = (PgpPublicKey)en.Current;
 
                 IEnumerator sEn = key.GetSignatures().GetEnumerator();
 
                 if (sEn.MoveNext())
                 {
-                    PgpSignature sig = (PgpSignature) sEn.Current;
+                    PgpSignature sig = (PgpSignature)sEn.Current;
                     if (sig.KeyAlgorithm != PublicKeyAlgorithmTag.Experimental_1)
                     {
                         Fail("experimental signature not found");
@@ -2516,6 +2488,23 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 CheckUidSig(masterpk, uid);
             }
+        }
+
+        [Test]
+        public void KeyRoundtripRegressionTest()
+        {
+            var dsaParameters = new DSAParameters
+            {
+                X = Convert.FromBase64String("AGJZMcxjosyFxBm18B425HrV7PvMmUhDw7rkQb3pO14="), // NOTE: Leading zero
+                Y = Convert.FromBase64String("W5sfP3+csR4zgTnqfccG4Mr5prgEAy183FQQ4/O0kbabN5PvZ9bHxvzUdvsFQFoaa/T/b9P+GVp6X9zwlKv87SlRbetQK9ztd8nB/Yx0H2kLkpCExTkVHUyOBvdnNi1qXUfYIV8K03SlPWM02vS9uS69KA9oU35JU2nMQqqOF87hpFKUpHnquezYpdhMR7rnh55VsxbbkS5XF9Ur0j2axGXUutXs8qDfiPZDJ7Gl5K+hwXnYl/yUBRHbOaLNkYFIbLRbPpM3CF+38cXmeC9AaDTF851Oo2yJ9X2riqDKaMHJRHRVJJr6dl9FhxxFk6eGgPOCkiVKlYv4o3xF+0zqdg=="),
+                P = Convert.FromBase64String("1Fes9cEKkPXBNU5qoM7Kq783WZCx0VLSWd+aKc4g4eHP63nEOhCsmywROj1I7fhCB6oBmorFS7ySNBOhPQEFM3FpcHnU8FPahUof2Kady3YYWKzeGBzb6GiNLPuRh/EeUR5A4WUPS/2hLLeEmU/zUcSv8oUJmWuLWMrl4/9T7ElBh8bqZYvVVubHYI9cdtkOHNOjzzQcu6sDNpHNfvUw19842fX7fmUHhrUu+U3dP9ASpCL5ewiNgoZw1lGhHXq1wAxX9x5MFdawAdwU+msRnsBsaeuyjArG3Qo5odqsHGitVMcvFg18/Nmpk93bVignb0Phx32BTlvdxbitMASViQ=="),
+                Q = Convert.FromBase64String("oN27EDST9jxM81RblXr1fhGC9/EuAGFqimiPRoCim7c="),
+                G = Convert.FromBase64String("d7Ngc6zuHjljpnIAqQq6OiGH/ZrMCUZUNwtmTT8HqqMW63ImXVFuZqOOfviI8HOpAZZDIEqInzDnZGQtKOQIQH6muqesDIqw81aAK0CrAo2ip+3ujPnDVGS6OQG+5N5xzfFNzkfylyArZDlcdhDLo/rDW52dYRZ4czuJnpAmZ1koN2zm48rLMEfGXBL7uCQsRdS7YgULgaI/niuk330ZvF0PIxEJsWZuv6vMnc2kdjYeCHGBfWi25mhvrokTUukVIT976yn4xfl7z2VjyLgXsv+wu1jLX6nYYYzuVDaT37LOahBlqpnO1nXUScyYsXbySRh1x2F6wTp8/omY9h5Cpg==")
+            };
+            var dsa = DSA.Create(dsaParameters);
+
+            var secretKey = new PgpSecretKey(PgpSignature.PositiveCertification, dsa, DateTime.UtcNow, "boo", SymmetricKeyAlgorithmTag.Aes128, "", true, null, null);
+            var privateKey = secretKey.ExtractPrivateKey("");
         }
 
         private void CheckUidSig(PgpPublicKey pk, string uid)
