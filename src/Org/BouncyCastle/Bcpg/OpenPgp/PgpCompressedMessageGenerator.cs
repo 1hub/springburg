@@ -8,25 +8,20 @@ using System.Security.Cryptography;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>Class for producing compressed data packets.</summary>
-    public class PgpCompressedMessageGenerator
-        : IStreamGenerator
+    class PgpCompressedMessageGenerator : PgpMessageGenerator, IStreamGenerator
     {
         private readonly CompressionAlgorithmTag algorithm;
-        private readonly CompressionLevel compression;
+        private readonly CompressionLevel compressionLevel;
 
         private Stream dOut;
         private Stream pkOut;
         private Adler32 checksum;
 
         public PgpCompressedMessageGenerator(
-            CompressionAlgorithmTag algorithm)
-            : this(algorithm, CompressionLevel.Optimal)
-        {
-        }
-
-        public PgpCompressedMessageGenerator(
+            IPacketWriter packetWriter,
             CompressionAlgorithmTag algorithm,
-            CompressionLevel compression)
+            CompressionLevel compressionLevel = CompressionLevel.Optimal)
+            : base(packetWriter)
         {
             switch (algorithm)
             {
@@ -40,7 +35,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
 
             this.algorithm = algorithm;
-            this.compression = compression;
+            this.compressionLevel = compressionLevel;
         }
 
         /// <summary>
@@ -52,12 +47,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="IOException"></exception>
-        public IPacketWriter Open(IPacketWriter writer)
+        protected override IPacketWriter Open()
         {
-            if (writer == null)
-                throw new ArgumentNullException(nameof(writer));
-            if (dOut != null)
-                throw new InvalidOperationException("generator already in open state");
+            var writer = base.Open();
 
             var packet = new CompressedDataPacket(algorithm);
 
@@ -69,7 +61,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     dOut = pkOut;
                     break;
                 case CompressionAlgorithmTag.Zip:
-                    dOut = new DeflateStream(pkOut, compression, leaveOpen: true);
+                    dOut = new DeflateStream(pkOut, compressionLevel, leaveOpen: true);
                     break;
                 case CompressionAlgorithmTag.ZLib:
                     checksum = new Adler32();
@@ -82,7 +74,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     pkOut.WriteByte(flg);
                     dOut =
                         new CryptoStream(
-                            new DeflateStream(pkOut, compression, leaveOpen: true),
+                            new DeflateStream(pkOut, compressionLevel, leaveOpen: true),
                             checksum,
                             CryptoStreamMode.Write);
                     break;

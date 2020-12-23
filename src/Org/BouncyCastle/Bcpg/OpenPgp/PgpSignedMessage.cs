@@ -10,7 +10,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private OnePassSignaturePacket onePassSignaturePacket;
         private SignaturePacket signaturePacket;
         private IPacketReader packetReader;
-        private PgpSignatureHelper signatureHelper;
+        private PgpSignatureTransformation signatureHelper;
 
         internal PgpSignedMessage(IPacketReader packetReader)
         {
@@ -29,7 +29,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public PgpMessage ReadMessage()
         {
-            signatureHelper = new PgpSignatureHelper(
+            signatureHelper = new PgpSignatureTransformation(
                 onePassSignaturePacket != null ? onePassSignaturePacket.SignatureType : signaturePacket.SignatureType,
                 onePassSignaturePacket != null ? onePassSignaturePacket.HashAlgorithm : signaturePacket.HashAlgorithm);
 

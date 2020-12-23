@@ -27,7 +27,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private readonly SignaturePacket sigPck;
         private readonly TrustPacket trustPck;
 
-        private PgpSignatureHelper helper;
+        private PgpSignatureTransformation helper;
         private PgpPublicKey publicKey;
 
         internal PgpSignature(SignaturePacket sigPacket)
@@ -73,7 +73,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public void InitVerify(PgpPublicKey publicKey, bool ignoreTrailingWhitespace = false)
         {
-            this.helper = new PgpSignatureHelper(SignatureType, HashAlgorithm);
+            this.helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm);
             this.helper.IgnoreTrailingWhitespace = ignoreTrailingWhitespace;
             this.publicKey = publicKey;
         }

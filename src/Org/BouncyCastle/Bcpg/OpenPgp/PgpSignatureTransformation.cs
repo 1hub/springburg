@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    class PgpSignatureHelper : ICryptoTransform
+    class PgpSignatureTransformation : ICryptoTransform
     {
         private HashAlgorithm sig;
         private byte lastb; // Initial value anything but '\r'
@@ -14,7 +14,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private byte[] pendingWhitespace;
         private int pendingWhitespacePosition = 0;
 
-        public PgpSignatureHelper(int signatureType, HashAlgorithmTag hashAlgorithm)
+        public PgpSignatureTransformation(int signatureType, HashAlgorithmTag hashAlgorithm)
         {
             this.signatureType = signatureType;
             this.hashAlgorithm = hashAlgorithm;
@@ -25,6 +25,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public bool IgnoreTrailingWhitespace { get; set; }
 
         public int SignatureType => signatureType;
+
+        public HashAlgorithmTag HashAlgorithm => hashAlgorithm;
 
         bool ICryptoTransform.CanReuseTransform => true;
 

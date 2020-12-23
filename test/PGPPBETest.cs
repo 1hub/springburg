@@ -53,15 +53,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             MemoryStream bOut = new MemoryStream();
 
-            PgpEncryptedMessageGenerator encryptedGenerator = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.Cast5, withIntegrityPacket);
-            PgpCompressedMessageGenerator comData = new PgpCompressedMessageGenerator(CompressionAlgorithmTag.Zip);
-            PgpLiteralMessageGenerator lData = new PgpLiteralMessageGenerator();
-            encryptedGenerator.AddMethod(pass, HashAlgorithmTag.Sha1);
-            using (var writer = new PacketWriter(bOut))
-            using (var encryptedWriter = encryptedGenerator.Open(writer))
-            using (var compressedWriter = comData.Open(encryptedWriter))
-            using (var ldOut = lData.Open(compressedWriter, PgpLiteralData.Binary, PgpLiteralData.Console, TestDateTime))
-                ldOut.Write(msg);
+            using (var messageGenerator = new PgpMessageGenerator(bOut))
+            using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5, withIntegrityPacket))
+            {
+                encryptedGenerator.AddMethod(pass, HashAlgorithmTag.Sha1);
+                using (var compressedGenerator = encryptedGenerator.CreateCompressed(CompressionAlgorithmTag.Zip))
+                using (var literalStream = compressedGenerator.CreateLiteral(PgpLiteralData.Binary, PgpLiteralData.Console, TestDateTime))
+                    literalStream.Write(msg);
+            }
 
             return bOut.ToArray();
         }

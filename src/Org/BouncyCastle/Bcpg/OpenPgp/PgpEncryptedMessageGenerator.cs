@@ -10,7 +10,7 @@ using System.Text;
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
     /// <summary>Generator for encrypted objects.</summary>
-    public class PgpEncryptedMessageGenerator : IStreamGenerator
+    public class PgpEncryptedMessageGenerator : PgpMessageGenerator, IStreamGenerator
     {
         private Stream pOut;
         private CryptoStream cOut;
@@ -141,8 +141,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <param name="encAlgorithm">The symmetric algorithm to use.</param>
         /// <param name="withIntegrityPacket">Use integrity packet.</param>
         public PgpEncryptedMessageGenerator(
+            IPacketWriter packetWriter,
             SymmetricKeyAlgorithmTag encAlgorithm,
             bool withIntegrityPacket = false)
+            : base(packetWriter)
         {
             this.defAlgorithm = encAlgorithm;
             this.withIntegrityPacket = withIntegrityPacket;
@@ -208,10 +210,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>
         /// Return an output stream which will encrypt the data as it is written to it.
         /// </summary>
-        public IPacketWriter Open(IPacketWriter writer)
+        protected override IPacketWriter Open()
         {
-            if (writer == null)
-                throw new ArgumentNullException(nameof(writer));
+            var writer = base.Open();
+
             if (cOut != null)
                 throw new InvalidOperationException("generator already in open state");
             if (methods.Count == 0)

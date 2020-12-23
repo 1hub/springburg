@@ -14,7 +14,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [TestCase(false)]
         public void ReadBackTest(bool oldFormat)
         {
-            var generator = new PgpLiteralMessageGenerator();
             Random rand = new Random();
             byte[] buf = new byte[MAX];
             byte[] buf2 = new byte[MAX];
@@ -25,8 +24,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 using MemoryStream bOut = new MemoryStream();
 
-                var writer = new PacketWriter(bOut, oldFormat);
-                using (var outputStream = generator.Open(writer, PgpLiteralData.Binary, PgpLiteralData.Console, DateTime.UtcNow))
+                var messageGenerator = new PgpMessageGenerator(new PacketWriter(bOut, oldFormat));
+                using (var outputStream = messageGenerator.CreateLiteral(PgpLiteralData.Binary, PgpLiteralData.Console, DateTime.UtcNow))
                     outputStream.Write(buf, 0, i);
 
                 bOut.Position = 0;

@@ -247,16 +247,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             PgpSecretKey pgpSecKey = ReadSecretKey(new MemoryStream(secretKey));
             PgpPrivateKey pgpPrivKey = pgpSecKey.ExtractPrivateKey("");
-            PgpSignedMessageGenerator sGen = new PgpSignedMessageGenerator(PgpSignature.CanonicalTextDocument, pgpPrivKey, HashAlgorithmTag.Sha256);
-            PgpSignatureSubpacketGenerator spGen = new PgpSignatureSubpacketGenerator();
-            spGen.SetSignerUserId(false, (string)pgpSecKey.PublicKey.GetUserIds().First());
-            sGen.SetHashedSubpackets(spGen.Generate());
             MemoryStream bOut = new MemoryStream();
-            using (var writer = new ArmoredPacketWriter(bOut))
-            using (var signerWriter = sGen.Open(writer))
-            using (var literalStream = new PgpLiteralMessageGenerator().Open(signerWriter, PgpLiteralData.Text, "", DateTime.MinValue))
+            using (var messageGenerator = new PgpMessageGenerator(new ArmoredPacketWriter(bOut)))
+            using (var signedGenerator = messageGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, pgpPrivKey, HashAlgorithmTag.Sha256))
             {
-                literalStream.Write(Encoding.UTF8.GetBytes(message));
+                PgpSignatureSubpacketGenerator spGen = new PgpSignatureSubpacketGenerator();
+                spGen.SetSignerUserId(false, (string)pgpSecKey.PublicKey.GetUserIds().First());
+                signedGenerator.SetHashedSubpackets(spGen.Generate());
+                using (var literalStream = signedGenerator.CreateLiteral(PgpLiteralData.Text, "", DateTime.MinValue))
+                {
+                    literalStream.Write(Encoding.UTF8.GetBytes(message));
+                }
             }
             byte[] bs = bOut.ToArray();
             MessageTest(type, Encoding.ASCII.GetString(bs, 0, bs.Length));

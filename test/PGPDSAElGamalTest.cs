@@ -97,15 +97,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Generate signature
             MemoryStream bOut = new MemoryStream();
-            PgpSignedMessageGenerator sGen = new PgpSignedMessageGenerator(PgpSignature.BinaryDocument, privKey, HashAlgorithmTag.Sha1);
-            PgpCompressedMessageGenerator cGen = new PgpCompressedMessageGenerator(CompressionAlgorithmTag.Zip);
-            PgpLiteralMessageGenerator lGen = new PgpLiteralMessageGenerator();
             DateTime testDateTime = new DateTime(1973, 7, 27);
 
-            var writer = new PacketWriter(bOut);
-            using (var compressedWriter = cGen.Open(writer))
-            using (var signingWriter = sGen.Open(compressedWriter))
-            using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", testDateTime))
+            var messageGenerator = new PgpMessageGenerator(bOut);
+            using (var compressedGenerator = messageGenerator.CreateCompressed(CompressionAlgorithmTag.Zip))
+            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, privKey, HashAlgorithmTag.Sha1))
+            using (var literalStream = signingGenerator.CreateLiteral(PgpLiteralData.Binary, "_CONSOLE", testDateTime))
                 literalStream.Write(text);
 
             // Verify generated signature
@@ -155,12 +152,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var privateKey = secretKey.ExtractPrivateKey(pass);
 
             MemoryStream cbOut = new MemoryStream();
-            PgpEncryptedMessageGenerator cPk = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.TripleDes);
-            cPk.AddMethod(secretKey.PublicKey);
-            var writer = new PacketWriter(cbOut);
-            using (var cOut = cPk.Open(writer))
-            using (var pOut = new PgpLiteralMessageGenerator().Open(cOut, PgpLiteralData.Utf8, "", DateTime.UtcNow))
-                pOut.Write(text, 0, text.Length);
+            var messageGenerator = new PgpMessageGenerator(cbOut);
+            using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.TripleDes))
+            {
+                encryptedGenerator.AddMethod(secretKey.PublicKey);
+                using (var literalStream = encryptedGenerator.CreateLiteral(PgpLiteralData.Utf8, "", DateTime.UtcNow))
+                    literalStream.Write(text);
+            }
 
             cbOut.Position = 0;
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(cbOut);
@@ -197,14 +195,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             {
                 PgpKeyPair elGamalKeyPair = new PgpKeyPair(ElGamal.Create(pSize), DateTime.UtcNow);
 
-                var cPk = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.Cast5);
-                cPk.AddMethod(elGamalKeyPair.PublicKey);
-
                 var cbOut = new MemoryStream();
-                var writer = new PacketWriter(cbOut);
-                using (var encryptedWriter = cPk.Open(writer))
-                using (var literalStream = new PgpLiteralMessageGenerator().Open(encryptedWriter, PgpLiteralData.Binary, "", DateTime.UtcNow))
-                    literalStream.Write(text);
+                var messageGenerator = new PgpMessageGenerator(cbOut);
+                using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5))
+                {
+                    encryptedGenerator.AddMethod(elGamalKeyPair.PublicKey);
+                    using (var literalStream = encryptedGenerator.CreateLiteral(PgpLiteralData.Binary, "", DateTime.UtcNow))
+                        literalStream.Write(text);
+                }
 
                 cbOut.Position = 0;
                 var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(cbOut);

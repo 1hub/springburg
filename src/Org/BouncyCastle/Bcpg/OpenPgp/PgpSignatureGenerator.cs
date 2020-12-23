@@ -16,13 +16,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         protected SignatureSubpacket[] unhashed = Array.Empty<SignatureSubpacket>();
         protected SignatureSubpacket[] hashed = Array.Empty<SignatureSubpacket>();
 
-        private protected PgpSignatureHelper helper;
+        internal PgpSignatureTransformation helper;
         protected PgpPrivateKey privateKey;
 
         protected int version;
 
         /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
-        public PgpSignatureGenerator(int signatureType, PgpPrivateKey privateKey, HashAlgorithmTag hashAlgorithm, int version = 4)
+        public PgpSignatureGenerator(int signatureType, PgpPrivateKey privateKey, HashAlgorithmTag hashAlgorithm, int version = 4, bool ignoreTrailingWhitespace = false)
         {
             // TODO: Add version 5 support
             if (version < 3 || version > 4)
@@ -30,9 +30,16 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             this.version = version;
             this.hashAlgorithm = hashAlgorithm;
-            this.helper = new PgpSignatureHelper(signatureType, hashAlgorithm);
+            this.helper = new PgpSignatureTransformation(signatureType, hashAlgorithm);
+            this.helper.IgnoreTrailingWhitespace = ignoreTrailingWhitespace;
             this.privateKey = privateKey;
         }
+
+        public HashAlgorithmTag HashAlgorithm => helper.HashAlgorithm;
+
+        public int SignatureType => helper.SignatureType;
+
+        public PgpPrivateKey PrivateKey => privateKey;
 
         public void SetHashedSubpackets(PgpSignatureSubpacketVector hashedPackets)
         {
@@ -51,7 +58,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>Return a signature object containing the current signature state.</summary>
-        protected PgpSignature Generate()
+        internal PgpSignature Generate()
         {
             if (version >= 4)
             {

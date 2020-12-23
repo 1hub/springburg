@@ -172,13 +172,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Encrypt text
             MemoryStream cbOut = new MemoryStream();
-            PgpEncryptedMessageGenerator cPk = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.Cast5);
-            cPk.AddMethod(ecdhKeyPair.PublicKey);
-            PgpLiteralMessageGenerator lData = new PgpLiteralMessageGenerator();
-            var writer = new PacketWriter(cbOut);
-            using (var cOut = cPk.Open(writer))
-            using (var pOut = lData.Open(cOut, PgpLiteralMessageGenerator.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
-                pOut.Write(text);
+            var messageGenerator = new PgpMessageGenerator(cbOut);
+            using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5))
+            {
+                encryptedGenerator.AddMethod(ecdhKeyPair.PublicKey);
+                using (var literalStream = encryptedGenerator.CreateLiteral(PgpLiteralData.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
+                    literalStream.Write(text);
+            }
 
             // Read it back
             cbOut.Position = 0;
@@ -198,13 +198,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Encrypt text
             MemoryStream cbOut = new MemoryStream();
-            PgpEncryptedMessageGenerator cPk = new PgpEncryptedMessageGenerator(SymmetricKeyAlgorithmTag.Cast5);
-            cPk.AddMethod(publicKeyRing.GetPublicKey(0x6c37367cd2f455c5));
-            PgpLiteralMessageGenerator lData = new PgpLiteralMessageGenerator();
-            var writer = new PacketWriter(cbOut);
-            using (var cOut = cPk.Open(writer))
-            using (var pOut = lData.Open(cOut, PgpLiteralMessageGenerator.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
-                pOut.Write(text);
+            var messageGenerator = new PgpMessageGenerator(cbOut);
+            using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5))
+            {
+                encryptedGenerator.AddMethod(publicKeyRing.GetPublicKey(0x6c37367cd2f455c5));
+                using (var literalStream = encryptedGenerator.CreateLiteral(PgpLiteralData.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
+                    literalStream.Write(text);
+            }
 
             // Read it back
             cbOut.Position = 0;

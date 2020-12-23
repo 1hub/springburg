@@ -750,12 +750,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             int version = 4)
         {
             MemoryStream bOut = new MemoryStream();
-            PgpSignedMessageGenerator sGen = new PgpSignedMessageGenerator(PgpSignature.BinaryDocument, privKey, hashAlgorithm, version);
-            PgpLiteralMessageGenerator lGen = new PgpLiteralMessageGenerator();
 
-            var writer = new PacketWriter(bOut);
-            using (var signingWriter = sGen.Open(writer))
-            using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Binary, "_CONSOLE", DateTime.UtcNow))
+            var messageGenerator = new PgpMessageGenerator(bOut);
+            using (var signingGenerator = messageGenerator.CreateSigned(PgpSignature.BinaryDocument, privKey, hashAlgorithm, version))
+            using (var literalStream = signingGenerator.CreateLiteral(PgpLiteralData.Binary, "_CONSOLE", DateTime.UtcNow))
             {
                 literalStream.Write(TEST_DATA);
                 literalStream.Write(TEST_DATA);
@@ -773,12 +771,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             int version = 4)
         {
             MemoryStream bOut = new MemoryStream();
-            PgpSignedMessageGenerator sGen = new PgpSignedMessageGenerator(PgpSignature.CanonicalTextDocument, privKey, HashAlgorithmTag.Sha1, version);
-            PgpLiteralMessageGenerator lGen = new PgpLiteralMessageGenerator();
-
-            var writer = new PacketWriter(bOut);
-            using (var signingWriter = sGen.Open(writer))
-            using (var literalStream = lGen.Open(signingWriter, PgpLiteralData.Text, "_CONSOLE", DateTime.UtcNow))
+            var messageGenerator = new PgpMessageGenerator(bOut);
+            using (var signingGenerator = messageGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, privKey, HashAlgorithmTag.Sha1, version))
+            using (var literalStream = signingGenerator.CreateLiteral(PgpLiteralData.Text, "_CONSOLE", DateTime.UtcNow))
             {
                 literalStream.Write(data);
                 literalStream.Write(canonicalData);

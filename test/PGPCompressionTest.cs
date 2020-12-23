@@ -40,11 +40,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             using MemoryStream bOut = new MemoryStream();
 
             // Compress data
-            PgpCompressedMessageGenerator cPacket = new PgpCompressedMessageGenerator(type);
-            PgpLiteralMessageGenerator lPacket = new PgpLiteralMessageGenerator();
-            var writer = new PacketWriter(bOut);
-            using (var compressedWriter = cPacket.Open(writer))
-            using (var literalStream = lPacket.Open(compressedWriter, PgpLiteralData.Binary, "", DateTime.UtcNow))
+            var messageGenerator = new PgpMessageGenerator(bOut);
+            using (var compressedGenerator = messageGenerator.CreateCompressed(type))
+            using (var literalStream = compressedGenerator.CreateLiteral(PgpLiteralData.Binary, "", DateTime.UtcNow))
                 literalStream.Write(Data);
 
             // Read it back

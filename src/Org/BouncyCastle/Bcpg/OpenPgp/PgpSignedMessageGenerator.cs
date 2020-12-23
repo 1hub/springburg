@@ -1,32 +1,41 @@
-using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
-using Org.BouncyCastle.Bcpg.Sig;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
-    public class PgpSignedMessageGenerator : PgpSignatureGenerator
+    public class PgpSignedMessageGenerator : PgpMessageGenerator
     {
+        PgpSignatureGenerator signatureGenerator;
+
         /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
-        public PgpSignedMessageGenerator(int signatureType, PgpPrivateKey privateKey, HashAlgorithmTag hashAlgorithm, int version = 4)
-            : base(signatureType, privateKey, hashAlgorithm, version)
+        internal PgpSignedMessageGenerator(IPacketWriter writer, int signatureType, PgpPrivateKey privateKey, HashAlgorithmTag hashAlgorithm, int version = 4)
+            : base(writer)
         {
+            signatureGenerator = new PgpSignatureGenerator(
+                signatureType, privateKey, hashAlgorithm, version,
+                ignoreTrailingWhitespace: writer is ArmoredPacketWriter);
+
+            // FIXME: Nesting
+            var onePassPacket = new OnePassSignaturePacket(
+                signatureGenerator.SignatureType,
+                signatureGenerator.HashAlgorithm,
+                signatureGenerator.PrivateKey.PublicKeyPacket.Algorithm,
+                signatureGenerator.PrivateKey.KeyId,
+                /*isNested*/ false);
+            writer.WritePacket(onePassPacket);
         }
 
-        public IPacketWriter Open(IPacketWriter writer)
+        public void SetHashedSubpackets(PgpSignatureSubpacketVector hashedPackets) => signatureGenerator.SetHashedSubpackets(hashedPackets);
+
+        public void SetUnhashedSubpackets(PgpSignatureSubpacketVector unhashedPackets) => signatureGenerator.SetHashedSubpackets(unhashedPackets);
+
+        protected override IPacketWriter Open()
         {
-            // FIXME: Nesting
-            var onePassPacket = new OnePassSignaturePacket(helper.SignatureType, hashAlgorithm, privateKey.PublicKeyPacket.Algorithm, privateKey.KeyId, /*isNested*/ false);
-            writer.WritePacket(onePassPacket);
-            if (writer is ArmoredPacketWriter)
-            {
-                helper.IgnoreTrailingWhitespace = true;
-            }
-            return new SigningPacketWriter(writer, helper, this);
+            return new SigningPacketWriter(base.Open(), signatureGenerator.helper, this);
         }
+
+        private PgpSignature Generate() => signatureGenerator.Generate();
 
         class SigningPacketWriter : IPacketWriter
         {
