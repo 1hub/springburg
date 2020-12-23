@@ -131,6 +131,20 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return CryptographicOperations.FixedTimeEquals(digest, streamDigest);
         }
 
+        private void VerifyInlineIV(ReadOnlySpan<byte> inlineIv, ReadOnlySpan<byte> check)
+        {
+            bool repeatCheckPassed = inlineIv[inlineIv.Length - 2] == (byte)check[0] && inlineIv[inlineIv.Length - 1] == (byte)check[1];
+
+            // Note: some versions of PGP appear to produce 0 for the extra
+            // bytes rather than repeating the two previous bytes
+            bool zeroesCheckPassed = check[0] == 0 && check[1] == 0;
+
+            if (!repeatCheckPassed && !zeroesCheckPassed)
+            {
+                throw new PgpDataValidationException("quick check failed.");
+            }
+        }
+
         private Stream GetDataStream(ReadOnlySpan<byte> sessionData, bool verifyIntegrity)
         {
             SymmetricKeyAlgorithmTag keyAlgorithm = (SymmetricKeyAlgorithmTag)sessionData[0];
@@ -143,18 +157,23 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             var iv = new byte[(encryptionAlgorithm.BlockSize + 7) / 8];
             byte[] keyArray = Array.Empty<byte>();
             ICryptoTransform decryptor;
+            var inlineIv = new byte[iv.Length * 2]; // Aligned to block size
 
             try
             {
                 keyArray = key.ToArray();
-                if (encryptedPacket is SymmetricEncIntegrityPacket)
+                decryptor = encryptionAlgorithm.CreateDecryptor(keyArray, iv);
+                if (encryptedPacket is SymmetricEncDataPacket)
                 {
-                    decryptor = encryptionAlgorithm.CreateDecryptor(keyArray, iv);
-                }
-                else
-                {
-                    encryptionAlgorithm.Mode = CipherMode.ECB;
-                    decryptor = new OpenPGPCFBTransformWrapper(encryptionAlgorithm.CreateEncryptor(keyArray, null), iv, false);
+                    if (Streams.ReadFully(inputStream, inlineIv, 0, iv.Length + 2) < iv.Length + 2)
+                        throw new EndOfStreamException("unexpected end of stream.");
+
+                    var decryptedInlineIv = decryptor.TransformFinalBlock(inlineIv, 0, inlineIv.Length);
+                    if (verifyIntegrity)
+                        VerifyInlineIV(decryptedInlineIv.AsSpan(0, iv.Length), decryptedInlineIv.AsSpan(iv.Length, 2));
+
+                    // Perform reset according to the OpenPGP CFB rules
+                    decryptor = encryptionAlgorithm.CreateDecryptor(keyArray, inlineIv.AsSpan(2, iv.Length).ToArray());
                 }
             }
             finally
@@ -171,30 +190,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 hashAlgorithm = SHA1.Create();
                 tailEndCryptoTransform = new TailEndCryptoTransform(hashAlgorithm, hashAlgorithm.HashSize / 8);
                 encStream = new CryptoStream(encStream, tailEndCryptoTransform, CryptoStreamMode.Read);
-            }
 
-            if (Streams.ReadFully(encStream, iv, 0, iv.Length) < iv.Length)
-                throw new EndOfStreamException("unexpected end of stream.");
+                if (Streams.ReadFully(encStream, inlineIv, 0, iv.Length + 2) < iv.Length + 2)
+                    throw new EndOfStreamException("unexpected end of stream.");
 
-            int v1 = encStream.ReadByte();
-            int v2 = encStream.ReadByte();
-
-            if (v1 < 0 || v2 < 0)
-                throw new EndOfStreamException("unexpected end of stream.");
-
-            if (verifyIntegrity)
-            {
-                bool repeatCheckPassed = iv[iv.Length - 2] == (byte)v1 && iv[iv.Length - 1] == (byte)v2;
-
-                // Note: some versions of PGP appear to produce 0 for the extra
-                // bytes rather than repeating the two previous bytes
-                bool zeroesCheckPassed = v1 == 0 && v2 == 0;
-
-                if (!repeatCheckPassed && !zeroesCheckPassed)
-                {
-                    throw new PgpDataValidationException("quick check failed.");
-                }
-
+                if (verifyIntegrity)
+                    VerifyInlineIV(inlineIv.AsSpan(0, iv.Length), inlineIv.AsSpan(iv.Length, 2));
             }
 
             return encStream;

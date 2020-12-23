@@ -253,9 +253,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             try
             {
-                // TODO Confirm the IV should be all zero bytes (not inLineIv - see below)
-                c.IV = new byte[c.BlockSize / 8];
-
                 if (withIntegrityPacket)
                 {
                     pOut = writer.GetPacketStream(new SymmetricEncIntegrityPacket());
@@ -265,20 +262,25 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     pOut = writer.GetPacketStream(new SymmetricEncDataPacket());
                 }
 
-                int blockSize = c.BlockSize / 8;
-                byte[] inLineIv = new byte[blockSize + 2];
+                int blockSize = (c.BlockSize + 7) / 8;
+                byte[] inLineIv = new byte[blockSize * 2]; // Aligned to block size
                 RandomNumberGenerator.Fill(inLineIv.AsSpan(0, blockSize));
-                Array.Copy(inLineIv, inLineIv.Length - 4, inLineIv, inLineIv.Length - 2, 2);
+                inLineIv[blockSize] = inLineIv[blockSize - 2];
+                inLineIv[blockSize + 1] = inLineIv[blockSize - 1];
 
                 ICryptoTransform encryptor;
+                c.IV = new byte[blockSize];
                 if (withIntegrityPacket)
                 {
                     encryptor = c.CreateEncryptor();
                 }
                 else
                 {
-                    c.Mode = CipherMode.ECB;
-                    encryptor = new OpenPGPCFBTransformWrapper(c.CreateEncryptor(), c.IV, true);
+                    encryptor = c.CreateEncryptor();
+                    var encryptedInlineIv = encryptor.TransformFinalBlock(inLineIv, 0, inLineIv.Length);
+                    pOut.Write(encryptedInlineIv.AsSpan(0, blockSize + 2));
+                    c.IV = encryptedInlineIv.AsSpan(2, blockSize).ToArray();
+                    encryptor = c.CreateEncryptor();
                 }
 
                 Stream myOut = cOut = new CryptoStream(pOut, new ZeroPaddedCryptoTransformWrapper(encryptor), CryptoStreamMode.Write);
@@ -287,9 +289,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 {
                     digest = SHA1.Create();
                     myOut = digestOut = new CryptoStream(new FilterStream(myOut), digest, CryptoStreamMode.Write);
+                    myOut.Write(inLineIv, 0, blockSize + 2);
                 }
-
-                myOut.Write(inLineIv, 0, inLineIv.Length);
 
                 return writer.CreateNestedWriter(new WrappedGeneratorStream(this, myOut));
             }
