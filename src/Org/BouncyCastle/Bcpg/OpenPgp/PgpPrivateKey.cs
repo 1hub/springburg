@@ -35,6 +35,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public PublicKeyPacket PublicKeyPacket => publicKeyPacket;
 
         /// <summary>The contained private key.</summary>
-        public AsymmetricAlgorithm Key => privateKey;
+        internal AsymmetricAlgorithm Key => privateKey;
     }
 }

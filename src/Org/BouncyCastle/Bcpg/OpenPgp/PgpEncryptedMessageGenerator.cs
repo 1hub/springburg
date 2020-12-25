@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using InflatablePalace.Cryptography.Algorithms;
 using Org.BouncyCastle.Utilities.IO;
 using System.Text;
+using Internal.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
 {
@@ -104,7 +105,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm) / 8).ToArray();
 
                     byte[] paddedSessionData = PgpPad.PadSessionData(sessionInfo, sessionKeyObfuscation);
-                    byte[] C = KeyWrapAlgorithm.WrapKey(derivedKey, paddedSessionData);
+                    byte[] C = SymmetricKeyWrap.AESKeyWrapEncrypt(derivedKey, paddedSessionData);
                     var ep = ecdh.PublicKey.ExportParameters();
                     byte[] VB = PgpUtilities.EncodePoint(ep.Q).GetEncoded();
                     byte[] rv = new byte[VB.Length + 1 + C.Length];
@@ -164,12 +165,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         }
 
         /// <summary>Add a public key encrypted session key to the encrypted object.</summary>
-        public void AddMethod(PgpPublicKey key)
-        {
-            AddMethod(key, true);
-        }
-
-        public void AddMethod(PgpPublicKey key, bool sessionKeyObfuscation)
+        public void AddMethod(PgpPublicKey key, bool sessionKeyObfuscation = true)
         {
             if (!key.IsEncryptionKey)
             {

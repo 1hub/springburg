@@ -203,14 +203,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     new MPInteger(elgamalKParams.G),
                     new MPInteger(elgamalKParams.Y));
             }
-            /*
-            else if (pubKey is ElGamalPublicKeyParameters)
-            {
-                ElGamalPublicKeyParameters eK = (ElGamalPublicKeyParameters)pubKey;
-                ElGamalParameters eS = eK.Parameters;
-
-                bcpgKey = new ElGamalPublicBcpgKey(eS.P, eS.G, eK.Y);
-            }*/
             else
             {
                 throw new PgpException("unknown key class");
@@ -475,7 +467,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>The public key contained in the object.</summary>
         /// <returns>A lightweight public key.</returns>
         /// <exception cref="PgpException">If the key algorithm is not recognised.</exception>
-        public AsymmetricAlgorithm GetKey()
+        internal AsymmetricAlgorithm GetKey()
         {
             try
             {

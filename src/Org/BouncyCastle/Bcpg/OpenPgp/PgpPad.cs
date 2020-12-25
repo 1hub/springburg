@@ -5,12 +5,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
     /// <summary>Padding functions.</summary>
     static class PgpPad
     {
-        public static byte[] PadSessionData(byte[] sessionInfo)
-        {
-            return PadSessionData(sessionInfo, true);
-        }
-
-        public static byte[] PadSessionData(byte[] sessionInfo, bool obfuscate)
+        public static byte[] PadSessionData(byte[] sessionInfo, bool obfuscate = true)
         {
             int length = sessionInfo.Length;
             int paddedLength = ((length >> 3) + 1) << 3;

@@ -1,4 +1,5 @@
 ﻿using InflatablePalace.Cryptography.Algorithms;
+using Internal.Cryptography;
 using Org.BouncyCastle.Utilities.IO;
 using System;
 using System.Collections.Generic;
@@ -278,7 +279,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
                 derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm) / 8).ToArray();
 
-                var C = KeyWrapAlgorithm.UnwrapKey(derivedKey, keyEnc);
+                var C = SymmetricKeyWrap.AESKeyWrapDecrypt(derivedKey, keyEnc);
                 return PgpPad.UnpadSessionData(C);
             }
 
