@@ -28,8 +28,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             this.version = version;
             this.hashAlgorithm = hashAlgorithm;
-            this.helper = new PgpSignatureTransformation(signatureType, hashAlgorithm);
-            this.helper.IgnoreTrailingWhitespace = ignoreTrailingWhitespace;
+            this.helper = new PgpSignatureTransformation(signatureType, hashAlgorithm, ignoreTrailingWhitespace);
             this.privateKey = privateKey;
         }
 
@@ -146,7 +145,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Generate a certification, such as a revocation, for the passed in key.</summary>
         /// <param name="pubKey">The key we are certifying.</param>
         /// <returns>The certification.</returns>
-        public PgpSignature GenerateCertification(PgpPublicKey pubKey)
+        public PgpSignature GenerateRevokation(PgpPublicKey pubKey)
         {
             this.helper.UpdateWithPublicKey(pubKey);
             return Generate();

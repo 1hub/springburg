@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
@@ -26,9 +28,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         private readonly SignaturePacket sigPck;
         private readonly TrustPacket trustPck;
-
-        private PgpSignatureTransformation helper;
-        private PgpPublicKey publicKey;
 
         internal PgpSignature(SignaturePacket sigPacket)
             : this(sigPacket, null)
@@ -86,21 +85,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
         }
 
-        public void InitVerify(PgpPublicKey publicKey, bool ignoreTrailingWhitespace = false)
+        public bool Verify(PgpPublicKey publicKey, Stream stream, bool ignoreTrailingWhitespace = false)
         {
-            this.helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm);
-            this.helper.IgnoreTrailingWhitespace = ignoreTrailingWhitespace;
-            this.publicKey = publicKey;
-        }
-
-        public void Update(params byte[] bytes) => this.helper.Update(bytes);
-
-        public void Update(byte[] bytes, int off, int length) => this.helper.Update(bytes, off, length);
-
-        public bool Verify()
-        {
+            var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace);
+            new CryptoStream(stream, helper, CryptoStreamMode.Read).CopyTo(Stream.Null);
             helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
-            return helper.Verify(sigPck.GetSignature(), this.publicKey);
+            return helper.Verify(sigPck.GetSignature(), publicKey);
         }
 
         /// <summary>
@@ -111,10 +101,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <param name="key">The key to be verified.</param>
         /// <returns>True, if the signature matches, false otherwise.</returns>
         public bool VerifyCertification(
+            PgpPublicKey masterKey,
             PgpUserAttributeSubpacketVector userAttributes,
             PgpPublicKey key)
         {
-            this.helper.UpdateWithPublicKey(key);
+            var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace: false);
+
+            Debug.Assert(masterKey.KeyId == KeyId);
+
+            helper.UpdateWithPublicKey(key);
 
             //
             // hash in the userAttributes
@@ -126,14 +121,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 {
                     packet.Encode(bOut);
                 }
-                this.helper.UpdateWithIdData(0xd1, bOut.ToArray());
+                helper.UpdateWithIdData(0xd1, bOut.ToArray());
             }
             catch (IOException e)
             {
                 throw new PgpException("cannot encode subpacket array", e);
             }
 
-            return this.Verify();
+            helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
+            return helper.Verify(sigPck.GetSignature(), masterKey);
         }
 
         /// <summary>
@@ -144,17 +140,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <param name="key">The key to be verified.</param>
         /// <returns>True, if the signature matches, false otherwise.</returns>
         public bool VerifyCertification(
+            PgpPublicKey masterKey,
             string id,
-            PgpPublicKey key)
+            PgpPublicKey pubKey)
         {
-            this.helper.UpdateWithPublicKey(key);
+            var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace: false);
 
-            //
-            // hash in the id
-            //
-            this.helper.UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
+            Debug.Assert(masterKey.KeyId == KeyId);
 
-            return this.Verify();
+            helper.UpdateWithPublicKey(pubKey);
+            helper.UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
+
+            helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
+            return helper.Verify(sigPck.GetSignature(), masterKey);
         }
 
         /// <summary>Verify a certification for the passed in key against the passed in master key.</summary>
@@ -165,26 +163,35 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             PgpPublicKey masterKey,
             PgpPublicKey pubKey)
         {
-            this.helper.UpdateWithPublicKey(masterKey);
-            this.helper.UpdateWithPublicKey(pubKey);
+            var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace: false);
 
-            return this.Verify();
+            Debug.Assert(masterKey.KeyId == KeyId);
+
+            helper.UpdateWithPublicKey(masterKey);
+            helper.UpdateWithPublicKey(pubKey);
+
+            helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
+            return helper.Verify(sigPck.GetSignature(), masterKey);
         }
 
         /// <summary>Verify a key certification, such as revocation, for the passed in key.</summary>
         /// <param name="pubKey">The key we are checking.</param>
         /// <returns>True, if the certification is valid, false otherwise.</returns>
-        public bool VerifyCertification(
-            PgpPublicKey pubKey)
+        public bool VerifyRevocation(PgpPublicKey pubKey)
         {
+            var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace: false);
+
+            Debug.Assert(pubKey.KeyId == KeyId);
+
             if (SignatureType != KeyRevocation && SignatureType != SubkeyRevocation)
             {
                 throw new InvalidOperationException("signature is not a key signature");
             }
 
-            this.helper.UpdateWithPublicKey(pubKey);
+            helper.UpdateWithPublicKey(pubKey);
 
-            return this.Verify();
+            helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
+            return helper.Verify(sigPck.GetSignature(), pubKey);
         }
 
         public int SignatureType => sigPck.SignatureType;

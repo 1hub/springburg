@@ -14,16 +14,16 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         private HashAlgorithmTag hashAlgorithm;
         private byte[] pendingWhitespace;
         private int pendingWhitespacePosition = 0;
+        private bool ignoreTrailingWhitespace;
 
-        public PgpSignatureTransformation(int signatureType, HashAlgorithmTag hashAlgorithm)
+        public PgpSignatureTransformation(int signatureType, HashAlgorithmTag hashAlgorithm, bool ignoreTrailingWhitespace)
         {
             this.signatureType = signatureType;
             this.hashAlgorithm = hashAlgorithm;
             this.lastb = 0;
             this.sig = PgpUtilities.GetHashAlgorithm(hashAlgorithm);
+            this.ignoreTrailingWhitespace = ignoreTrailingWhitespace;
         }
-
-        public bool IgnoreTrailingWhitespace { get; set; }
 
         public int SignatureType => signatureType;
 
@@ -37,7 +37,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         int ICryptoTransform.OutputBlockSize => 1;
 
-        public void Update(byte b)
+        private void Update(byte b)
         {
             if (signatureType == PgpSignature.CanonicalTextDocument)
             {
@@ -62,7 +62,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     doUpdateCRLF();
                 }
             }
-            else if (IgnoreTrailingWhitespace && (b == ' ' || b == '\t'))
+            else if (ignoreTrailingWhitespace && (b == ' ' || b == '\t'))
             {
                 if (pendingWhitespace == null)
                 {
@@ -96,12 +96,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             sig.TransformBlock(new byte[] { (byte)'\r', (byte)'\n' }, 0, 2, null, 0);
         }
 
-        public void Update(params byte[] bytes)
+        private void Update(params byte[] bytes)
         {
             Update(bytes, 0, bytes.Length);
         }
 
-        public void Update(
+        private void Update(
             byte[] bytes,
             int off,
             int length)

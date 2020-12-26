@@ -60,9 +60,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var pubKeyRing = new PgpPublicKeyRing(referencePubKey);
             var publicKey = pubKeyRing.GetPublicKey();
             var signature = new PgpSignature(referenceSignature);
-            signature.InitVerify(publicKey);
-            signature.Update(Encoding.ASCII.GetBytes(referenceMessage));
-            Assert.IsTrue(signature.Verify(), "signature failed to verify!");
+            Assert.IsTrue(signature.Verify(publicKey, new MemoryStream(Encoding.ASCII.GetBytes(referenceMessage), false)), "signature failed to verify!");
         }
 
         [Test]
@@ -96,10 +94,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpPublicKeyRing pubKeyRing = new PgpPublicKeyRing(testPubKey);
             foreach (PgpSignature certification in pubKeyRing.GetPublicKey().GetSignatures())
             {
-                certification.InitVerify(pubKeyRing.GetPublicKey());
                 var firstUserId = pubKeyRing.GetPublicKey().GetUserIds().FirstOrDefault() as string;
                 Assert.NotNull(firstUserId);
-                Assert.IsTrue(certification.VerifyCertification(firstUserId, pubKeyRing.GetPublicKey()));
+                Assert.IsTrue(certification.VerifyCertification(pubKeyRing.GetPublicKey(), firstUserId, pubKeyRing.GetPublicKey()));
             }
         }
 

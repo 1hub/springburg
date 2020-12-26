@@ -76,10 +76,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpPublicKeyRing pubKeyRing = new PgpPublicKeyRing(testPubKey);
             foreach (PgpSignature certification in pubKeyRing.GetPublicKey().GetSignatures())
             {
-                certification.InitVerify(pubKeyRing.GetPublicKey());
                 var firstUserId = pubKeyRing.GetPublicKey().GetUserIds().FirstOrDefault() as string;
                 Assert.NotNull(firstUserId);
-                Assert.IsTrue(certification.VerifyCertification(firstUserId, pubKeyRing.GetPublicKey()));
+                Assert.IsTrue(certification.VerifyCertification(pubKeyRing.GetPublicKey(), firstUserId, pubKeyRing.GetPublicKey()));
             }
         }
 

@@ -373,14 +373,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.KeyRevocation, pgpPrivKey, HashAlgorithmTag.Sha1);
 
-            PgpSignature sig = sGen.GenerateCertification(secretKey.PublicKey);
+            PgpSignature sig = sGen.GenerateRevokation(secretKey.PublicKey);
 
-            sig.InitVerify(secretKey.PublicKey);
-
-            if (!sig.VerifyCertification(secretKey.PublicKey))
-            {
-                Fail("revocation verification failed.");
-            }
+            Assert.IsTrue(sig.VerifyRevocation(secretKey.PublicKey));
 
             PgpSecretKeyRing pgpDSAPriv = new PgpSecretKeyRing(dsaKeyRing);
             PgpSecretKey secretDSAKey = pgpDSAPriv.GetSecretKey();
@@ -408,12 +403,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             sig = ((PgpSignatureList)f.NextPgpObject())[0];*/
 
-            sig.InitVerify(secretDSAKey.PublicKey);
-
-            if (!sig.VerifyCertification(secretDSAKey.PublicKey, secretKey.PublicKey))
-            {
-                Fail("subkey binding verification failed.");
-            }
+            Assert.IsTrue(sig.VerifyCertification(secretDSAKey.PublicKey, secretKey.PublicKey));
 
             PgpSignatureSubpacketVector hashedPcks = sig.GetHashedSubPackets();
             PgpSignatureSubpacketVector unhashedPcks = sig.GetUnhashedSubPackets();
@@ -469,9 +459,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             sig = sGen.GenerateCertification(TEST_USER_ID, secretKey.PublicKey);
 
-            sig.InitVerify(secretDSAKey.PublicKey);
-
-            if (!sig.VerifyCertification(TEST_USER_ID, secretKey.PublicKey))
+            if (!sig.VerifyCertification(secretDSAKey.PublicKey, TEST_USER_ID, secretKey.PublicKey))
             {
                 Fail("subkey binding verification failed.");
             }
@@ -490,16 +478,16 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 Fail("found wrong number of unhashed packets");
             }
 
-            try
+            /*try
             {
-                sig.VerifyCertification(secretKey.PublicKey);
+                sig.VerifyRevocation(secretKey.PublicKey);
 
                 Fail("failed to detect non-key signature.");
             }
             catch (InvalidOperationException)
             {
                 // expected
-            }
+            }*/
 
             //
             // override hash packets
@@ -517,9 +505,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             sig = sGen.GenerateCertification(TEST_USER_ID, secretKey.PublicKey);
 
-            sig.InitVerify(secretDSAKey.PublicKey);
-
-            if (!sig.VerifyCertification(TEST_USER_ID, secretKey.PublicKey))
+            if (!sig.VerifyCertification(secretDSAKey.PublicKey, TEST_USER_ID, secretKey.PublicKey))
             {
                 Fail("subkey binding verification failed.");
             }

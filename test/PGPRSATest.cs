@@ -392,8 +392,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 int sigCount = 0;
                 foreach (PgpSignature sig in pubKey.GetSignaturesForUserAttribute(attributes))
                 {
-                    sig.InitVerify(pubKey);
-                    Assert.IsTrue(sig.VerifyCertification(attributes, pubKey));
+                    Assert.IsTrue(sig.VerifyCertification(pubKey, attributes, pubKey));
                     sigCount++;
                 }
 
@@ -430,8 +429,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 int sigCount = 0;
                 foreach (PgpSignature s in nKey.GetSignaturesForUserAttribute(attributes))
                 {
-                    s.InitVerify(pubKey);
-                    Assert.IsTrue(sig.VerifyCertification(attributes, nKey));
+                    Assert.IsTrue(sig.VerifyCertification(pubKey, attributes, nKey));
                     sigCount++;
                 }
 
@@ -461,8 +459,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             enumerator.MoveNext();
             PgpSignature sig = (PgpSignature)enumerator.Current;
 
-            sig.InitVerify(pgpPub.GetPublicKey());
-            Assert.IsTrue(sig.VerifyCertification(uid, pgpPub.GetPublicKey()));
+            Assert.IsTrue(sig.VerifyCertification(pgpPub.GetPublicKey(), uid, pgpPub.GetPublicKey()));
 
             //
             // write a public key
@@ -652,8 +649,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             enumerator.MoveNext();
             sig = (PgpSignature)enumerator.Current;
 
-            sig.InitVerify(key);
-            Assert.IsTrue(sig.VerifyCertification(uid, key));
+            Assert.IsTrue(sig.VerifyCertification(key, uid, key));
 
             pgpPrivKey = secretKey.ExtractPrivateKey(passPhrase);
 
@@ -668,7 +664,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.KeyRevocation, secretKey.ExtractPrivateKey(passPhrase), HashAlgorithmTag.Sha1);
 
-            sig = sGen.GenerateCertification(key);
+            sig = sGen.GenerateRevokation(key);
 
             key = PgpPublicKey.AddCertification(key, sig);
 
@@ -682,8 +678,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             sgEnum.MoveNext();
             sig = (PgpSignature)sgEnum.Current;
 
-            sig.InitVerify(key);
-            Assert.IsTrue(sig.VerifyCertification(key));
+            Assert.IsTrue(sig.VerifyRevocation(key));
 
             //
             // use of PgpKeyPair
@@ -734,8 +729,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             enumerator.MoveNext();
             sig = (PgpSignature)enumerator.Current;
 
-            sig.InitVerify(key);
-            Assert.IsTrue(sig.VerifyCertification(uid, key));
+            Assert.IsTrue(sig.VerifyCertification(key, uid, key));
 
             pgpPrivKey = secretKey.ExtractPrivateKey(newPass);
 

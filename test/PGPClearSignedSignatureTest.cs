@@ -196,7 +196,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpSignature sig = new PgpSignature(aIn);
 
-            sig.InitVerify(pgpRings.GetPublicKey(sig.KeyId), ignoreTrailingWhitespace: true);
             // FIXME: This belongs directly to the armor reader
             byte[] clearText = bOut.ToArray();
             int clearTextLength = clearText.Length;
@@ -204,9 +203,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 clearTextLength--;
             if (clearTextLength > 0 && clearText[clearTextLength - 1] == '\r')
                 clearTextLength--;
-            sig.Update(clearText, 0, clearTextLength);
 
-            Assert.IsTrue(sig.Verify(), "signature failed to verify m_in " + type);
+            bool verified = sig.Verify(pgpRings.GetPublicKey(sig.KeyId), new MemoryStream(clearText, 0, clearTextLength, false), ignoreTrailingWhitespace: true);
+            Assert.IsTrue(verified, "signature failed to verify m_in " + type);
 
             var reader = new ArmoredPacketReader(new MemoryStream(Encoding.ASCII.GetBytes(message)));
             var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(reader);

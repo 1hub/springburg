@@ -1880,12 +1880,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 Fail("wrong number of revocations in test7.");
             }
 
-            sig.InitVerify(masterKey);
-
-            if (!sig.VerifyCertification(masterKey))
-            {
-                Fail("failed to verify revocation certification");
-            }
+            Assert.IsTrue(sig.VerifyRevocation(masterKey));
 
             pgpPub = new PgpPublicKeyRing(pub7sub);
             masterKey = null;
@@ -1916,8 +1911,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 {
                     Fail("wrong signature found");
                 }
-
-                sig.InitVerify(masterKey);
 
                 if (!sig.VerifyCertification(masterKey, k))
                 {
@@ -2150,12 +2143,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 if (sig.KeyId == vKey.KeyId
                     && sig.SignatureType == PgpSignature.SubkeyBinding)
                 {
-                    sig.InitVerify(vKey);
-
-                    if (!sig.VerifyCertification(vKey, sKey))
-                    {
-                        Fail("failed to verify sub-key signature.");
-                    }
+                    Assert.IsTrue(sig.VerifyCertification(vKey, sKey));
                 }
             }
         }
@@ -2250,12 +2238,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 if (sig.KeyId == vKey.KeyId
                     && sig.SignatureType == PgpSignature.SubkeyBinding)
                 {
-                    sig.InitVerify(vKey);
-
-                    if (!sig.VerifyCertification(vKey, sKey))
-                    {
-                        Fail("failed to verify sub-key signature.");
-                    }
+                    Assert.IsTrue(sig.VerifyCertification(vKey, sKey));
                 }
             }
         }
@@ -2520,8 +2503,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private static bool IsGoodUidSignature(PgpSignature sig, PgpPublicKey masterpk, string uid)
         {
-            sig.InitVerify(masterpk);
-            return sig.VerifyCertification(uid, masterpk);
+            return sig.VerifyCertification(masterpk, uid, masterpk);
         }
 
         private static void Fail(string f) => Assert.Fail(f);

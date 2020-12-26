@@ -31,7 +31,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             signatureHelper = new PgpSignatureTransformation(
                 onePassSignaturePacket != null ? onePassSignaturePacket.SignatureType : signaturePacket.SignatureType,
-                onePassSignaturePacket != null ? onePassSignaturePacket.HashAlgorithm : signaturePacket.HashAlgorithm);
+                onePassSignaturePacket != null ? onePassSignaturePacket.HashAlgorithm : signaturePacket.HashAlgorithm,
+                packetReader is ArmoredPacketReader);
 
             var signingReader = new SigningPacketReader(packetReader, signatureHelper);
 
