@@ -113,7 +113,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     throw new PgpException("exception encoding hashed data.", e);
                 }
 
-                var signature = helper.Sign(hData, privateKey.Key);
+                var signature = helper.Sign(hData, privateKey);
 
                 return new PgpSignature(
                     new SignaturePacket(helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
@@ -133,7 +133,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     (byte)seconds
                 };
 
-                var signature = helper.Sign(hData, privateKey.Key);
+                var signature = helper.Sign(hData, privateKey);
                 return new PgpSignature(new SignaturePacket(3, helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm, hashAlgorithm, creationTime.UtcDateTime, signature.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
             }
         }

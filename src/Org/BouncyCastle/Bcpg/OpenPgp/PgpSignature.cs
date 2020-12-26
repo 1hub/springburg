@@ -82,7 +82,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public void Update(byte[] bytes, int off, int length) => this.helper.Update(bytes, off, length);
 
-        public bool Verify() => helper.Verify(sigPck.GetSignature(), GetSignatureTrailer(), this.publicKey.GetKey());
+        public bool Verify() => helper.Verify(sigPck.GetSignature(), GetSignatureTrailer(), this.publicKey);
 
         /// <summary>
         /// Verify the signature as certifying the passed in public key as associated

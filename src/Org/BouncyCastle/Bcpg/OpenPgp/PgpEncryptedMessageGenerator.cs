@@ -82,48 +82,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             private byte[] EncryptSessionInfo(byte[] sessionInfo)
             {
-                if (pubKey.Algorithm == PublicKeyAlgorithmTag.RsaEncrypt || pubKey.Algorithm == PublicKeyAlgorithmTag.RsaGeneral)
-                {
-                    var asymmetricAlgorithm = pubKey.GetKey() as RSA;
-                    return asymmetricAlgorithm.Encrypt(sessionInfo, RSAEncryptionPadding.Pkcs1);
-                }
-
-                if (pubKey.Algorithm == PublicKeyAlgorithmTag.ECDH)
-                {
-                    var otherPartyKey = pubKey.GetKey() as ECDiffieHellman;
-                    ECDHPublicBcpgKey ecKey = (ECDHPublicBcpgKey)pubKey.PublicKeyPacket.Key;
-
-                    // Generate the ephemeral key pair
-                    var ecCurve = ECCurve.CreateFromOid(ecKey.CurveOid);
-                    var ecdh = PgpUtilities.GetECDiffieHellman(ecCurve);
-                    var derivedKey = ecdh.DeriveKeyFromHash(
-                        otherPartyKey.PublicKey,
-                        PgpUtilities.GetHashAlgorithmName(ecKey.HashAlgorithm),
-                        new byte[] { 0, 0, 0, 1 },
-                        Rfc6637Utilities.CreateUserKeyingMaterial(pubKey.PublicKeyPacket));
-
-                    derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm) / 8).ToArray();
-
-                    byte[] paddedSessionData = PgpPad.PadSessionData(sessionInfo, sessionKeyObfuscation);
-                    byte[] C = SymmetricKeyWrap.AESKeyWrapEncrypt(derivedKey, paddedSessionData);
-                    var ep = ecdh.PublicKey.ExportParameters();
-                    byte[] VB = PgpUtilities.EncodePoint(ep.Q).GetEncoded();
-                    byte[] rv = new byte[VB.Length + 1 + C.Length];
-                    Array.Copy(VB, 0, rv, 0, VB.Length);
-                    rv[VB.Length] = (byte)C.Length;
-                    Array.Copy(C, 0, rv, VB.Length + 1, C.Length);
-
-                    return rv;
-                }
-
-                if (pubKey.Algorithm == PublicKeyAlgorithmTag.ElGamalEncrypt || pubKey.Algorithm == PublicKeyAlgorithmTag.ElGamalGeneral)
-                {
-                    var asymmetricAlgorithm = pubKey.GetKey() as ElGamal;
-                    return asymmetricAlgorithm.Encrypt(sessionInfo, RSAEncryptionPadding.Pkcs1).ToArray();
-                }
-
-                // TODO: ElGamal
-                throw new NotImplementedException();
+                return pubKey.EncryptSessionInfo(sessionInfo);
             }
 
             public override PacketTag Tag => PacketTag.PublicKeyEncryptedSession;
@@ -217,25 +176,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             c = PgpUtilities.GetSymmetricAlgorithm(defAlgorithm);
 
-            if (methods.Count == 1)
+            if (methods.Count == 1 && methods[0] is PbeMethod)
             {
-                if (methods[0] is PbeMethod)
-                {
-                    PbeMethod m = (PbeMethod)methods[0];
-                    c.Key = m.GetKey();
-                }
-                else
-                {
-                    c.GenerateKey();
-
-                    byte[] sessionInfo = CreateSessionInfo(defAlgorithm, c.Key);
-                    PubMethod m = (PubMethod)methods[0];
-                    m.AddSessionInfo(sessionInfo);
-                }
-
+                PbeMethod m = (PbeMethod)methods[0];
+                c.Key = m.GetKey();
                 writer.WritePacket(methods[0]);
             }
-            else // multiple methods
+            else
             {
                 c.GenerateKey();
                 byte[] sessionInfo = CreateSessionInfo(defAlgorithm, c.Key);

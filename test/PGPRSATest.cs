@@ -453,12 +453,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             PgpPublicKeyRing pgpPub = new PgpPublicKeyRing(testPubKey);
 
-            var pubKey = pgpPub.GetPublicKey().GetKey();
-
             IEnumerator enumerator = pgpPub.GetPublicKey().GetUserIds().GetEnumerator();
             enumerator.MoveNext();
             string uid = (string)enumerator.Current;
-
 
             enumerator = pgpPub.GetPublicKey().GetSignaturesForId(uid).GetEnumerator();
             enumerator.MoveNext();
@@ -478,7 +475,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // Read the public key
             //
             PgpPublicKeyRing pgpPubV3 = new PgpPublicKeyRing(testPubKeyV3);
-            var pubKeyV3 = pgpPub.GetPublicKey().GetKey();
 
             //
             // write a V3 public key

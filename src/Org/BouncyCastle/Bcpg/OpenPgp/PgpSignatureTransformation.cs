@@ -142,54 +142,44 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             this.Update(keyBytes);
         }
 
-        public bool Verify(MPInteger[] signature, byte[] trailer, AsymmetricAlgorithm key)
+        public bool Verify(MPInteger[] sigValues, byte[] trailer, PgpPublicKey key)
         {
+            byte[] signature;
+
+            if (sigValues.Length == 1)
+            {
+                signature = sigValues[0].Value;
+            }
+            else
+            {
+                Debug.Assert(sigValues.Length == 2);
+                int rsLength = Math.Max(sigValues[0].Value.Length, sigValues[1].Value.Length);
+                signature = new byte[rsLength * 2];
+                sigValues[0].Value.CopyTo(signature, rsLength - sigValues[0].Value.Length);
+                sigValues[1].Value.CopyTo(signature, signature.Length - sigValues[1].Value.Length);
+            }
+
             sig.TransformFinalBlock(trailer, 0, trailer.Length);
-            var hash = sig.Hash;
-            if (key is RSA rsa)
-                return rsa.VerifyHash(hash, signature[0].Value, PgpUtilities.GetHashAlgorithmName(hashAlgorithm), RSASignaturePadding.Pkcs1);
-
-            Debug.Assert(signature.Length == 2);
-            int rsLength = Math.Max(signature[0].Value.Length, signature[1].Value.Length);
-            byte[] sigBytes = new byte[rsLength * 2];
-            signature[0].Value.CopyTo(sigBytes, rsLength - signature[0].Value.Length);
-            signature[1].Value.CopyTo(sigBytes, sigBytes.Length - signature[1].Value.Length);
-
-            if (key is DSA dsa)
-                return dsa.VerifySignature(hash, sigBytes, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
-            if (key is ECDsa ecdsa)
-                return ecdsa.VerifyHash(hash, sigBytes, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
-
-            throw new NotImplementedException();
+            return key.Verify(sig.Hash, signature, hashAlgorithm);
         }
 
-        public (MPInteger[] SigValues, byte[] Hash) Sign(byte[] trailer, AsymmetricAlgorithm privateKey)
+        public (MPInteger[] SigValues, byte[] Hash) Sign(byte[] trailer, PgpPrivateKey privateKey)
         {
             sig.TransformFinalBlock(trailer, 0, trailer.Length);
-
-            byte[] sigBytes;
-            if (privateKey is RSA rsa)
-                sigBytes = rsa.SignHash(sig.Hash, PgpUtilities.GetHashAlgorithmName(hashAlgorithm), RSASignaturePadding.Pkcs1);
-            else if (privateKey is DSA dsa)
-                sigBytes = dsa.CreateSignature(sig.Hash, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
-            else if (privateKey is ECDsa ecdsa)
-                sigBytes = ecdsa.SignHash(sig.Hash, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
-            else
-                throw new NotImplementedException();
-
+            var signature = privateKey.Sign(sig.Hash, hashAlgorithm);
             MPInteger[] sigValues;
-            if (privateKey is RSA)
+            if (privateKey.PublicKeyPacket.Algorithm == PublicKeyAlgorithmTag.RsaGeneral ||
+                privateKey.PublicKeyPacket.Algorithm == PublicKeyAlgorithmTag.RsaSign)
             {
-                sigValues = new MPInteger[] { new MPInteger(sigBytes) };
+                sigValues = new MPInteger[] { new MPInteger(signature) };
             }
             else
             {
                 sigValues = new MPInteger[] {
-                    new MPInteger(sigBytes.AsSpan(0, sigBytes.Length / 2).ToArray()),
-                    new MPInteger(sigBytes.AsSpan(sigBytes.Length / 2).ToArray())
+                    new MPInteger(signature.AsSpan(0, signature.Length / 2).ToArray()),
+                    new MPInteger(signature.AsSpan(signature.Length / 2).ToArray())
                 };
             }
-
             return (sigValues, sig.Hash);
         }
 

@@ -1,5 +1,4 @@
 ﻿using InflatablePalace.Cryptography.Algorithms;
-using Internal.Cryptography;
 using Org.BouncyCastle.Utilities.IO;
 using System;
 using System.Collections.Generic;
@@ -63,7 +62,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     byte[] sessionData = Array.Empty<byte>();
                     try
                     {
-                        sessionData = GetSessionData(keyData, privateKey);
+                        sessionData = privateKey.DecryptSessionData(keyData.SessionKey);
 
                         if (!ConfirmCheckSum(sessionData))
                         {
@@ -235,60 +234,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             {
                 CryptographicOperations.ZeroMemory(key);
             }
-        }
-
-        /// <summary>Return the decrypted session data for the packet.</summary>
-        private byte[] GetSessionData(PublicKeyEncSessionPacket keyData, PgpPrivateKey privKey)
-        {
-            var secKeyData = keyData.SessionKey;
-            var asymmetricAlgorithm = privKey.Key;
-
-            if (asymmetricAlgorithm is RSA rsa)
-            {
-                return rsa.Decrypt(secKeyData, RSAEncryptionPadding.Pkcs1);
-            }
-
-            if (asymmetricAlgorithm is ECDiffieHellman ecdh)
-            {
-                ECDHPublicBcpgKey ecKey = (ECDHPublicBcpgKey)privKey.PublicKeyPacket.Key;
-
-                byte[] enc = secKeyData;
-
-                int pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
-                if ((2 + pLen + 1) > enc.Length)
-                    throw new PgpException("encoded length out of range");
-
-                byte[] pEnc = new byte[pLen];
-                Array.Copy(enc, 2, pEnc, 0, pLen);
-
-                int keyLen = enc[pLen + 2];
-                if ((2 + pLen + 1 + keyLen) > enc.Length)
-                    throw new PgpException("encoded length out of range");
-
-                byte[] keyEnc = new byte[keyLen];
-                Array.Copy(enc, 2 + pLen + 1, keyEnc, 0, keyEnc.Length);
-
-                var publicPoint = PgpUtilities.DecodePoint(new MPInteger(pEnc));
-                var ecCurve = ECCurve.CreateFromOid(ecKey.CurveOid);
-                var otherEcdh = PgpUtilities.GetECDiffieHellman(new ECParameters { Curve = ecCurve, Q = publicPoint });
-                var derivedKey = ecdh.DeriveKeyFromHash(
-                    otherEcdh.PublicKey,
-                    PgpUtilities.GetHashAlgorithmName(ecKey.HashAlgorithm),
-                    new byte[] { 0, 0, 0, 1 },
-                    Rfc6637Utilities.CreateUserKeyingMaterial(privKey.PublicKeyPacket));
-
-                derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm) / 8).ToArray();
-
-                var C = SymmetricKeyWrap.AESKeyWrapDecrypt(derivedKey, keyEnc);
-                return PgpPad.UnpadSessionData(C);
-            }
-
-            if (asymmetricAlgorithm is ElGamal elGamal)
-            {
-                return elGamal.Decrypt(secKeyData, RSAEncryptionPadding.Pkcs1).ToArray();
-            }
-
-            throw new NotImplementedException();
         }
     }
 }

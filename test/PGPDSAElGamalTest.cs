@@ -173,13 +173,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var pubKey = pgpPub.GetPublicKey();
             var sKey = new PgpSecretKeyRing(testPrivKeyRing);
             long pgpKeyID = 0;
-            AsymmetricAlgorithm pKey = null;
 
             foreach (PgpPublicKey pgpKey in pgpPub.GetPublicKeys())
             {
-                if (pgpKey.Algorithm == PublicKeyAlgorithmTag.ElGamalEncrypt || pgpKey.Algorithm == PublicKeyAlgorithmTag.ElGamalGeneral)
+                if (pgpKey.IsEncryptionKey)
                 {
-                    pKey = pgpKey.GetKey();
                     pgpKeyID = pgpKey.KeyId;
                     Assert.AreEqual(1024, pgpKey.BitStrength);
                 }
