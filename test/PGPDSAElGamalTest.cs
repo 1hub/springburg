@@ -179,7 +179,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 if (pgpKey.IsEncryptionKey)
                 {
                     pgpKeyID = pgpKey.KeyId;
-                    Assert.AreEqual(1024, pgpKey.BitStrength);
                 }
             }
 

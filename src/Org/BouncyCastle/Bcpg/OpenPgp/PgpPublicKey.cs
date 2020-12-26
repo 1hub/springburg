@@ -56,7 +56,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         private long keyId;
         private byte[] fingerprint;
-        private int keyStrength;
 
         private AsymmetricAlgorithm key;
         internal PublicKeyPacket publicPk;
@@ -87,7 +86,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     | ((ulong)modulus[modulus.Length - 2] << 8)
                     | (ulong)modulus[modulus.Length - 1]);
                 //this.keyId = (long)(ulong)(rK.Modulus & 0xffff_ffff_ffff_ffff);
-                this.keyStrength = modulus.Length;
             }
             else
             {
@@ -99,25 +97,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     | ((ulong)fingerprint[fingerprint.Length - 3] << 16)
                     | ((ulong)fingerprint[fingerprint.Length - 2] << 8)
                     | (ulong)fingerprint[fingerprint.Length - 1]);
-
-                if (key is RsaPublicBcpgKey)
-                {
-                    this.keyStrength = ((RsaPublicBcpgKey)key).Modulus.Value.Length * 8;
-                }
-                else if (key is DsaPublicBcpgKey)
-                {
-                    this.keyStrength = ((DsaPublicBcpgKey)key).P.Value.Length * 8;
-                }
-                else if (key is ElGamalPublicBcpgKey)
-                {
-                    this.keyStrength = ((ElGamalPublicBcpgKey)key).P.Value.Length * 8;
-                }
-                else if (key is ECPublicBcpgKey)
-                {
-                    // TODO
-                    //this.keyStrength = ECCurve.CreateFromOid(((ECPublicBcpgKey)key).CurveOid).Prime.Length * 8;
-                    //this.keyStrength = ECKeyPairGenerator.FindECCurveByOid(((ECPublicBcpgKey)key).CurveOid).Curve.FieldSize;
-                }
             }
         }
 
@@ -254,7 +233,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             this.fingerprint = key.fingerprint;
             this.keyId = key.keyId;
-            this.keyStrength = key.keyStrength;
         }
 
         /// <summary>Copy constructor.</summary>
@@ -284,7 +262,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             this.fingerprint = pubKey.fingerprint;
             this.keyId = pubKey.keyId;
-            this.keyStrength = pubKey.keyStrength;
         }
 
         internal PgpPublicKey(
@@ -459,12 +436,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public PublicKeyAlgorithmTag Algorithm
         {
             get { return publicPk.Algorithm; }
-        }
-
-        /// <summary>The strength of the key in bits.</summary>
-        public int BitStrength
-        {
-            get { return keyStrength; }
         }
 
         /// <summary>The public key contained in the object.</summary>
@@ -665,7 +636,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return subSigs ?? keySigs;
         }
 
-        public PublicKeyPacket PublicKeyPacket
+        internal PublicKeyPacket PublicKeyPacket
         {
             get { return publicPk; }
         }

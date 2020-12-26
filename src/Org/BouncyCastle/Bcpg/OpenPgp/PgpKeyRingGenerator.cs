@@ -261,18 +261,18 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         {
             IList<PgpPublicKey> pubKeys = new List<PgpPublicKey>();
 
-            IEnumerator enumerator = keys.GetEnumerator();
+            IEnumerator<PgpSecretKey> enumerator = keys.GetEnumerator();
             enumerator.MoveNext();
 
-            PgpSecretKey pgpSecretKey = (PgpSecretKey)enumerator.Current;
+            PgpSecretKey pgpSecretKey = enumerator.Current;
             pubKeys.Add(pgpSecretKey.PublicKey);
 
             while (enumerator.MoveNext())
             {
-                pgpSecretKey = (PgpSecretKey)enumerator.Current;
+                pgpSecretKey = enumerator.Current;
 
                 PgpPublicKey k = new PgpPublicKey(pgpSecretKey.PublicKey);
-                k.publicPk = new PublicSubkeyPacket(k.Algorithm, k.CreationTime, k.publicPk.Key);
+                k.publicPk = new PublicSubkeyPacket(k.Algorithm, k.CreationTime, k.PublicKeyPacket.Key);
 
                 pubKeys.Add(k);
             }
