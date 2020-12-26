@@ -69,7 +69,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         public HashAlgorithmTag HashAlgorithm => sigPck.HashAlgorithm;
 
         /// <summary>Return true if this signature represents a certification.</summary>
-        public bool IsCertification() => IsCertification(SignatureType);
+        public bool IsCertification
+        {
+            get
+            {
+                switch (SignatureType)
+                {
+                    case DefaultCertification:
+                    case NoCertification:
+                    case CasualCertification:
+                    case PositiveCertification:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        }
 
         public void InitVerify(PgpPublicKey publicKey, bool ignoreTrailingWhitespace = false)
         {
@@ -82,7 +97,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
         public void Update(byte[] bytes, int off, int length) => this.helper.Update(bytes, off, length);
 
-        public bool Verify() => helper.Verify(sigPck.GetSignature(), GetSignatureTrailer(), this.publicKey);
+        public bool Verify()
+        {
+            helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
+            return helper.Verify(sigPck.GetSignature(), this.publicKey);
+        }
 
         /// <summary>
         /// Verify the signature as certifying the passed in public key as associated
@@ -176,8 +195,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>The creation time of this signature.</summary>
         public DateTime CreationTime => sigPck.CreationTime;
 
-        public byte[] GetSignatureTrailer() => sigPck.GetSignatureTrailer();
-
         /// <summary>
         /// Return true if the signature has either hashed or unhashed subpackets.
         /// </summary>
@@ -214,25 +231,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             if (trustPck != null)
             {
                 outStream.WritePacket(trustPck);
-            }
-        }
-
-        /// <summary>
-        /// Return true if the passed in signature type represents a certification, false if the signature type is not.
-        /// </summary>
-        /// <param name="signatureType"></param>
-        /// <returns>true if signatureType is a certification, false otherwise.</returns>
-        public static bool IsCertification(int signatureType)
-        {
-            switch (signatureType)
-            {
-                case DefaultCertification:
-                case NoCertification:
-                case CasualCertification:
-                case PositiveCertification:
-                    return true;
-                default:
-                    return false;
             }
         }
     }

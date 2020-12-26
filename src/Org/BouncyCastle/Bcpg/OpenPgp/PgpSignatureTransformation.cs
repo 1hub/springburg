@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Diagnostics;
+using System.IO;
 using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp
@@ -142,7 +143,54 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             this.Update(keyBytes);
         }
 
-        public bool Verify(MPInteger[] sigValues, byte[] trailer, PgpPublicKey key)
+        public void Finish(
+            int version,
+            PublicKeyAlgorithmTag keyAlgorithm,
+            DateTime creationTime,
+            SignatureSubpacket[] hashedSubpackets)
+        {
+            if (version == 3)
+            {
+                long time = new DateTimeOffset(creationTime, TimeSpan.Zero).ToUnixTimeSeconds();
+
+                Update(new byte[] {
+                    (byte)signatureType,
+                    (byte)(time >> 24),
+                    (byte)(time >> 16),
+                    (byte)(time >> 8),
+                    (byte)(time) });
+            }
+            else
+            {
+                Update((byte)version);
+                Update((byte)this.SignatureType);
+                Update((byte)keyAlgorithm);
+                Update((byte)this.HashAlgorithm);
+
+                MemoryStream hOut = new MemoryStream();
+
+                foreach (var hashedSubpacket in hashedSubpackets)
+                {
+                    hashedSubpacket.Encode(hOut);
+                }
+
+                Update((byte)(hOut.Length >> 8));
+                Update((byte)hOut.Length);
+                Update(hOut.GetBuffer(), 0, (int)hOut.Length);
+
+                Update((byte)version);
+                Update((byte)0xff);
+                int hDataLength = 4 + (int)hOut.Length + 2;
+                Update((byte)(hDataLength >> 24));
+                Update((byte)(hDataLength >> 16));
+                Update((byte)(hDataLength >> 8));
+                Update((byte)(hDataLength));
+            }
+        }
+
+        public byte[] Hash => sig.Hash;
+
+        public bool Verify(MPInteger[] sigValues, PgpPublicKey key)
         {
             byte[] signature;
 
@@ -159,13 +207,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 sigValues[1].Value.CopyTo(signature, signature.Length - sigValues[1].Value.Length);
             }
 
-            sig.TransformFinalBlock(trailer, 0, trailer.Length);
+            sig.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
             return key.Verify(sig.Hash, signature, hashAlgorithm);
         }
 
-        public (MPInteger[] SigValues, byte[] Hash) Sign(byte[] trailer, PgpPrivateKey privateKey)
+        public MPInteger[] Sign(PgpPrivateKey privateKey)
         {
-            sig.TransformFinalBlock(trailer, 0, trailer.Length);
+            sig.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
             var signature = privateKey.Sign(sig.Hash, hashAlgorithm);
             MPInteger[] sigValues;
             if (privateKey.PublicKeyPacket.Algorithm == PublicKeyAlgorithmTag.RsaGeneral ||
@@ -180,7 +228,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                     new MPInteger(signature.AsSpan(signature.Length / 2).ToArray())
                 };
             }
-            return (sigValues, sig.Hash);
+            return sigValues;
         }
 
         int ICryptoTransform.TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)

@@ -1,8 +1,6 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using Org.BouncyCastle.Bcpg.Sig;
 
@@ -60,13 +58,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
         /// <summary>Return a signature object containing the current signature state.</summary>
         internal PgpSignature Generate()
         {
+            DateTime creationTime = DateTime.UtcNow;
+            SignatureSubpacket[] hPkts = hashed, unhPkts = unhashed;
+
             if (version >= 4)
             {
-                SignatureSubpacket[] hPkts = hashed, unhPkts = unhashed;
-
-                if (!hashed.Any(sp => sp.SubpacketType == SignatureSubpacketTag.CreationTime))
+                var creationTimePacket = hashed.OfType<SignatureCreationTime>().FirstOrDefault();
+                if (creationTimePacket == null)
                 {
-                    hPkts = hPkts.Append(new SignatureCreationTime(false, DateTime.UtcNow)).ToArray();
+                    hPkts = hPkts.Append(new SignatureCreationTime(false, creationTime)).ToArray();
+                }
+                else
+                {
+                    creationTime = creationTimePacket.Time;
                 }
 
                 if (!hashed.Any(sp => sp.SubpacketType == SignatureSubpacketTag.IssuerKeyId) &&
@@ -74,68 +78,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 {
                     unhPkts = unhPkts.Append(new IssuerKeyId(false, privateKey.KeyId)).ToArray();
                 }
-
-                int version = 4;
-                byte[] hData;
-
-                try
-                {
-                    MemoryStream hOut = new MemoryStream();
-
-                    for (int i = 0; i != hPkts.Length; i++)
-                    {
-                        hPkts[i].Encode(hOut);
-                    }
-
-                    byte[] data = hOut.ToArray();
-
-                    MemoryStream sOut = new MemoryStream(data.Length + 6);
-                    sOut.WriteByte((byte)version);
-                    sOut.WriteByte((byte)helper.SignatureType);
-                    sOut.WriteByte((byte)privateKey.PublicKeyPacket.Algorithm);
-                    sOut.WriteByte((byte)hashAlgorithm);
-                    sOut.WriteByte((byte)(data.Length >> 8));
-                    sOut.WriteByte((byte)data.Length);
-                    sOut.Write(data, 0, data.Length);
-
-                    int hDataLength = (int)sOut.Length;
-                    sOut.WriteByte((byte)version);
-                    sOut.WriteByte(0xff);
-                    sOut.WriteByte((byte)(hDataLength >> 24));
-                    sOut.WriteByte((byte)(hDataLength >> 16));
-                    sOut.WriteByte((byte)(hDataLength >> 8));
-                    sOut.WriteByte((byte)hDataLength);
-
-                    hData = sOut.ToArray();
-                }
-                catch (IOException e)
-                {
-                    throw new PgpException("exception encoding hashed data.", e);
-                }
-
-                var signature = helper.Sign(hData, privateKey);
-
-                return new PgpSignature(
-                    new SignaturePacket(helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
-                        hashAlgorithm, hPkts, unhPkts, signature.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
             }
-            else
-            {
-                var creationTime = DateTimeOffset.UtcNow;
-                long seconds = creationTime.ToUnixTimeSeconds();
 
-                byte[] hData = new byte[]
-                {
-                    (byte)helper.SignatureType,
-                    (byte)(seconds >> 24),
-                    (byte)(seconds >> 16),
-                    (byte)(seconds >> 8),
-                    (byte)seconds
-                };
+            helper.Finish(version, privateKey.PublicKeyPacket.Algorithm, creationTime, hPkts);
 
-                var signature = helper.Sign(hData, privateKey);
-                return new PgpSignature(new SignaturePacket(3, helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm, hashAlgorithm, creationTime.UtcDateTime, signature.Hash.AsSpan(0, 2).ToArray(), signature.SigValues));
-            }
+            var signature = helper.Sign(privateKey);
+            return new PgpSignature(new SignaturePacket(
+                version, helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
+                hashAlgorithm, creationTime, hPkts, unhPkts,
+                helper.Hash.AsSpan(0, 2).ToArray(), signature));
         }
 
         /// <summary>Generate a certification for the passed in ID and key.</summary>
