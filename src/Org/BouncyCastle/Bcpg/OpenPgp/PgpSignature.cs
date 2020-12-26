@@ -90,7 +90,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace);
             new CryptoStream(stream, helper, CryptoStreamMode.Read).CopyTo(Stream.Null);
             helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
-            return helper.Verify(sigPck.GetSignature(), publicKey);
+            return publicKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
         }
 
         /// <summary>
@@ -129,7 +129,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             }
 
             helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
-            return helper.Verify(sigPck.GetSignature(), masterKey);
+            return masterKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
         }
 
         /// <summary>
@@ -152,7 +152,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             helper.UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
 
             helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
-            return helper.Verify(sigPck.GetSignature(), masterKey);
+            return masterKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
         }
 
         /// <summary>Verify a certification for the passed in key against the passed in master key.</summary>
@@ -171,7 +171,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             helper.UpdateWithPublicKey(pubKey);
 
             helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
-            return helper.Verify(sigPck.GetSignature(), masterKey);
+            return masterKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
         }
 
         /// <summary>Verify a key certification, such as revocation, for the passed in key.</summary>
@@ -191,7 +191,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             helper.UpdateWithPublicKey(pubKey);
 
             helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
-            return helper.Verify(sigPck.GetSignature(), pubKey);
+            return pubKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
         }
 
         public int SignatureType => sigPck.SignatureType;
@@ -229,7 +229,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             return pcks == null ? null : new PgpSignatureSubpacketVector(pcks);
         }
 
-        public byte[] GetSignature() => sigPck.GetSignatureBytes();
+        public byte[] GetSignature() => sigPck.GetSignature();
 
         public override void Encode(IPacketWriter outStream)
         {

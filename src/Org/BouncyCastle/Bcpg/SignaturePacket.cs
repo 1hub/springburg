@@ -14,11 +14,10 @@ namespace Org.BouncyCastle.Bcpg
         private long keyId;
         private PublicKeyAlgorithmTag keyAlgorithm;
         private HashAlgorithmTag hashAlgorithm;
-        private MPInteger[] signature;
         private byte[] fingerprint;
         private SignatureSubpacket[] hashedData;
         private SignatureSubpacket[] unhashedData;
-        private byte[] signatureEncoding;
+        private byte[] signature;
 
         internal SignaturePacket(Stream bcpgIn)
         {
@@ -126,28 +125,24 @@ namespace Org.BouncyCastle.Bcpg
                 case PublicKeyAlgorithmTag.RsaGeneral:
                 case PublicKeyAlgorithmTag.RsaSign:
                     MPInteger v = new MPInteger(bcpgIn);
-                    signature = new MPInteger[] { v };
+                    signature = v.Value;
                     break;
                 case PublicKeyAlgorithmTag.Dsa:
                 case PublicKeyAlgorithmTag.ECDsa:
                 case PublicKeyAlgorithmTag.EdDsa:
                     MPInteger r = new MPInteger(bcpgIn);
                     MPInteger s = new MPInteger(bcpgIn);
-                    signature = new MPInteger[] { r, s };
+                    int halfLength = Math.Max(r.Value.Length, s.Value.Length);
+                    signature = new byte[halfLength * 2];
+                    r.Value.CopyTo(signature.AsSpan(halfLength - r.Value.Length));
+                    s.Value.CopyTo(signature.AsSpan(signature.Length - s.Value.Length));
                     break;
                 default:
                     if ((keyAlgorithm >= PublicKeyAlgorithmTag.Experimental_1 && keyAlgorithm <= PublicKeyAlgorithmTag.Experimental_11) ||
                         keyAlgorithm == PublicKeyAlgorithmTag.ElGamalEncrypt ||
                         keyAlgorithm == PublicKeyAlgorithmTag.ElGamalGeneral)
                     {
-                        signature = null;
-                        MemoryStream bOut = new MemoryStream();
-                        int ch;
-                        while ((ch = bcpgIn.ReadByte()) >= 0)
-                        {
-                            bOut.WriteByte((byte)ch);
-                        }
-                        signatureEncoding = bOut.ToArray();
+                        signature = Streams.ReadAll(bcpgIn);
                     }
                     else
                     {
@@ -167,7 +162,7 @@ namespace Org.BouncyCastle.Bcpg
             SignatureSubpacket[] hashedData,
             SignatureSubpacket[] unhashedData,
             byte[] fingerprint,
-            MPInteger[] signature)
+            byte[] signature)
         {
             this.version = version;
             this.signatureType = signatureType;
@@ -191,24 +186,7 @@ namespace Org.BouncyCastle.Bcpg
 
         public HashAlgorithmTag HashAlgorithm => hashAlgorithm;
 
-        public MPInteger[] GetSignature() => signature;
-
-        public byte[] GetSignatureBytes()
-        {
-            if (signatureEncoding != null)
-            {
-                return (byte[])signatureEncoding.Clone();
-            }
-
-            using MemoryStream bOut = new MemoryStream();
-
-            foreach (MPInteger sigObj in signature)
-            {
-                sigObj.Encode(bOut);
-            }
-
-            return bOut.ToArray();
-        }
+        public byte[] GetSignature() => signature;
 
         public SignatureSubpacket[] GetHashedSubPackets() => hashedData;
 
@@ -252,16 +230,22 @@ namespace Org.BouncyCastle.Bcpg
 
             bcpgOut.Write(fingerprint);
 
-            if (signature != null)
+            switch (keyAlgorithm)
             {
-                foreach (var o in signature)
-                {
-                    o.Encode(bcpgOut);
-                }
-            }
-            else
-            {
-                bcpgOut.Write(signatureEncoding);
+                case PublicKeyAlgorithmTag.RsaGeneral:
+                case PublicKeyAlgorithmTag.RsaSign:
+                    new MPInteger(signature).Encode(bcpgOut);
+                    break;
+                case PublicKeyAlgorithmTag.Dsa:
+                case PublicKeyAlgorithmTag.ECDsa:
+                case PublicKeyAlgorithmTag.EdDsa:
+                    int halfLength = signature.Length / 2;
+                    new MPInteger(signature.AsSpan(0, halfLength)).Encode(bcpgOut);
+                    new MPInteger(signature.AsSpan(halfLength)).Encode(bcpgOut);
+                    break;
+                default:
+                    bcpgOut.Write(signature);
+                    break;
             }
         }
 

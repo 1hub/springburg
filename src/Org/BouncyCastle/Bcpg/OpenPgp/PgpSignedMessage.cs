@@ -53,7 +53,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
             creationTime = signaturePacket.CreationTime;
 
             signatureHelper.Finish(signaturePacket.Version, signaturePacket.KeyAlgorithm, signaturePacket.CreationTime, signaturePacket.GetHashedSubPackets());
-            return signatureHelper.Verify(signaturePacket.GetSignature(), publicKey);
+            return publicKey.Verify(signatureHelper.Hash, signaturePacket.GetSignature(), signatureHelper.HashAlgorithm);
         }
 
         class SigningPacketReader : IPacketReader

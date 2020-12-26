@@ -16,11 +16,7 @@ namespace Org.BouncyCastle.Bcpg
             this.algorithm = algorithm;
         }
 
-        /// <summary>The algorithm tag value.</summary>
-        public CompressionAlgorithmTag Algorithm
-        {
-            get { return algorithm; }
-        }
+        public CompressionAlgorithmTag Algorithm => algorithm;
 
         public override PacketTag Tag => PacketTag.CompressedData;
 

@@ -1,6 +1,5 @@
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Basic PGP packet tag types.</remarks>
     public enum PacketTag
     {
         Reserved = 0,								//  Reserved - a packet tag must not have this value
@@ -21,6 +20,7 @@ namespace Org.BouncyCastle.Bcpg
         UserAttribute = 17,							// User attribute
         SymmetricEncryptedIntegrityProtected = 18,	// Symmetric encrypted, integrity protected
         ModificationDetectionCode = 19,				// Modification detection code
+        SymmetricEncryptedAeadProtected = 20,
 
         Experimental1 = 60,							// Private or Experimental Values
         Experimental2 = 61,

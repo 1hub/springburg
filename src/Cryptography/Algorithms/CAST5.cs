@@ -1,9 +1,7 @@
 ﻿using InflatablePalace.Cryptography.Algorithms;
 using InflatablePalace.Cryptography.Algorithms.Modes;
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace InflatablePalace.OpenPGP
 {

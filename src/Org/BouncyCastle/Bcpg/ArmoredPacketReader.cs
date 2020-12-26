@@ -1,6 +1,8 @@
-﻿using Org.BouncyCastle.Bcpg.OpenPgp;
+﻿using InflatablePalace.Cryptography.Algorithms;
+using Org.BouncyCastle.Bcpg.OpenPgp;
 using System;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace Org.BouncyCastle.Bcpg
 {
@@ -83,7 +85,8 @@ namespace Org.BouncyCastle.Bcpg
                 if (!generatedOnePassPacket)
                     throw new NotSupportedException();
 
-                return (new LiteralDataPacket(PgpLiteralData.Utf8, "", DateTime.MinValue), new LiteralDataStream(armoredInputStream));
+                var stream = new LiteralDataStream(armoredInputStream);
+                return (new LiteralDataPacket(PgpLiteralData.Utf8, "", DateTime.MinValue), stream);
             }
 
             if (this.packetReader == null)

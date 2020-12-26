@@ -186,50 +186,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
                 Update((byte)(hDataLength >> 8));
                 Update((byte)(hDataLength));
             }
+
+            sig.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
         }
 
         public byte[] Hash => sig.Hash;
-
-        public bool Verify(MPInteger[] sigValues, PgpPublicKey key)
-        {
-            byte[] signature;
-
-            if (sigValues.Length == 1)
-            {
-                signature = sigValues[0].Value;
-            }
-            else
-            {
-                Debug.Assert(sigValues.Length == 2);
-                int rsLength = Math.Max(sigValues[0].Value.Length, sigValues[1].Value.Length);
-                signature = new byte[rsLength * 2];
-                sigValues[0].Value.CopyTo(signature, rsLength - sigValues[0].Value.Length);
-                sigValues[1].Value.CopyTo(signature, signature.Length - sigValues[1].Value.Length);
-            }
-
-            sig.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-            return key.Verify(sig.Hash, signature, hashAlgorithm);
-        }
-
-        public MPInteger[] Sign(PgpPrivateKey privateKey)
-        {
-            sig.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-            var signature = privateKey.Sign(sig.Hash, hashAlgorithm);
-            MPInteger[] sigValues;
-            if (privateKey.PublicKeyPacket.Algorithm == PublicKeyAlgorithmTag.RsaGeneral ||
-                privateKey.PublicKeyPacket.Algorithm == PublicKeyAlgorithmTag.RsaSign)
-            {
-                sigValues = new MPInteger[] { new MPInteger(signature) };
-            }
-            else
-            {
-                sigValues = new MPInteger[] {
-                    new MPInteger(signature.AsSpan(0, signature.Length / 2).ToArray()),
-                    new MPInteger(signature.AsSpan(signature.Length / 2).ToArray())
-                };
-            }
-            return sigValues;
-        }
 
         int ICryptoTransform.TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
         {

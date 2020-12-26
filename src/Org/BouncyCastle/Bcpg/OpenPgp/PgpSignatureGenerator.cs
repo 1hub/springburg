@@ -81,7 +81,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp
 
             helper.Finish(version, privateKey.PublicKeyPacket.Algorithm, creationTime, hPkts);
 
-            var signature = helper.Sign(privateKey);
+            var signature = privateKey.Sign(helper.Hash, helper.HashAlgorithm);
             return new PgpSignature(new SignaturePacket(
                 version, helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
                 hashAlgorithm, creationTime, hPkts, unhPkts,

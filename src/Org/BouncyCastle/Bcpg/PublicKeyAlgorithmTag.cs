@@ -2,21 +2,18 @@ using System;
 
 namespace Org.BouncyCastle.Bcpg
 {
-    /// <remarks>Public Key Algorithm tag numbers.</remarks>
     public enum PublicKeyAlgorithmTag
     {
-        RsaGeneral = 1,			// RSA (Encrypt or Sign)
-        RsaEncrypt = 2,			// RSA Encrypt-Only
-        RsaSign = 3,			// RSA Sign-Only
-        ElGamalEncrypt = 16,	// Elgamal (Encrypt-Only), see [ELGAMAL]
-        Dsa = 17,				// DSA (Digital Signature Standard)
-        [Obsolete("Use 'ECDH' instead")]
-        EC = 18,				// Reserved for Elliptic Curve
-        ECDH = 18,              // Reserved for Elliptic Curve (actual algorithm name)
-        ECDsa = 19,				// Reserved for ECDSA
-        ElGamalGeneral = 20,	// Elgamal (Encrypt or Sign)
-        DiffieHellman = 21,		// Reserved for Diffie-Hellman (X9.42, as defined for IETF-S/MIME)
-        EdDsa = 22,             // EdDSA - (internet draft, but appearing in use)
+        RsaGeneral = 1,
+        RsaEncrypt = 2,
+        RsaSign = 3,
+        ElGamalEncrypt = 16,
+        Dsa = 17,
+        ECDH = 18,
+        ECDsa = 19,
+        ElGamalGeneral = 20,
+        DiffieHellman = 21, // Reserved for Diffie-Hellman (X9.42, as defined for IETF-S/MIME)
+        EdDsa = 22,
 
         Experimental_1 = 100,
         Experimental_2 = 101,

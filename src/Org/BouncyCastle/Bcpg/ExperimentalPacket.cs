@@ -1,5 +1,4 @@
 using Org.BouncyCastle.Utilities.IO;
-using System;
 using System.IO;
 
 namespace Org.BouncyCastle.Bcpg
