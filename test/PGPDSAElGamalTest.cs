@@ -185,6 +185,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             return sKey.GetSecretKey(pgpKeyID);
         }
 
+        [Test]
         public void KeyPairPSizeTest()
         {
             // Test bug with ElGamal P size != 0 mod 8 (don't use these sizes at home!)
