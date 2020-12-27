@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using InflatablePalace.Cryptography.OpenPgp.Packet;
 using NUnit.Framework;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
@@ -94,7 +95,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             using var bOut = new MemoryStream();
             using var aOut = new ArmoredPacketWriter(bOut);
 
-            aOut.WritePacket(new MarkerPacket());
+            //aOut.WritePacket(new MarkerPacket());
 
             aOut.Dispose();
             aOut.Dispose();

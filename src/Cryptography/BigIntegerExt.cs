@@ -13,7 +13,7 @@ using System.Security.Cryptography;
 
 namespace Aprismatic
 {
-    public static class BigIntegerExt
+    static class BigIntegerExt
     {
         // primes smaller than 2000 to test the generated prime number
         public static readonly ulong[] PrimesBelow2000 = {

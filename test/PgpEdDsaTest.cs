@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using InflatablePalace.Cryptography.OpenPgp;
 using NUnit.Framework;
 using Ed25519Dsa = InflatablePalace.Cryptography.Algorithms.Ed25519;
 

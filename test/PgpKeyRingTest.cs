@@ -3,6 +3,8 @@ using System.Collections;
 using System.IO;
 using System.Security.Cryptography;
 using InflatablePalace.Cryptography.Algorithms;
+using InflatablePalace.Cryptography.OpenPgp;
+using InflatablePalace.Cryptography.OpenPgp.Packet;
 using NUnit.Framework;
 using Org.BouncyCastle.Utilities.Test;
 
@@ -2272,7 +2274,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     // this should succeed
                     PgpPrivateKey privTmp = pgpKey.ExtractPrivateKey("");
 
-                    if (pgpKey.KeyId != oldKeyID || pgpKey.S2kUsage != SecretKeyPacket.UsageNone)
+                    if (pgpKey.KeyId != oldKeyID || pgpKey.S2kUsage != S2kUsageTag.None)
                     {
                         Fail("usage/key ID mismatch");
                     }
@@ -2294,7 +2296,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     // this should succeed
                     PgpPrivateKey privTmp = pgpKey.ExtractPrivateKey(newPass);
 
-                    if (pgpKey.KeyId != oldKeyID || pgpKey.S2kUsage != SecretKeyPacket.UsageChecksum)
+                    if (pgpKey.KeyId != oldKeyID || pgpKey.S2kUsage != S2kUsageTag.Checksum)
                     {
                         Fail("usage/key ID mismatch");
                     }
@@ -2416,7 +2418,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 if (sEn.MoveNext())
                 {
                     PgpSignature sig = (PgpSignature)sEn.Current;
-                    if (sig.KeyAlgorithm != PublicKeyAlgorithmTag.Experimental_1)
+                    if (sig.KeyAlgorithm != (PublicKeyAlgorithmTag)100)
                     {
                         Fail("experimental signature not found");
                     }

@@ -2,8 +2,9 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using InflatablePalace.Cryptography.OpenPgp;
+using InflatablePalace.Cryptography.OpenPgp.Packet;
 using NUnit.Framework;
-using Org.BouncyCastle.Utilities.IO;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
@@ -210,7 +211,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var reader = new ArmoredPacketReader(new MemoryStream(Encoding.ASCII.GetBytes(message)));
             var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(reader);
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
-            var bytes = Streams.ReadAll(literalMessage.GetStream());
+            //var bytes = literalMessage.GetStream().ReadAll();
             //Assert.IsTrue(signedMessage.Verify(pgpRings.GetPublicKey(sig.KeyId)));
         }
 

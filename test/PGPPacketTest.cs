@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using InflatablePalace.Cryptography.OpenPgp;
+using InflatablePalace.Cryptography.OpenPgp.Packet;
 using NUnit.Framework;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests

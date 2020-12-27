@@ -4,11 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using NuGet.Frameworks;
+using InflatablePalace.Cryptography.OpenPgp;
+using InflatablePalace.Cryptography.OpenPgp.Packet.Attr;
 using NUnit.Framework;
-
-using Org.BouncyCastle.Bcpg.Attr;
-using Org.BouncyCastle.Utilities.IO;
 using Org.BouncyCastle.Utilities.Test;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
