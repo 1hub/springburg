@@ -1,15 +1,15 @@
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
     /// <summary>Basic PGP signature sub-packet tag types.</summary>
-    public enum SignatureSubpacketTag
+    enum SignatureSubpacketTag
     {
-        CreationTime = 2,
-        ExpireTime = 3,
+        SignatureCreationTime = 2,
+        SignatureExpirationTime = 3,
         Exportable = 4,
-        TrustSig = 5,
+        TrustSignature = 5,
         RegExp = 6,
         Revocable = 7,
-        KeyExpireTime = 9,
+        KeyExpirationTime = 9,
         Placeholder = 10,
         PreferredSymmetricAlgorithms = 11,
         RevocationKey = 12,

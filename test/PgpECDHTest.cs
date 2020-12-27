@@ -92,7 +92,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // Generate a key ring
             var passPhrase = "test";
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, ecdsaKeyPair,
-                "test@bouncycastle.org", SymmetricKeyAlgorithmTag.Aes256, passPhrase, true, null, null);
+                "test@bouncycastle.org", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, true, null, null);
             keyRingGen.AddSubKey(ecdhKeyPair);
 
             PgpPublicKeyRing pubRing = keyRingGen.GeneratePublicKeyRing();
@@ -123,7 +123,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // Generate a key ring
             var passPhrase = "test";
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, ecdsaKeyPair,
-                "test@bouncycastle.org", SymmetricKeyAlgorithmTag.Aes256, passPhrase, true, null, null);
+                "test@bouncycastle.org", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, true, null, null);
             keyRingGen.AddSubKey(ecdhKeyPair);
 
             PgpPublicKeyRing pubRing = keyRingGen.GeneratePublicKeyRing();
@@ -172,7 +172,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // Encrypt text
             MemoryStream cbOut = new MemoryStream();
             var messageGenerator = new PgpMessageGenerator(cbOut);
-            using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5))
+            using (var encryptedGenerator = messageGenerator.CreateEncrypted(PgpSymmetricKeyAlgorithm.Cast5))
             {
                 encryptedGenerator.AddMethod(ecdhKeyPair.PublicKey);
                 using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Utf8, "_CONSOLE", DateTime.UtcNow))
@@ -198,7 +198,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // Encrypt text
             MemoryStream cbOut = new MemoryStream();
             var messageGenerator = new PgpMessageGenerator(cbOut);
-            using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5))
+            using (var encryptedGenerator = messageGenerator.CreateEncrypted(PgpSymmetricKeyAlgorithm.Cast5))
             {
                 encryptedGenerator.AddMethod(publicKeyRing.GetPublicKey(0x6c37367cd2f455c5));
                 using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Utf8, "_CONSOLE", DateTime.UtcNow))

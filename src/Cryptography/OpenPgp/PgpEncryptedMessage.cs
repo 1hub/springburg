@@ -147,9 +147,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         private Stream GetDataStream(ReadOnlySpan<byte> sessionData, bool verifyIntegrity)
         {
-            SymmetricKeyAlgorithmTag keyAlgorithm = (SymmetricKeyAlgorithmTag)sessionData[0];
+            PgpSymmetricKeyAlgorithm keyAlgorithm = (PgpSymmetricKeyAlgorithm)sessionData[0];
 
-            if (keyAlgorithm == SymmetricKeyAlgorithmTag.Null)
+            if (keyAlgorithm == PgpSymmetricKeyAlgorithm.Null)
                 return inputStream;
 
             var key = sessionData.Slice(1);

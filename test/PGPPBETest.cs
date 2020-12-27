@@ -54,7 +54,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             MemoryStream bOut = new MemoryStream();
 
             using (var messageGenerator = new PgpMessageGenerator(bOut))
-            using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5, withIntegrityPacket))
+            using (var encryptedGenerator = messageGenerator.CreateEncrypted(PgpSymmetricKeyAlgorithm.Cast5, withIntegrityPacket))
             {
                 encryptedGenerator.AddMethod(pass, PgpHashAlgorithm.Sha1);
                 using (var compressedGenerator = encryptedGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))

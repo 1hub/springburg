@@ -15,14 +15,14 @@ namespace InflatablePalace.Cryptography.OpenPgp
     {
         private IList<PgpSecretKey> keys = new List<PgpSecretKey>();
         private string id;
-        private SymmetricKeyAlgorithmTag encAlgorithm;
+        private PgpSymmetricKeyAlgorithm encAlgorithm;
         private PgpHashAlgorithm hashAlgorithm;
         private int certificationLevel;
         private byte[] rawPassPhrase;
         private bool useSha1;
         private PgpKeyPair masterKey;
-        private PgpSignatureSubpacketVector hashedPacketVector;
-        private PgpSignatureSubpacketVector unhashedPacketVector;
+        private PgpSignatureAttributes hashedPacketVector;
+        private PgpSignatureAttributes unhashedPacketVector;
 
         /// <summary>
         /// Create a new key ring generator using old style checksumming. It is recommended to use
@@ -37,19 +37,19 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <param name="id">The id to be associated with the ring.</param>
         /// <param name="encAlgorithm">The algorithm to be used to protect secret keys.</param>
         /// <param name="passPhrase">The passPhrase to be used to protect secret keys.</param>
-        /// <param name="hashedPackets">Packets to be included in the certification hash.</param>
-        /// <param name="unhashedPackets">Packets to be attached unhashed to the certification.</param>
+        /// <param name="hashedAttributes">Packets to be included in the certification hash.</param>
+        /// <param name="unhashedAttributes">Packets to be attached unhashed to the certification.</param>
         /// <param name="rand">input secured random.</param>
         [Obsolete("Use version taking an explicit 'useSha1' parameter instead")]
         public PgpKeyRingGenerator(
             int certificationLevel,
             PgpKeyPair masterKey,
             string id,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             string passPhrase,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
-            : this(certificationLevel, masterKey, id, encAlgorithm, passPhrase, false, hashedPackets, unhashedPackets)
+            PgpSignatureAttributes hashedAttributes,
+            PgpSignatureAttributes unhashedAttributes)
+            : this(certificationLevel, masterKey, id, encAlgorithm, passPhrase, false, hashedAttributes, unhashedAttributes)
         {
         }
 
@@ -73,11 +73,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int certificationLevel,
             PgpKeyPair masterKey,
             string id,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             string passPhrase,
             bool useSha1,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
             : this(certificationLevel, masterKey, id, encAlgorithm, Encoding.UTF8.GetBytes(passPhrase), useSha1, hashedPackets, unhashedPackets)
         {
         }
@@ -97,11 +97,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int certificationLevel,
             PgpKeyPair masterKey,
             string id,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             byte[] rawPassPhrase,
             bool useSha1,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
         {
             this.certificationLevel = certificationLevel;
             this.masterKey = masterKey;
@@ -134,12 +134,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int certificationLevel,
             PgpKeyPair masterKey,
             string id,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             PgpHashAlgorithm hashAlgorithm,
             byte[] rawPassPhrase,
             bool useSha1,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
         {
             this.certificationLevel = certificationLevel;
             this.masterKey = masterKey;
@@ -181,8 +181,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <exception cref="PgpException"></exception>
         public void AddSubKey(
             PgpKeyPair keyPair,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
         {
             try
             {
@@ -192,8 +192,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 // Generate the certification
                 //
 
-                sGen.SetHashedSubpackets(hashedPackets);
-                sGen.SetUnhashedSubpackets(unhashedPackets);
+                sGen.HashedAttributes = hashedPackets;
+                sGen.UnhashedAttributes = unhashedPackets;
 
                 IList<PgpSignature> subSigs = new List<PgpSignature>();
 
@@ -223,8 +223,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <exception cref="PgpException"></exception>
         public void AddSubKey(
             PgpKeyPair keyPair,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets,
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets,
             PgpHashAlgorithm hashAlgorithm)
         {
             try
@@ -232,8 +232,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, masterKey.PrivateKey, hashAlgorithm);
 
                 // Generate the certification
-                sGen.SetHashedSubpackets(hashedPackets);
-                sGen.SetUnhashedSubpackets(unhashedPackets);
+                sGen.HashedAttributes = hashedPackets;
+                sGen.UnhashedAttributes = unhashedPackets;
 
                 IList<PgpSignature> subSigs = new List<PgpSignature>();
                 subSigs.Add(sGen.GenerateCertification(masterKey.PublicKey, keyPair.PublicKey));

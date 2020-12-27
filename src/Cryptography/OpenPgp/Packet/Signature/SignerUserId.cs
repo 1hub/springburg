@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
+namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
 {
     class SignerUserId : SignatureSubpacket
     {

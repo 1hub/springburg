@@ -1,4 +1,4 @@
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
+namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
 {
     /// <summary>
     /// Packet giving whether or not the signature is signed using the primary user ID for the key.

@@ -347,7 +347,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             MemoryStream bcOut = new MemoryStream();
             var messageGenerator = new PgpMessageGenerator(bcOut);
-            using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Aes128, withIntegrityPacket: true))
+            using (var encryptedGenerator = messageGenerator.CreateEncrypted(PgpSymmetricKeyAlgorithm.Aes128, withIntegrityPacket: true))
             {
                 encryptedGenerator.AddMethod(pgpPubKey);
                 encryptedGenerator.AddMethod("password", PgpHashAlgorithm.Sha1);
@@ -567,7 +567,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpPublicKey puK = pgpPriv.GetSecretKey(encKeyId).PublicKey;
             
             var messageGenerator = new PgpMessageGenerator(cbOut);
-            using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5))            
+            using (var encryptedGenerator = messageGenerator.CreateEncrypted(PgpSymmetricKeyAlgorithm.Cast5))            
             {
                 encryptedGenerator.AddMethod(puK);
                 using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))
@@ -592,7 +592,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             puK = pgpPriv.GetSecretKey(encKeyId).PublicKey;
 
             messageGenerator = new PgpMessageGenerator(cbOut);
-            using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5))
+            using (var encryptedGenerator = messageGenerator.CreateEncrypted(PgpSymmetricKeyAlgorithm.Cast5))
             {
                 encryptedGenerator.AddMethod(puK);
                 using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))
@@ -630,7 +630,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 rsa,
                 DateTime.UtcNow,
                 "fred",
-                SymmetricKeyAlgorithmTag.Cast5,
+                PgpSymmetricKeyAlgorithm.Cast5,
                 passPhrase,
                 null,
                 null);
@@ -696,7 +696,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //kp = kpg.GenerateKeyPair();
             rsa = RSA.Create(1024);
 
-            secretKey = new PgpSecretKey(PgpSignature.DefaultCertification, rsa, DateTime.UtcNow, "fred", SymmetricKeyAlgorithmTag.Aes256, passPhrase, null, null);
+            secretKey = new PgpSecretKey(PgpSignature.DefaultCertification, rsa, DateTime.UtcNow, "fred", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, null, null);
 
             secretKey.ExtractPrivateKey(passPhrase);
 

@@ -1,4 +1,4 @@
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
+namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
 {
     class KeyFlags : SignatureSubpacket
     {

@@ -152,7 +152,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             MemoryStream cbOut = new MemoryStream();
             var messageGenerator = new PgpMessageGenerator(cbOut);
-            using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.TripleDes))
+            using (var encryptedGenerator = messageGenerator.CreateEncrypted(PgpSymmetricKeyAlgorithm.TripleDes))
             {
                 encryptedGenerator.AddMethod(secretKey.PublicKey);
                 using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Utf8, "", DateTime.UtcNow))
@@ -194,7 +194,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
                 var cbOut = new MemoryStream();
                 var messageGenerator = new PgpMessageGenerator(cbOut);
-                using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5))
+                using (var encryptedGenerator = messageGenerator.CreateEncrypted(PgpSymmetricKeyAlgorithm.Cast5))
                 {
                     encryptedGenerator.AddMethod(elGamalKeyPair.PublicKey);
                     using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))

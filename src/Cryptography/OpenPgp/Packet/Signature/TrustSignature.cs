@@ -1,16 +1,16 @@
 using System;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
+namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
 {
     class TrustSignature : SignatureSubpacket
     {
         public TrustSignature(bool critical, bool isLongLength, byte[] data)
-            : base(SignatureSubpacketTag.TrustSig, critical, isLongLength, data)
+            : base(SignatureSubpacketTag.TrustSignature, critical, isLongLength, data)
         {
         }
 
         public TrustSignature(bool critical, byte depth, byte trustAmount)
-            : base(SignatureSubpacketTag.TrustSig, critical, false, new byte[] { depth, trustAmount })
+            : base(SignatureSubpacketTag.TrustSignature, critical, false, new byte[] { depth, trustAmount })
         {
         }
 

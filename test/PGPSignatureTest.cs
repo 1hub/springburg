@@ -12,8 +12,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
     public class PgpSignatureTest
         : SimpleTest
     {
-        private static readonly SymmetricKeyAlgorithmTag[] PREFERRED_SYMMETRIC_ALGORITHMS
-            = new SymmetricKeyAlgorithmTag[] { SymmetricKeyAlgorithmTag.Aes128, SymmetricKeyAlgorithmTag.TripleDes };
+        private static readonly PgpSymmetricKeyAlgorithm[] PREFERRED_SYMMETRIC_ALGORITHMS
+            = new PgpSymmetricKeyAlgorithm[] { PgpSymmetricKeyAlgorithm.Aes128, PgpSymmetricKeyAlgorithm.TripleDes };
         private static readonly PgpHashAlgorithm[] PREFERRED_HASH_ALGORITHMS
             = new PgpHashAlgorithm[] { PgpHashAlgorithm.Sha1, PgpHashAlgorithm.Sha256 };
         private static readonly PgpCompressionAlgorithm[] PREFERRED_COMPRESSION_ALGORITHMS
@@ -385,17 +385,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, pgpPrivDSAKey, PgpHashAlgorithm.Sha1);
 
-            PgpSignatureSubpacketGenerator unhashedGen = new PgpSignatureSubpacketGenerator();
-            PgpSignatureSubpacketGenerator hashedGen = new PgpSignatureSubpacketGenerator();
-
-            hashedGen.SetSignatureExpirationTime(false, TEST_EXPIRATION_TIME);
-            hashedGen.SetSignerUserId(true, TEST_USER_ID);
-            hashedGen.SetPreferredCompressionAlgorithms(false, PREFERRED_COMPRESSION_ALGORITHMS);
-            hashedGen.SetPreferredHashAlgorithms(false, PREFERRED_HASH_ALGORITHMS);
-            hashedGen.SetPreferredSymmetricAlgorithms(false, PREFERRED_SYMMETRIC_ALGORITHMS);
-
-            sGen.SetHashedSubpackets(hashedGen.Generate());
-            sGen.SetUnhashedSubpackets(unhashedGen.Generate());
+            sGen.HashedAttributes.SetSignatureExpirationTime(false, TEST_EXPIRATION_TIME);
+            sGen.HashedAttributes.SetSignerUserId(true, TEST_USER_ID);
+            sGen.HashedAttributes.SetPreferredCompressionAlgorithms(false, PREFERRED_COMPRESSION_ALGORITHMS);
+            sGen.HashedAttributes.SetPreferredHashAlgorithms(false, PREFERRED_HASH_ALGORITHMS);
+            sGen.HashedAttributes.SetPreferredSymmetricAlgorithms(false, PREFERRED_SYMMETRIC_ALGORITHMS);
 
             sig = sGen.GenerateCertification(secretDSAKey.PublicKey, secretKey.PublicKey);
 
@@ -407,10 +401,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             Assert.IsTrue(sig.VerifyCertification(secretDSAKey.PublicKey, secretKey.PublicKey));
 
-            PgpSignatureSubpacketVector hashedPcks = sig.GetHashedSubPackets();
-            PgpSignatureSubpacketVector unhashedPcks = sig.GetUnhashedSubPackets();
+            PgpSignatureAttributes hashedPcks = sig.HashedAttributes;
+            PgpSignatureAttributes unhashedPcks = sig.UnhashedAttributes;
 
-            if (hashedPcks.Count != 6)
+            /*if (hashedPcks.Count != 6)
             {
                 Fail("wrong number of hashed packets found.");
             }
@@ -418,28 +412,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             if (unhashedPcks.Count != 1)
             {
                 Fail("wrong number of unhashed packets found.");
-            }
+            }*/
 
-            if (!hashedPcks.GetSignerUserId().Equals(TEST_USER_ID))
-            {
-                Fail("test userid not matching");
-            }
+            Assert.AreEqual(TEST_USER_ID, hashedPcks.SignerUserId);
+            Assert.AreEqual(TEST_EXPIRATION_TIME, hashedPcks.SignatureExpirationTime);
+            Assert.AreEqual(secretDSAKey.KeyId, unhashedPcks.IssuerKeyId);
 
-            if (hashedPcks.GetSignatureExpirationTime() != TEST_EXPIRATION_TIME)
-            {
-                Fail("test signature expiration time not matching");
-            }
+            preferredAlgorithmCheck("compression", PREFERRED_COMPRESSION_ALGORITHMS, hashedPcks.PreferredCompressionAlgorithms);
+            preferredAlgorithmCheck("hash", PREFERRED_HASH_ALGORITHMS, hashedPcks.PreferredHashAlgorithms);
+            preferredAlgorithmCheck("symmetric", PREFERRED_SYMMETRIC_ALGORITHMS, hashedPcks.PreferredSymmetricAlgorithms);
 
-            if (unhashedPcks.GetIssuerKeyId() != secretDSAKey.KeyId)
-            {
-                Fail("wrong issuer key ID found in certification");
-            }
-
-            preferredAlgorithmCheck("compression", PREFERRED_COMPRESSION_ALGORITHMS, hashedPcks.GetPreferredCompressionAlgorithms());
-            preferredAlgorithmCheck("hash", PREFERRED_HASH_ALGORITHMS, hashedPcks.GetPreferredHashAlgorithms());
-            preferredAlgorithmCheck("symmetric", PREFERRED_SYMMETRIC_ALGORITHMS, hashedPcks.GetPreferredSymmetricAlgorithms());
-
-            SignatureSubpacketTag[] criticalHashed = hashedPcks.GetCriticalTags();
+            /*SignatureSubpacketTag[] criticalHashed = hashedPcks.GetCriticalTags();
 
             if (criticalHashed.Length != 1)
             {
@@ -449,15 +432,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             if (criticalHashed[0] != SignatureSubpacketTag.SignerUserId)
             {
                 Fail("wrong critical packet found in tag list.");
-            }
+            }*/
 
             //
             // no packets passed
             //
             sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, pgpPrivDSAKey, PgpHashAlgorithm.Sha1);
-
-            sGen.SetHashedSubpackets(null);
-            sGen.SetUnhashedSubpackets(null);
 
             sig = sGen.GenerateCertification(TEST_USER_ID, secretKey.PublicKey);
 
@@ -466,19 +446,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 Fail("subkey binding verification failed.");
             }
 
-            hashedPcks = sig.GetHashedSubPackets();
+            hashedPcks = sig.HashedAttributes;
+            Assert.IsTrue(hashedPcks.SignatureCreationTime.HasValue);
 
-            if (hashedPcks.Count != 1)
-            {
-                Fail("found wrong number of hashed packets");
-            }
-
-            unhashedPcks = sig.GetUnhashedSubPackets();
-
-            if (unhashedPcks.Count != 1)
-            {
-                Fail("found wrong number of unhashed packets");
-            }
+            unhashedPcks = sig.UnhashedAttributes;
+            Assert.IsTrue(unhashedPcks.IssuerKeyId.HasValue);
 
             /*try
             {
@@ -496,14 +468,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, pgpPrivDSAKey, PgpHashAlgorithm.Sha1);
 
-            hashedGen = new PgpSignatureSubpacketGenerator();
-
             DateTime creationTime = new DateTime(1973, 7, 27);
-            hashedGen.SetSignatureCreationTime(false, creationTime);
-
-            sGen.SetHashedSubpackets(hashedGen.Generate());
-
-            sGen.SetUnhashedSubpackets(null);
+            sGen.HashedAttributes.SetSignatureCreationTime(false, creationTime);
 
             sig = sGen.GenerateCertification(TEST_USER_ID, secretKey.PublicKey);
 
@@ -512,56 +478,22 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 Fail("subkey binding verification failed.");
             }
 
-            hashedPcks = sig.GetHashedSubPackets();
+            hashedPcks = sig.HashedAttributes;
 
-            if (hashedPcks.Count != 1)
-            {
-                Fail("found wrong number of hashed packets in override test");
-            }
+            Assert.IsTrue(hashedPcks.SignatureCreationTime.HasValue);
+            Assert.AreEqual(creationTime, hashedPcks.SignatureCreationTime);
 
-            if (!hashedPcks.HasSubpacket(SignatureSubpacketTag.CreationTime))
-            {
-                Fail("hasSubpacket test for creation time failed");
-            }
+            preferredAlgorithmCheck("compression", null, hashedPcks.PreferredCompressionAlgorithms);
+            preferredAlgorithmCheck("hash", null, hashedPcks.PreferredHashAlgorithms);
+            preferredAlgorithmCheck("symmetric", null, hashedPcks.PreferredSymmetricAlgorithms);
 
-            DateTime sigCreationTime = hashedPcks.GetSignatureCreationTime();
-            if (!sigCreationTime.Equals(creationTime))
-            {
-                Fail("creation of overridden date failed.");
-            }
+            Assert.AreEqual(null, hashedPcks.KeyExpirationTime);
+            Assert.AreEqual(null, hashedPcks.SignatureExpirationTime);
+            Assert.AreEqual(null, hashedPcks.SignerUserId);
 
-            preferredAlgorithmCheck("compression", null, hashedPcks.GetPreferredCompressionAlgorithms());
-            preferredAlgorithmCheck("hash", null, hashedPcks.GetPreferredHashAlgorithms());
-            preferredAlgorithmCheck("symmetric", null, hashedPcks.GetPreferredSymmetricAlgorithms());
+            unhashedPcks = sig.UnhashedAttributes;
 
-            if (hashedPcks.GetKeyExpirationTime() != TimeSpan.MaxValue)
-            {
-                Fail("unexpected key expiration time found");
-            }
-
-            if (hashedPcks.GetSignatureExpirationTime() != TimeSpan.MaxValue)
-            {
-                Fail("unexpected signature expiration time found");
-            }
-
-            if (hashedPcks.GetSignerUserId() != null)
-            {
-                Fail("unexpected signer user ID found");
-            }
-
-            criticalHashed = hashedPcks.GetCriticalTags();
-
-            if (criticalHashed.Length != 0)
-            {
-                Fail("critical packets found when none expected");
-            }
-
-            unhashedPcks = sig.GetUnhashedSubPackets();
-
-            if (unhashedPcks.Count != 1)
-            {
-                Fail("found wrong number of unhashed packets in override test");
-            }
+            Assert.IsTrue(unhashedPcks.IssuerKeyId.HasValue);
 
             //
             // general signatures
@@ -670,21 +602,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             if (sig.Version > 3)
             {
-                PgpSignatureSubpacketVector v = sig.GetHashedSubPackets();
-
-                if (v.GetKeyExpirationTime() != TimeSpan.MaxValue)
-                {
-                    Fail("key expiration time not zero for missing subpackets");
-                }
-
-                if (!sig.HasSubpackets)
-                {
-                    Fail("HasSubpackets property was false with packets");
-                }
+                PgpSignatureAttributes v = sig.HashedAttributes;
+                Assert.IsFalse(v.KeyExpirationTime.HasValue);
             }
             else
             {
-                if (sig.GetHashedSubPackets() != null)
+                /*if (sig.GetHashedSubPackets() != null)
                 {
                     Fail("hashed sub packets found when none expected");
                 }
@@ -697,7 +620,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 if (sig.HasSubpackets)
                 {
                     Fail("HasSubpackets property was true with no packets");
-                }
+                }*/
             }
         }
 

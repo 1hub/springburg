@@ -30,6 +30,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
         private readonly SignaturePacket sigPck;
         private readonly TrustPacket trustPck;
 
+        private PgpSignatureAttributes hashedAttributes;
+        private PgpSignatureAttributes unhashedAttributes;
+
         internal PgpSignature(SignaturePacket sigPacket)
             : this(sigPacket, null)
         {
@@ -203,32 +206,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <summary>The creation time of this signature.</summary>
         public DateTime CreationTime => sigPck.CreationTime;
 
-        /// <summary>
-        /// Return true if the signature has either hashed or unhashed subpackets.
-        /// </summary>
-        public bool HasSubpackets
-        {
-            get
-            {
-                return sigPck.GetHashedSubPackets() != null
-                    || sigPck.GetUnhashedSubPackets() != null;
-            }
-        }
+        public PgpSignatureAttributes HashedAttributes => hashedAttributes ?? (hashedAttributes = new PgpSignatureAttributes(sigPck.GetHashedSubPackets() ?? Array.Empty<SignatureSubpacket>()));
 
-        public PgpSignatureSubpacketVector GetHashedSubPackets()
-        {
-            return createSubpacketVector(sigPck.GetHashedSubPackets());
-        }
-
-        public PgpSignatureSubpacketVector GetUnhashedSubPackets()
-        {
-            return createSubpacketVector(sigPck.GetUnhashedSubPackets());
-        }
-
-        private PgpSignatureSubpacketVector createSubpacketVector(SignatureSubpacket[] pcks)
-        {
-            return pcks == null ? null : new PgpSignatureSubpacketVector(pcks);
-        }
+        public PgpSignatureAttributes UnhashedAttributes => unhashedAttributes ?? (unhashedAttributes = new PgpSignatureAttributes(sigPck.GetUnhashedSubPackets() ?? Array.Empty<SignatureSubpacket>()));
 
         public byte[] GetSignature() => sigPck.GetSignature();
 

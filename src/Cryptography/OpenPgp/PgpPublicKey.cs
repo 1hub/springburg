@@ -114,7 +114,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     new Oid("1.3.6.1.4.1.3029.1.5.1"),
                     new MPInteger(new byte[] { 0x40 }.Concat(ecdhKParams.Q.X).ToArray()),
                     PgpHashAlgorithm.Sha256,
-                    SymmetricKeyAlgorithmTag.Aes128);
+                    PgpSymmetricKeyAlgorithm.Aes128);
             }
             else if (pubKey is ECDiffieHellman ecdhK)
             {
@@ -124,7 +124,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     ecdhKParams.Curve.Oid,
                     PgpUtilities.EncodePoint(ecdhKParams.Q),
                     PgpHashAlgorithm.Sha256,
-                    SymmetricKeyAlgorithmTag.Aes128);
+                    PgpSymmetricKeyAlgorithm.Aes128);
             }
             else if (pubKey is Ed25519Dsa ed25519K)
             {
@@ -330,25 +330,21 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 if (selfSigned && sig.KeyId != this.KeyId)
                     continue;
 
-                PgpSignatureSubpacketVector hashed = sig.GetHashedSubPackets();
-                if (hashed == null)
+                TimeSpan? current = sig.HashedAttributes.KeyExpirationTime;
+                if (current == null)
                     continue;
 
-                if (!hashed.HasSubpacket(SignatureSubpacketTag.KeyExpireTime))
-                    continue;
-
-                TimeSpan current = hashed.GetKeyExpirationTime();
                 if (sig.KeyId == this.KeyId)
                 {
                     if (sig.CreationTime > lastDate)
                     {
                         lastDate = sig.CreationTime;
-                        expiryTime = current;
+                        expiryTime = current.Value;
                     }
                 }
                 else if (current != TimeSpan.MaxValue && current > expiryTime)
                 {
-                    expiryTime = current;
+                    expiryTime = current.Value;
                 }
             }
 

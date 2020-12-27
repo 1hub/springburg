@@ -27,16 +27,14 @@ namespace InflatablePalace.Cryptography.OpenPgp
             writer.WritePacket(onePassPacket);
         }
 
-        public void SetHashedSubpackets(PgpSignatureSubpacketVector hashedPackets) => signatureGenerator.SetHashedSubpackets(hashedPackets);
-
-        public void SetUnhashedSubpackets(PgpSignatureSubpacketVector unhashedPackets) => signatureGenerator.SetHashedSubpackets(unhashedPackets);
+        public PgpSignatureAttributes HashedAttributes => signatureGenerator.HashedAttributes;
+        
+        public PgpSignatureAttributes UnhashedAttributes => signatureGenerator.UnhashedAttributes;
 
         protected override IPacketWriter Open()
         {
             return new SigningPacketWriter(base.Open(), signatureGenerator.helper, this);
         }
-
-        private PgpSignature Generate() => signatureGenerator.Generate();
 
         class SigningPacketWriter : IPacketWriter
         {
@@ -60,7 +58,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             public void Dispose()
             {
                 Debug.Assert(literalDataWritten);
-                generator.Generate().Encode(innerWriter);
+                generator.signatureGenerator.Generate().Encode(innerWriter);
                 // DO NOT DISPOSE THE INNER WRITER
             }
 

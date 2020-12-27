@@ -30,11 +30,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
             private S2k s2k;
             private byte[] sessionInfo;
-            private SymmetricKeyAlgorithmTag encAlgorithm;
+            private PgpSymmetricKeyAlgorithm encAlgorithm;
             private byte[] key;
 
             internal PbeMethod(
-                SymmetricKeyAlgorithmTag encAlgorithm,
+                PgpSymmetricKeyAlgorithm encAlgorithm,
                 S2k s2k,
                 byte[] key)
             {
@@ -96,14 +96,14 @@ namespace InflatablePalace.Cryptography.OpenPgp
         }
 
         private readonly IList<EncMethod> methods = new List<EncMethod>();
-        private readonly SymmetricKeyAlgorithmTag defAlgorithm;
+        private readonly PgpSymmetricKeyAlgorithm defAlgorithm;
 
         /// <summary>Base constructor.</summary>
         /// <param name="encAlgorithm">The symmetric algorithm to use.</param>
         /// <param name="withIntegrityPacket">Use integrity packet.</param>
         public PgpEncryptedMessageGenerator(
             IPacketWriter packetWriter,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             bool withIntegrityPacket = false)
             : base(packetWriter)
         {
@@ -153,7 +153,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         }
 
         private byte[] CreateSessionInfo(
-            SymmetricKeyAlgorithmTag algorithm,
+            PgpSymmetricKeyAlgorithm algorithm,
             byte[] keyBytes)
         {
             byte[] sessionInfo = new byte[keyBytes.Length + 3];

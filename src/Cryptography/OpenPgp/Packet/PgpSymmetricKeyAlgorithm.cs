@@ -1,7 +1,7 @@
 namespace InflatablePalace.Cryptography.OpenPgp
 {
     /// <summary>Basic tags for symmetric key algorithms</summary>
-    public enum SymmetricKeyAlgorithmTag : byte
+    public enum PgpSymmetricKeyAlgorithm : byte
     {
         Null = 0,         // Plaintext or unencrypted data
         Idea = 1,         // IDEA [IDEA]

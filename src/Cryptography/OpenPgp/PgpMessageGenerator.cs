@@ -56,7 +56,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return new PgpSignedMessageGenerator(Open(), signatureType, privateKey, hashAlgorithm, version);
         }
 
-        public PgpEncryptedMessageGenerator CreateEncrypted(SymmetricKeyAlgorithmTag encAlgorithm, bool withIntegrityPacket = false)
+        public PgpEncryptedMessageGenerator CreateEncrypted(PgpSymmetricKeyAlgorithm encAlgorithm, bool withIntegrityPacket = false)
         {
             return new PgpEncryptedMessageGenerator(Open(), encAlgorithm, withIntegrityPacket);
         }

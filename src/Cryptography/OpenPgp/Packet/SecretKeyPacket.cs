@@ -9,7 +9,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         private PublicKeyPacket pubKeyPacket;
         private readonly byte[] secKeyData;
         private S2kUsageTag s2kUsage;
-        private SymmetricKeyAlgorithmTag encAlgorithm;
+        private PgpSymmetricKeyAlgorithm encAlgorithm;
         private S2k s2k;
         private byte[] iv;
 
@@ -28,19 +28,19 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
             if (s2kUsage == S2kUsageTag.Checksum || s2kUsage == S2kUsageTag.Sha1)
             {
-                encAlgorithm = (SymmetricKeyAlgorithmTag)bcpgIn.ReadByte();
+                encAlgorithm = (PgpSymmetricKeyAlgorithm)bcpgIn.ReadByte();
                 s2k = new S2k(bcpgIn);
             }
             else
             {
-                encAlgorithm = (SymmetricKeyAlgorithmTag)s2kUsage;
+                encAlgorithm = (PgpSymmetricKeyAlgorithm)s2kUsage;
             }
 
             if (!(s2k != null && s2k.Type == S2k.GnuDummyS2K && s2k.ProtectionMode == 0x01))
             {
                 if (s2kUsage != 0)
                 {
-                    if (encAlgorithm < SymmetricKeyAlgorithmTag.Aes128)
+                    if (encAlgorithm < PgpSymmetricKeyAlgorithm.Aes128)
                     {
                         iv = new byte[8];
                     }
@@ -59,7 +59,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public SecretKeyPacket(
             PublicKeyPacket pubKeyPacket,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             S2k s2k,
             byte[] iv,
             byte[] secKeyData)
@@ -67,7 +67,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             this.pubKeyPacket = pubKeyPacket;
             this.encAlgorithm = encAlgorithm;
 
-            if (encAlgorithm != SymmetricKeyAlgorithmTag.Null)
+            if (encAlgorithm != PgpSymmetricKeyAlgorithm.Null)
             {
                 this.s2kUsage = S2kUsageTag.Checksum;
             }
@@ -83,7 +83,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public SecretKeyPacket(
             PublicKeyPacket pubKeyPacket,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             S2kUsageTag s2kUsage,
             S2k s2k,
             byte[] iv,
@@ -97,7 +97,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             this.secKeyData = secKeyData;
         }
 
-        public SymmetricKeyAlgorithmTag EncAlgorithm => encAlgorithm;
+        public PgpSymmetricKeyAlgorithm EncAlgorithm => encAlgorithm;
 
         public S2kUsageTag S2kUsage => s2kUsage;
 

@@ -9,7 +9,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
     {
         private byte reserved;
         private PgpHashAlgorithm hashFunctionId;
-        private SymmetricKeyAlgorithmTag symAlgorithmId;
+        private PgpSymmetricKeyAlgorithm symAlgorithmId;
 
         /// <param name="bcpgIn">The stream to read the packet from.</param>
         public ECDHPublicBcpgKey(Stream bcpgIn)
@@ -25,7 +25,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
             reserved = kdfParameters[0];
             hashFunctionId = (PgpHashAlgorithm)kdfParameters[1];
-            symAlgorithmId = (SymmetricKeyAlgorithmTag)kdfParameters[2];
+            symAlgorithmId = (PgpSymmetricKeyAlgorithm)kdfParameters[2];
 
             VerifyHashAlgorithm();
             VerifySymmetricKeyAlgorithm();
@@ -35,7 +35,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             Oid oid,
             MPInteger encodedPoint,
             PgpHashAlgorithm hashAlgorithm,
-            SymmetricKeyAlgorithmTag symmetricKeyAlgorithm)
+            PgpSymmetricKeyAlgorithm symmetricKeyAlgorithm)
             : base(oid, encodedPoint)
         {
             reserved = 1;
@@ -50,7 +50,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public PgpHashAlgorithm HashAlgorithm => hashFunctionId;
 
-        public SymmetricKeyAlgorithmTag SymmetricKeyAlgorithm => symAlgorithmId;
+        public PgpSymmetricKeyAlgorithm SymmetricKeyAlgorithm => symAlgorithmId;
 
         public override void Encode(Stream bcpgOut)
         {
@@ -78,9 +78,9 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         {
             switch (symAlgorithmId)
             {
-                case SymmetricKeyAlgorithmTag.Aes128:
-                case SymmetricKeyAlgorithmTag.Aes192:
-                case SymmetricKeyAlgorithmTag.Aes256:
+                case PgpSymmetricKeyAlgorithm.Aes128:
+                case PgpSymmetricKeyAlgorithm.Aes192:
+                case PgpSymmetricKeyAlgorithm.Aes256:
                     break;
                 default:
                     throw new InvalidOperationException("Symmetric key algorithm must be AES-128 or stronger.");

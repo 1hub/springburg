@@ -2115,7 +2115,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpKeyPair elgKeyPair = new PgpKeyPair(ElGamal.Create(1024), DateTime.UtcNow);
 
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, dsaKeyPair,
-                "test", SymmetricKeyAlgorithmTag.Aes256, passPhrase, false, null, null);
+                "test", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, false, null, null);
 
             keyRingGen.AddSubKey(elgKeyPair);
 
@@ -2163,12 +2163,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpKeyPair rsaKeyPair2 = new PgpKeyPair(RSA.Create(), DateTime.UtcNow);
 
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification,
-                rsaKeyPair1, "test", SymmetricKeyAlgorithmTag.Aes256, passPhrase, false, null, null);
+                rsaKeyPair1, "test", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, false, null, null);
             PgpSecretKeyRing secRing1 = keyRingGen.GenerateSecretKeyRing();
             PgpPublicKeyRing pubRing1 = keyRingGen.GeneratePublicKeyRing();
 
             keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification,
-                rsaKeyPair2, "test", SymmetricKeyAlgorithmTag.Aes256, passPhrase, false, null, null);
+                rsaKeyPair2, "test", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, false, null, null);
             PgpSecretKeyRing secRing2 = keyRingGen.GenerateSecretKeyRing();
             PgpPublicKeyRing pubRing2 = keyRingGen.GeneratePublicKeyRing();
 
@@ -2210,7 +2210,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpKeyPair elgKeyPair = new PgpKeyPair(elGamal, DateTime.UtcNow);
 
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, dsaKeyPair,
-                "test", SymmetricKeyAlgorithmTag.Aes256, passPhrase, true, null, null);
+                "test", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, true, null, null);
 
             keyRingGen.AddSubKey(elgKeyPair);
 
@@ -2268,7 +2268,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                         pgpKeyEnum,
                         rewrapPass,
                         "",
-                        SymmetricKeyAlgorithmTag.Null);
+                        PgpSymmetricKeyAlgorithm.Null);
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);
 
                     // this should succeed
@@ -2290,7 +2290,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                         pgpKeyEnum,
                         "",
                         newPass,
-                        SymmetricKeyAlgorithmTag.Cast5);
+                        PgpSymmetricKeyAlgorithm.Cast5);
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);
 
                     // this should succeed
@@ -2327,7 +2327,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                         pgpKeyEnum,
                         v3KeyPass,
                         "",
-                        SymmetricKeyAlgorithmTag.Null);
+                        PgpSymmetricKeyAlgorithm.Null);
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);
 
                     // this should succeed
@@ -2349,7 +2349,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                         pgpKeyEnum,
                         "",
                         newPass,
-                        SymmetricKeyAlgorithmTag.Cast5);
+                        PgpSymmetricKeyAlgorithm.Cast5);
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);
 
                     // this should succeed
@@ -2488,7 +2488,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             };
             var dsa = DSA.Create(dsaParameters);
 
-            var secretKey = new PgpSecretKey(PgpSignature.PositiveCertification, dsa, DateTime.UtcNow, "boo", SymmetricKeyAlgorithmTag.Aes128, "", true, null, null);
+            var secretKey = new PgpSecretKey(PgpSignature.PositiveCertification, dsa, DateTime.UtcNow, "boo", PgpSymmetricKeyAlgorithm.Aes128, "", true, null, null);
             var privateKey = secretKey.ExtractPrivateKey("");
         }
 

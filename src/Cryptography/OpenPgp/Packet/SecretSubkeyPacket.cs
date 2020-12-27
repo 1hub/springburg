@@ -12,7 +12,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public SecretSubkeyPacket(
             PublicKeyPacket pubKeyPacket,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             S2k s2k,
             byte[] iv,
             byte[] secKeyData)
@@ -22,7 +22,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public SecretSubkeyPacket(
             PublicKeyPacket pubKeyPacket,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             S2kUsageTag s2kUsage,
             S2k s2k,
             byte[] iv,

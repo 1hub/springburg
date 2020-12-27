@@ -43,56 +43,56 @@ namespace InflatablePalace.Cryptography.OpenPgp
         }
 
         public static string GetSymmetricCipherName(
-                SymmetricKeyAlgorithmTag algorithm)
+                PgpSymmetricKeyAlgorithm algorithm)
         {
             switch (algorithm)
             {
-                case SymmetricKeyAlgorithmTag.Null: return null;
-                case SymmetricKeyAlgorithmTag.TripleDes: return "DESEDE";
-                case SymmetricKeyAlgorithmTag.Idea: return "IDEA";
-                case SymmetricKeyAlgorithmTag.Cast5: return "CAST5";
-                case SymmetricKeyAlgorithmTag.Blowfish: return "Blowfish";
-                case SymmetricKeyAlgorithmTag.Safer: return "SAFER";
-                case SymmetricKeyAlgorithmTag.Des: return "DES";
-                case SymmetricKeyAlgorithmTag.Aes128: return "AES";
-                case SymmetricKeyAlgorithmTag.Aes192: return "AES";
-                case SymmetricKeyAlgorithmTag.Aes256: return "AES";
-                case SymmetricKeyAlgorithmTag.Twofish: return "Twofish";
-                case SymmetricKeyAlgorithmTag.Camellia128: return "Camellia";
-                case SymmetricKeyAlgorithmTag.Camellia192: return "Camellia";
-                case SymmetricKeyAlgorithmTag.Camellia256: return "Camellia";
+                case PgpSymmetricKeyAlgorithm.Null: return null;
+                case PgpSymmetricKeyAlgorithm.TripleDes: return "DESEDE";
+                case PgpSymmetricKeyAlgorithm.Idea: return "IDEA";
+                case PgpSymmetricKeyAlgorithm.Cast5: return "CAST5";
+                case PgpSymmetricKeyAlgorithm.Blowfish: return "Blowfish";
+                case PgpSymmetricKeyAlgorithm.Safer: return "SAFER";
+                case PgpSymmetricKeyAlgorithm.Des: return "DES";
+                case PgpSymmetricKeyAlgorithm.Aes128: return "AES";
+                case PgpSymmetricKeyAlgorithm.Aes192: return "AES";
+                case PgpSymmetricKeyAlgorithm.Aes256: return "AES";
+                case PgpSymmetricKeyAlgorithm.Twofish: return "Twofish";
+                case PgpSymmetricKeyAlgorithm.Camellia128: return "Camellia";
+                case PgpSymmetricKeyAlgorithm.Camellia192: return "Camellia";
+                case PgpSymmetricKeyAlgorithm.Camellia256: return "Camellia";
                 default:
                     throw new PgpException("unknown symmetric algorithm: " + algorithm);
             }
         }
 
-        public static int GetKeySize(SymmetricKeyAlgorithmTag algorithm)
+        public static int GetKeySize(PgpSymmetricKeyAlgorithm algorithm)
         {
             switch (algorithm)
             {
-                case SymmetricKeyAlgorithmTag.Des:
+                case PgpSymmetricKeyAlgorithm.Des:
                     return 64;
-                case SymmetricKeyAlgorithmTag.Idea:
-                case SymmetricKeyAlgorithmTag.Cast5:
-                case SymmetricKeyAlgorithmTag.Blowfish:
-                case SymmetricKeyAlgorithmTag.Safer:
-                case SymmetricKeyAlgorithmTag.Aes128:
-                case SymmetricKeyAlgorithmTag.Camellia128:
+                case PgpSymmetricKeyAlgorithm.Idea:
+                case PgpSymmetricKeyAlgorithm.Cast5:
+                case PgpSymmetricKeyAlgorithm.Blowfish:
+                case PgpSymmetricKeyAlgorithm.Safer:
+                case PgpSymmetricKeyAlgorithm.Aes128:
+                case PgpSymmetricKeyAlgorithm.Camellia128:
                     return 128;
-                case SymmetricKeyAlgorithmTag.TripleDes:
-                case SymmetricKeyAlgorithmTag.Aes192:
-                case SymmetricKeyAlgorithmTag.Camellia192:
+                case PgpSymmetricKeyAlgorithm.TripleDes:
+                case PgpSymmetricKeyAlgorithm.Aes192:
+                case PgpSymmetricKeyAlgorithm.Camellia192:
                     return 192;
-                case SymmetricKeyAlgorithmTag.Aes256:
-                case SymmetricKeyAlgorithmTag.Twofish:
-                case SymmetricKeyAlgorithmTag.Camellia256:
+                case PgpSymmetricKeyAlgorithm.Aes256:
+                case PgpSymmetricKeyAlgorithm.Twofish:
+                case PgpSymmetricKeyAlgorithm.Camellia256:
                     return 256;
                 default:
                     throw new PgpException("unknown symmetric algorithm: " + algorithm);
             }
         }
 
-        internal static byte[] DoMakeKeyFromPassPhrase(SymmetricKeyAlgorithmTag algorithm, S2k s2k, byte[] rawPassPhrase)
+        internal static byte[] DoMakeKeyFromPassPhrase(PgpSymmetricKeyAlgorithm algorithm, S2k s2k, byte[] rawPassPhrase)
         {
             int keySize = GetKeySize(algorithm);
             byte[] pBytes = rawPassPhrase;
@@ -395,44 +395,44 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// </summary>
         /// <param name="symmetricKeyAlgorithmTag">Algorithm identifier</param>
         /// <returns>Symmetric algorithm implementation</returns>
-        internal static SymmetricAlgorithm GetSymmetricAlgorithm(SymmetricKeyAlgorithmTag symmetricKeyAlgorithmTag)
+        internal static SymmetricAlgorithm GetSymmetricAlgorithm(PgpSymmetricKeyAlgorithm symmetricKeyAlgorithmTag)
         {
             SymmetricAlgorithm symmetricAlgorithm;
 
             switch (symmetricKeyAlgorithmTag)
             {
-                case SymmetricKeyAlgorithmTag.Aes128:
-                case SymmetricKeyAlgorithmTag.Aes192:
-                case SymmetricKeyAlgorithmTag.Aes256:
+                case PgpSymmetricKeyAlgorithm.Aes128:
+                case PgpSymmetricKeyAlgorithm.Aes192:
+                case PgpSymmetricKeyAlgorithm.Aes256:
                     symmetricAlgorithm = Aes.Create();
                     symmetricAlgorithm.BlockSize = 128;
                     switch (symmetricKeyAlgorithmTag)
                     {
-                        case SymmetricKeyAlgorithmTag.Aes128:
+                        case PgpSymmetricKeyAlgorithm.Aes128:
                             symmetricAlgorithm.KeySize = 128;
                             break;
-                        case SymmetricKeyAlgorithmTag.Aes192:
+                        case PgpSymmetricKeyAlgorithm.Aes192:
                             symmetricAlgorithm.KeySize = 192;
                             break;
-                        case SymmetricKeyAlgorithmTag.Aes256:
+                        case PgpSymmetricKeyAlgorithm.Aes256:
                             symmetricAlgorithm.KeySize = 256;
                             break;
                     }
                     break;
 
-                case SymmetricKeyAlgorithmTag.TripleDes:
+                case PgpSymmetricKeyAlgorithm.TripleDes:
                     symmetricAlgorithm = TripleDES.Create();
                     break;
 
-                case SymmetricKeyAlgorithmTag.Idea:
+                case PgpSymmetricKeyAlgorithm.Idea:
                     symmetricAlgorithm = new IDEA();
                     break;
 
-                case SymmetricKeyAlgorithmTag.Cast5:
+                case PgpSymmetricKeyAlgorithm.Cast5:
                     symmetricAlgorithm = new CAST5();
                     break;
 
-                case SymmetricKeyAlgorithmTag.Twofish:
+                case PgpSymmetricKeyAlgorithm.Twofish:
                     symmetricAlgorithm = new Twofish();
                     break;
 

@@ -1,15 +1,15 @@
-using InflatablePalace.Cryptography.OpenPgp.Packet.Sig;
+using InflatablePalace.Cryptography.OpenPgp.Packet.Signature;
 using InflatablePalace.IO;
 using System;
 using System.IO;
 
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
-    public class SignatureSubpacketsParser
+    class SignatureSubpacketParser
     {
         private readonly Stream input;
 
-        public SignatureSubpacketsParser(
+        public SignatureSubpacketParser(
             Stream input)
         {
             this.input = input;
@@ -66,16 +66,16 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             {
                 switch (type)
                 {
-                    case SignatureSubpacketTag.CreationTime:
+                    case SignatureSubpacketTag.SignatureCreationTime:
                         data = CheckData(data, 4, bytesRead, "Signature Creation Time");
                         break;
                     case SignatureSubpacketTag.IssuerKeyId:
                         data = CheckData(data, 8, bytesRead, "Issuer");
                         break;
-                    case SignatureSubpacketTag.KeyExpireTime:
+                    case SignatureSubpacketTag.KeyExpirationTime:
                         data = CheckData(data, 4, bytesRead, "Signature Key Expiration Time");
                         break;
-                    case SignatureSubpacketTag.ExpireTime:
+                    case SignatureSubpacketTag.SignatureExpirationTime:
                         data = CheckData(data, 4, bytesRead, "Signature Expiration Time");
                         break;
                     default:
@@ -85,11 +85,11 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
             switch (type)
             {
-                case SignatureSubpacketTag.CreationTime:
+                case SignatureSubpacketTag.SignatureCreationTime:
                     return new SignatureCreationTime(isCritical, isLongLength, data);
-                case SignatureSubpacketTag.KeyExpireTime:
+                case SignatureSubpacketTag.KeyExpirationTime:
                     return new KeyExpirationTime(isCritical, isLongLength, data);
-                case SignatureSubpacketTag.ExpireTime:
+                case SignatureSubpacketTag.SignatureExpirationTime:
                     return new SignatureExpirationTime(isCritical, isLongLength, data);
                 case SignatureSubpacketTag.Revocable:
                     return new Revocable(isCritical, isLongLength, data);
@@ -97,14 +97,14 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                     return new Exportable(isCritical, isLongLength, data);
                 case SignatureSubpacketTag.IssuerKeyId:
                     return new IssuerKeyId(isCritical, isLongLength, data);
-                case SignatureSubpacketTag.TrustSig:
+                case SignatureSubpacketTag.TrustSignature:
                     return new TrustSignature(isCritical, isLongLength, data);
                 case SignatureSubpacketTag.PreferredCompressionAlgorithms:
                 case SignatureSubpacketTag.PreferredHashAlgorithms:
                 case SignatureSubpacketTag.PreferredSymmetricAlgorithms:
                     return new PreferredAlgorithms(type, isCritical, isLongLength, data);
                 case SignatureSubpacketTag.KeyFlags:
-                    return new Sig.KeyFlags(isCritical, isLongLength, data);
+                    return new Signature.KeyFlags(isCritical, isLongLength, data);
                 case SignatureSubpacketTag.PrimaryUserId:
                     return new PrimaryUserId(isCritical, isLongLength, data);
                 case SignatureSubpacketTag.SignerUserId:

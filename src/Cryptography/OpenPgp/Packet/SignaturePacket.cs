@@ -1,4 +1,4 @@
-using InflatablePalace.Cryptography.OpenPgp.Packet.Sig;
+using InflatablePalace.Cryptography.OpenPgp.Packet.Signature;
 using InflatablePalace.IO;
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.IO;
 
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
-    public class SignaturePacket : ContainedPacket
+    class SignaturePacket : ContainedPacket
     {
         private int version;
         private int signatureType;
@@ -59,7 +59,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 //
                 // read the signature sub packet data.
                 //
-                SignatureSubpacketsParser sIn = new SignatureSubpacketsParser(
+                SignatureSubpacketParser sIn = new SignatureSubpacketParser(
                     new MemoryStream(hashed, false));
 
                 IList<SignatureSubpacket> v = new List<SignatureSubpacket>();
@@ -92,7 +92,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 if (bcpgIn.ReadFully(unhashed) < unhashed.Length)
                     throw new EndOfStreamException();
 
-                sIn = new SignatureSubpacketsParser(new MemoryStream(unhashed, false));
+                sIn = new SignatureSubpacketParser(new MemoryStream(unhashed, false));
 
                 v.Clear();
 

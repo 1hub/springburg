@@ -55,7 +55,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // generate a key ring
             string passPhrase = "test";
             PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, ecdsaKeyPair,
-                "test@bouncycastle.org", SymmetricKeyAlgorithmTag.Aes256, passPhrase, true, null, null);
+                "test@bouncycastle.org", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, true, null, null);
 
             PgpPublicKeyRing pubRing = keyRingGen.GeneratePublicKeyRing();
             PgpSecretKeyRing secRing = keyRingGen.GenerateSecretKeyRing();

@@ -3,22 +3,22 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
-using InflatablePalace.Cryptography.OpenPgp.Packet.Sig;
+using InflatablePalace.Cryptography.OpenPgp.Packet.Signature;
 
 namespace InflatablePalace.Cryptography.OpenPgp
 {
     /// <summary>Generator for PGP signatures.</summary>
     public class PgpSignatureGenerator
     {
-        protected PgpHashAlgorithm hashAlgorithm;
+        private PgpHashAlgorithm hashAlgorithm;
 
-        protected SignatureSubpacket[] unhashed = Array.Empty<SignatureSubpacket>();
-        protected SignatureSubpacket[] hashed = Array.Empty<SignatureSubpacket>();
+        private PgpSignatureAttributes hashedAttributes;
+        private PgpSignatureAttributes unhashedAttributes;
 
         internal PgpSignatureTransformation helper;
-        protected PgpPrivateKey privateKey;
+        private PgpPrivateKey privateKey;
 
-        protected int version;
+        private int version;
 
         /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
         public PgpSignatureGenerator(int signatureType, PgpPrivateKey privateKey, PgpHashAlgorithm hashAlgorithm, int version = 4, bool ignoreTrailingWhitespace = false)
@@ -39,53 +39,79 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         public PgpPrivateKey PrivateKey => privateKey;
 
-        public void SetHashedSubpackets(PgpSignatureSubpacketVector hashedPackets)
+        public PgpSignatureAttributes HashedAttributes
         {
-            if (version == 3)
-                throw new PgpException("Version 3 signatures don't support subpackets");
+            get
+            {
+                if (version == 3)
+                    throw new PgpException("Version 3 signatures don't support attributes");
 
-            hashed = hashedPackets == null ? Array.Empty<SignatureSubpacket>() : hashedPackets.ToSubpacketArray();
+                return hashedAttributes ?? (hashedAttributes = new PgpSignatureAttributes());
+            }
+            set
+            {
+                if (version == 3)
+                    throw new PgpException("Version 3 signatures don't support attributes");
+
+                hashedAttributes = value;
+            }
         }
 
-        public void SetUnhashedSubpackets(PgpSignatureSubpacketVector unhashedPackets)
+        public PgpSignatureAttributes UnhashedAttributes
         {
-            if (version == 3)
-                throw new PgpException("Version 3 signatures don't support subpackets");
+            get
+            {
+                if (version == 3)
+                    throw new PgpException("Version 3 signatures don't support attributes");
 
-            unhashed = unhashedPackets == null ? Array.Empty<SignatureSubpacket>() : unhashedPackets.ToSubpacketArray();
+                return unhashedAttributes ?? (unhashedAttributes = new PgpSignatureAttributes());
+            }
+            set
+            {
+                if (version == 3)
+                    throw new PgpException("Version 3 signatures don't support attributes");
+
+                unhashedAttributes = value;
+            }
         }
 
         /// <summary>Return a signature object containing the current signature state.</summary>
         internal PgpSignature Generate()
         {
             DateTime creationTime = DateTime.UtcNow;
-            SignatureSubpacket[] hPkts = hashed, unhPkts = unhashed;
 
             if (version >= 4)
             {
-                var creationTimePacket = hashed.OfType<SignatureCreationTime>().FirstOrDefault();
-                if (creationTimePacket == null)
+                if (!HashedAttributes.SignatureCreationTime.HasValue)
                 {
-                    hPkts = hPkts.Append(new SignatureCreationTime(false, creationTime)).ToArray();
+                    HashedAttributes.SetSignatureCreationTime(false, creationTime);
                 }
                 else
                 {
-                    creationTime = creationTimePacket.Time;
+                    creationTime = hashedAttributes.SignatureCreationTime.Value;
                 }
 
-                if (!hashed.Any(sp => sp.SubpacketType == SignatureSubpacketTag.IssuerKeyId) &&
-                    !unhashed.Any(sp => sp.SubpacketType == SignatureSubpacketTag.IssuerKeyId))
-                {
-                    unhPkts = unhPkts.Append(new IssuerKeyId(false, privateKey.KeyId)).ToArray();
+                if (!HashedAttributes.IssuerKeyId.HasValue &&
+                    !UnhashedAttributes.IssuerKeyId.HasValue)
+                { 
+                    UnhashedAttributes.SetIssuerKeyId(false, privateKey.KeyId);
                 }
             }
 
-            helper.Finish(version, privateKey.PublicKeyPacket.Algorithm, creationTime, hPkts);
+            var hashedPackets = hashedAttributes == null ? Array.Empty<SignatureSubpacket>() : hashedAttributes.ToSubpacketArray();
+
+            helper.Finish(
+                version,
+                privateKey.PublicKeyPacket.Algorithm,
+                creationTime,
+                hashedPackets);
 
             var signature = privateKey.Sign(helper.Hash, helper.HashAlgorithm);
             return new PgpSignature(new SignaturePacket(
                 version, helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
-                hashAlgorithm, creationTime, hPkts, unhPkts,
+                hashAlgorithm, creationTime,
+                hashedPackets,
+                unhashedAttributes == null ? Array.Empty<SignatureSubpacket>() : unhashedAttributes.ToSubpacketArray(),
                 helper.Hash.AsSpan(0, 2).ToArray(), signature));
         }
 

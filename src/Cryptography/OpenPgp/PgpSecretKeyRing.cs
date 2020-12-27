@@ -136,7 +136,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpSecretKeyRing ring,
             string oldPassPhrase,
             string newPassPhrase,
-            SymmetricKeyAlgorithmTag newEncAlgorithm)
+            PgpSymmetricKeyAlgorithm newEncAlgorithm)
         {
             IList<PgpSecretKey> newKeys = new List<PgpSecretKey>(ring.keys.Count);
             foreach (PgpSecretKey secretKey in ring.GetSecretKeys())

@@ -290,10 +290,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
             using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, pgpPrivKey, PgpHashAlgorithm.Sha1))
             {
-                string primaryUserId = (string)secretKey.PublicKey.GetUserIds().First();
-                PgpSignatureSubpacketGenerator spGen = new PgpSignatureSubpacketGenerator();
-                spGen.SetSignerUserId(true, primaryUserId);
-                signingGenerator.SetHashedSubpackets(spGen.Generate());
+                signingGenerator.HashedAttributes.SetSignerUserId(true, secretKey.PublicKey.GetUserIds().First());
                 using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
                 {
                     literalStream.Write(dataBytes);

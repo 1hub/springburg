@@ -4,7 +4,7 @@ using System.IO;
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
     /// <summary>Basic type for a PGP Signature sub-packet.</summary>
-    public class SignatureSubpacket
+    class SignatureSubpacket
     {
         private readonly SignatureSubpacketTag type;
         private readonly bool critical;

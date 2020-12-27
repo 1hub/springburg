@@ -30,7 +30,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         internal PgpSecretKey(
             PgpPrivateKey privKey,
             PgpPublicKey pubKey,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             byte[] rawPassPhrase,
             bool useSha1,
             bool isMasterKey)
@@ -89,7 +89,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
                 keyData = keyData.Concat(checksumData).ToArray();
 
-                if (encAlgorithm == SymmetricKeyAlgorithmTag.Null)
+                if (encAlgorithm == PgpSymmetricKeyAlgorithm.Null)
                 {
                     if (isMasterKey)
                     {
@@ -146,10 +146,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int certificationLevel,
             PgpKeyPair keyPair,
             string id,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             string passPhrase,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
             : this(certificationLevel, keyPair, id, encAlgorithm, passPhrase, false, hashedPackets, unhashedPackets)
         {
         }
@@ -158,11 +158,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int certificationLevel,
             PgpKeyPair keyPair,
             string id,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             string passPhrase,
             bool useSha1,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
             : this(certificationLevel, keyPair, id, encAlgorithm, Encoding.UTF8.GetBytes(passPhrase), useSha1, hashedPackets, unhashedPackets)
         {
         }
@@ -171,11 +171,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int certificationLevel,
             PgpKeyPair keyPair,
             string id,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             byte[] rawPassPhrase,
             bool useSha1,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
             : this(keyPair.PrivateKey, CertifiedPublicKey(certificationLevel, keyPair, id, hashedPackets, unhashedPackets), encAlgorithm, rawPassPhrase, useSha1, true)
         {
         }
@@ -184,12 +184,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int certificationLevel,
             PgpKeyPair keyPair,
             string id,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             PgpHashAlgorithm hashAlgorithm,
             string passPhrase,
             bool useSha1,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
             : this(certificationLevel, keyPair, id, encAlgorithm, hashAlgorithm, Encoding.UTF8.GetBytes(passPhrase), useSha1, hashedPackets, unhashedPackets)
         {
         }
@@ -198,12 +198,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int certificationLevel,
             PgpKeyPair keyPair,
             string id,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             PgpHashAlgorithm hashAlgorithm,
             byte[] rawPassPhrase,
             bool useSha1,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
             : this(keyPair.PrivateKey, CertifiedPublicKey(certificationLevel, keyPair, id, hashedPackets, unhashedPackets, hashAlgorithm), encAlgorithm, rawPassPhrase, useSha1, true)
         {
         }
@@ -212,15 +212,15 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int certificationLevel,
             PgpKeyPair keyPair,
             string id,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
         {
             PgpSignatureGenerator sGen = new PgpSignatureGenerator(certificationLevel, keyPair.PrivateKey, PgpHashAlgorithm.Sha1);
 
             // Generate the certification
 
-            sGen.SetHashedSubpackets(hashedPackets);
-            sGen.SetUnhashedSubpackets(unhashedPackets);
+            sGen.HashedAttributes = hashedPackets;
+            sGen.UnhashedAttributes = unhashedPackets;
 
             try
             {
@@ -238,15 +238,15 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int certificationLevel,
             PgpKeyPair keyPair,
             string id,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets,
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets,
             PgpHashAlgorithm hashAlgorithm)
         {
             PgpSignatureGenerator sGen = new PgpSignatureGenerator(certificationLevel, keyPair.PrivateKey, hashAlgorithm);
 
             // Generate the certification
-            sGen.SetHashedSubpackets(hashedPackets);
-            sGen.SetUnhashedSubpackets(unhashedPackets);
+            sGen.HashedAttributes = hashedPackets;
+            sGen.UnhashedAttributes = unhashedPackets;
 
             try
             {
@@ -264,10 +264,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
             AsymmetricAlgorithm keyPair,
             DateTime time,
             string id,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             string passPhrase,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
             : this(certificationLevel, new PgpKeyPair(keyPair, time), id, encAlgorithm, passPhrase, false, hashedPackets, unhashedPackets)
         {
         }
@@ -277,11 +277,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             AsymmetricAlgorithm keyPair,
             DateTime time,
             string id,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             string passPhrase,
             bool useSha1,
-            PgpSignatureSubpacketVector hashedPackets,
-            PgpSignatureSubpacketVector unhashedPackets)
+            PgpSignatureAttributes hashedPackets,
+            PgpSignatureAttributes unhashedPackets)
             : this(certificationLevel, new PgpKeyPair(keyPair, time), id, encAlgorithm, passPhrase, useSha1, hashedPackets, unhashedPackets)
         {
         }
@@ -333,7 +333,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         }
 
         /// <summary>The algorithm the key is encrypted with.</summary>
-        public SymmetricKeyAlgorithmTag KeyEncryptionAlgorithm
+        public PgpSymmetricKeyAlgorithm KeyEncryptionAlgorithm
         {
             get { return secret.EncAlgorithm; }
         }
@@ -352,10 +352,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         private byte[] ExtractKeyData(byte[] rawPassPhrase)
         {
-            SymmetricKeyAlgorithmTag encAlgorithm = secret.EncAlgorithm;
+            PgpSymmetricKeyAlgorithm encAlgorithm = secret.EncAlgorithm;
             byte[] encData = secret.GetSecretKeyData();
 
-            if (encAlgorithm == SymmetricKeyAlgorithmTag.Null)
+            if (encAlgorithm == PgpSymmetricKeyAlgorithm.Null)
                 // TODO Check checksum here?
                 return encData;
 
@@ -448,7 +448,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
         }
 
-        private static byte[] RecoverKeyData(SymmetricKeyAlgorithmTag encAlgorithm, CipherMode cipherMode,
+        private static byte[] RecoverKeyData(PgpSymmetricKeyAlgorithm encAlgorithm, CipherMode cipherMode,
             byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
         {
             var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
@@ -684,7 +684,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpSecretKey key,
             string oldPassPhrase,
             string newPassPhrase,
-            SymmetricKeyAlgorithmTag newEncAlgorithm)
+            PgpSymmetricKeyAlgorithm newEncAlgorithm)
         {
             return CopyWithNewPassword(key, Encoding.UTF8.GetBytes(oldPassPhrase), Encoding.UTF8.GetBytes(newPassPhrase), newEncAlgorithm);
         }
@@ -705,7 +705,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpSecretKey key,
             byte[] rawOldPassPhrase,
             byte[] rawNewPassPhrase,
-            SymmetricKeyAlgorithmTag newEncAlgorithm)
+            PgpSymmetricKeyAlgorithm newEncAlgorithm)
         {
             if (key.IsPrivateKeyEmpty)
                 throw new PgpException("no private key in this SecretKey - public key present only.");
@@ -717,7 +717,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             byte[] keyData;
             PublicKeyPacket pubKeyPacket = key.secret.PublicKeyPacket;
 
-            if (newEncAlgorithm == SymmetricKeyAlgorithmTag.Null)
+            if (newEncAlgorithm == PgpSymmetricKeyAlgorithm.Null)
             {
                 s2kUsage = S2kUsageTag.None;
                 if (key.secret.S2kUsage == S2kUsageTag.Sha1)   // SHA-1 hash, need to rewrite Checksum
@@ -794,7 +794,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         private static byte[] EncryptKeyDataV3(
             byte[] rawKeyData,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             byte[] rawPassPhrase,
             out S2k s2k,
             out byte[] iv)
@@ -848,7 +848,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         private static byte[] EncryptKeyDataV4(
             byte[] rawKeyData,
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             PgpHashAlgorithm hashAlgorithm,
             byte[] rawPassPhrase,
             out S2k s2k,
@@ -861,7 +861,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         }
 
         private static byte[] EncryptData(
-            SymmetricKeyAlgorithmTag encAlgorithm,
+            PgpSymmetricKeyAlgorithm encAlgorithm,
             byte[] key,
             byte[] data,
             int dataOff,
@@ -990,7 +990,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
                 byte[] dValue = GetDValue(reader, pubKey.PublicKeyPacket, rawPassPhrase, curveName);
 
-                return new PgpSecretKey(new SecretKeyPacket(pubKey.PublicKeyPacket, SymmetricKeyAlgorithmTag.Null, null, null,
+                return new PgpSecretKey(new SecretKeyPacket(pubKey.PublicKeyPacket, PgpSymmetricKeyAlgorithm.Null, null, null,
                     new MPInteger(dValue).GetEncoded()), pubKey);
             }
 
@@ -1099,8 +1099,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             {
                 case "openpgp-s2k3-sha1-aes256-cbc":
                 case "openpgp-s2k3-sha1-aes-cbc":
-                    SymmetricKeyAlgorithmTag symmAlg =
-                        protection.Equals("openpgp-s2k3-sha1-aes256-cbc") ? SymmetricKeyAlgorithmTag.Aes256 : SymmetricKeyAlgorithmTag.Aes128;
+                    PgpSymmetricKeyAlgorithm symmAlg =
+                        protection.Equals("openpgp-s2k3-sha1-aes256-cbc") ? PgpSymmetricKeyAlgorithm.Aes256 : PgpSymmetricKeyAlgorithm.Aes128;
                     key = PgpUtilities.DoMakeKeyFromPassPhrase(symmAlg, s2k, rawPassPhrase);
                     data = RecoverKeyData(symmAlg, CipherMode.CBC, key, iv, secKeyData, 0, secKeyData.Length);
                     // TODO: check SHA-1 hash.
@@ -1109,7 +1109,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 case "openpgp-s2k3-ocb-aes":
                     MemoryStream aad = new MemoryStream();
                     WriteSExprPublicKey(new SXprWriter(aad), publicKey, curveName, protectedAt);
-                    key = PgpUtilities.DoMakeKeyFromPassPhrase(SymmetricKeyAlgorithmTag.Aes128, s2k, rawPassPhrase);
+                    key = PgpUtilities.DoMakeKeyFromPassPhrase(PgpSymmetricKeyAlgorithm.Aes128, s2k, rawPassPhrase);
                     /*IBufferedCipher c = CipherUtilities.GetCipher("AES/OCB");
                     c.Init(false, new AeadParameters(key, 128, iv, aad.ToArray()));
                     data = c.DoFinal(secKeyData, 0, secKeyData.Length);*/

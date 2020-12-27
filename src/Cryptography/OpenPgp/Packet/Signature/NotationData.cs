@@ -2,12 +2,12 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
+namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
 {
     /// <summary>
     /// Class provided a NotationData object according to RFC 4880bis, 5.2.3.17. Notation Data
     /// </summary>
-    public class NotationData : SignatureSubpacket
+    class NotationData : SignatureSubpacket
     {
         public const int HeaderFlagLength = 4;
         public const int HeaderNameLength = 2;

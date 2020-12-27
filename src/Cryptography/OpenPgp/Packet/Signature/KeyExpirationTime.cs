@@ -1,16 +1,16 @@
 using System;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
+namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
 {
     class KeyExpirationTime : SignatureSubpacket
     {
         public KeyExpirationTime(bool critical, bool isLongLength, byte[] data)
-            : base(SignatureSubpacketTag.KeyExpireTime, critical, isLongLength, data)
+            : base(SignatureSubpacketTag.KeyExpirationTime, critical, isLongLength, data)
         {
         }
 
         public KeyExpirationTime(bool critical, TimeSpan time)
-            : base(SignatureSubpacketTag.KeyExpireTime, critical, false, SecondsToBytes((long)time.TotalSeconds))
+            : base(SignatureSubpacketTag.KeyExpirationTime, critical, false, SecondsToBytes((long)time.TotalSeconds))
         {
         }
 
