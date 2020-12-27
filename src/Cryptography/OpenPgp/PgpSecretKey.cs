@@ -1,4 +1,5 @@
 using InflatablePalace.Cryptography.Algorithms;
+using InflatablePalace.Cryptography.Helpers;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
 using System;
 using System.Collections;
@@ -477,7 +478,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
             var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
             c.Mode = cipherMode;
-            var decryptor = new ZeroPaddedCryptoTransformWrapper(c.CreateDecryptor(key, iv));
+            var decryptor = new ZeroPaddedCryptoTransform(c.CreateDecryptor(key, iv));
             return decryptor.TransformFinalBlock(keyData, keyOff, keyLen);
         }
 
@@ -897,7 +898,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             {
                 iv = PgpUtilities.GenerateIV((c.BlockSize + 7) / 8);
             }
-            var encryptor = new ZeroPaddedCryptoTransformWrapper(c.CreateEncryptor(key, iv));
+            var encryptor = new ZeroPaddedCryptoTransform(c.CreateEncryptor(key, iv));
             return encryptor.TransformFinalBlock(data, dataOff, dataLen);
         }
 

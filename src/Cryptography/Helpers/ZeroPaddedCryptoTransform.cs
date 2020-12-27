@@ -2,17 +2,17 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.Algorithms
+namespace InflatablePalace.Cryptography.Helpers
 {
     /// <summary>
     /// Wrapper around cryptography transformations that generates and
     /// truncated zero padding around the last block.
     /// </summary>
-    class ZeroPaddedCryptoTransformWrapper : ICryptoTransform
+    class ZeroPaddedCryptoTransform : ICryptoTransform
     {
         ICryptoTransform transform;
 
-        public ZeroPaddedCryptoTransformWrapper(ICryptoTransform transform)
+        public ZeroPaddedCryptoTransform(ICryptoTransform transform)
         {
             this.transform = transform;
             Debug.Assert(transform.InputBlockSize == transform.OutputBlockSize);

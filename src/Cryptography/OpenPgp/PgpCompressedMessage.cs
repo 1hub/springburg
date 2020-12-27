@@ -1,4 +1,5 @@
 ﻿using InflatablePalace.Cryptography.Algorithms;
+using InflatablePalace.Cryptography.Helpers;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
 using InflatablePalace.IO.Checksum;
 using System.IO;

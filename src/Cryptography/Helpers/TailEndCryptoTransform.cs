@@ -3,7 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.Algorithms
+namespace InflatablePalace.Cryptography.Helpers
 {
     class TailEndCryptoTransform : ICryptoTransform
     {

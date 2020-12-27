@@ -1,4 +1,5 @@
 ﻿using InflatablePalace.Cryptography.Algorithms;
+using InflatablePalace.Cryptography.Helpers;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
 using InflatablePalace.IO;
 using System;
@@ -182,7 +183,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             encStream = new CryptoStream(
                 inputStream,
-                new ZeroPaddedCryptoTransformWrapper(decryptor),
+                new ZeroPaddedCryptoTransform(decryptor),
                 CryptoStreamMode.Read);
             if (encryptedPacket is SymmetricEncIntegrityPacket)
             {
@@ -218,7 +219,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 if (keyData.SecKeyData?.Length > 0)
                 {
                     using var keyCipher = PgpUtilities.GetSymmetricAlgorithm(keyData.EncAlgorithm);
-                    using var keyDecryptor = new ZeroPaddedCryptoTransformWrapper(keyCipher.CreateDecryptor(key, new byte[(keyCipher.BlockSize + 7) / 8]));
+                    using var keyDecryptor = new ZeroPaddedCryptoTransform(keyCipher.CreateDecryptor(key, new byte[(keyCipher.BlockSize + 7) / 8]));
                     return keyDecryptor.TransformFinalBlock(keyData.SecKeyData, 0, keyData.SecKeyData.Length);
                 }
                 else

@@ -1,4 +1,5 @@
 using InflatablePalace.Cryptography.Algorithms;
+using InflatablePalace.Cryptography.Helpers;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
 using InflatablePalace.IO;
 using System;
@@ -50,7 +51,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             public override void AddSessionInfo(byte[] si)
             {
                 using var symmetricAlgorithm = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
-                using var encryptor = new ZeroPaddedCryptoTransformWrapper(symmetricAlgorithm.CreateEncryptor(key, new byte[(symmetricAlgorithm.BlockSize + 7) / 8]));
+                using var encryptor = new ZeroPaddedCryptoTransform(symmetricAlgorithm.CreateEncryptor(key, new byte[(symmetricAlgorithm.BlockSize + 7) / 8]));
                 this.sessionInfo = encryptor.TransformFinalBlock(si, 0, si.Length - 2);
             }
 
@@ -226,7 +227,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     encryptor = c.CreateEncryptor();
                 }
 
-                Stream myOut = cOut = new CryptoStream(pOut, new ZeroPaddedCryptoTransformWrapper(encryptor), CryptoStreamMode.Write);
+                Stream myOut = cOut = new CryptoStream(pOut, new ZeroPaddedCryptoTransform(encryptor), CryptoStreamMode.Write);
 
                 if (withIntegrityPacket)
                 {
