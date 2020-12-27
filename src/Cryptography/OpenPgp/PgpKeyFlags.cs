@@ -4,7 +4,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 {
     /// <summary>Key flag values for the KeyFlags subpacket.</summary>
     [Flags]
-    public enum KeyFlags
+    public enum PgpKeyFlags
     {
         CertifyOther = 0x01, // This key may be used to certify other keys.
         SignData = 0x02, // This key may be used to sign data.

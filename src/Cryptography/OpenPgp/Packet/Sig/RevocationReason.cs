@@ -15,14 +15,14 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
 
         public RevocationReason(
             bool isCritical,
-            RevocationReasonTag reason,
+            PgpRevocationReason reason,
             string description)
             : base(SignatureSubpacketTag.RevocationReason, isCritical, false, CreateData(reason, description))
         {
         }
 
         private static byte[] CreateData(
-            RevocationReasonTag reason,
+            PgpRevocationReason reason,
             string description)
         {
             byte[] data = new byte[1 + Encoding.UTF8.GetByteCount(description)];
@@ -31,7 +31,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
             return data;
         }
 
-        public RevocationReasonTag Reason => (RevocationReasonTag)data[0];
+        public PgpRevocationReason Reason => (PgpRevocationReason)data[0];
 
         public string Description
         {

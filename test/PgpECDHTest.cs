@@ -175,7 +175,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5))
             {
                 encryptedGenerator.AddMethod(ecdhKeyPair.PublicKey);
-                using (var literalStream = encryptedGenerator.CreateLiteral(PgpLiteralData.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
+                using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Utf8, "_CONSOLE", DateTime.UtcNow))
                     literalStream.Write(text);
             }
 
@@ -201,7 +201,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5))
             {
                 encryptedGenerator.AddMethod(publicKeyRing.GetPublicKey(0x6c37367cd2f455c5));
-                using (var literalStream = encryptedGenerator.CreateLiteral(PgpLiteralData.Utf8, PgpLiteralData.Console, DateTime.UtcNow))
+                using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Utf8, "_CONSOLE", DateTime.UtcNow))
                     literalStream.Write(text);
             }
 

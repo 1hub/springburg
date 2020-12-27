@@ -9,7 +9,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         private int version;
         private long time;
         private int validDays;
-        private PublicKeyAlgorithmTag algorithm;
+        private PgpPublicKeyAlgorithm algorithm;
         private BcpgKey key;
 
         internal PublicKeyPacket(Stream bcpgIn)
@@ -24,27 +24,27 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 validDays = (bcpgIn.ReadByte() << 8) | bcpgIn.ReadByte();
             }
 
-            algorithm = (PublicKeyAlgorithmTag)bcpgIn.ReadByte();
+            algorithm = (PgpPublicKeyAlgorithm)bcpgIn.ReadByte();
 
             switch (algorithm)
             {
-                case PublicKeyAlgorithmTag.RsaEncrypt:
-                case PublicKeyAlgorithmTag.RsaGeneral:
-                case PublicKeyAlgorithmTag.RsaSign:
+                case PgpPublicKeyAlgorithm.RsaEncrypt:
+                case PgpPublicKeyAlgorithm.RsaGeneral:
+                case PgpPublicKeyAlgorithm.RsaSign:
                     key = new RsaPublicBcpgKey(bcpgIn);
                     break;
-                case PublicKeyAlgorithmTag.Dsa:
+                case PgpPublicKeyAlgorithm.Dsa:
                     key = new DsaPublicBcpgKey(bcpgIn);
                     break;
-                case PublicKeyAlgorithmTag.ElGamalEncrypt:
-                case PublicKeyAlgorithmTag.ElGamalGeneral:
+                case PgpPublicKeyAlgorithm.ElGamalEncrypt:
+                case PgpPublicKeyAlgorithm.ElGamalGeneral:
                     key = new ElGamalPublicBcpgKey(bcpgIn);
                     break;
-                case PublicKeyAlgorithmTag.ECDH:
+                case PgpPublicKeyAlgorithm.ECDH:
                     key = new ECDHPublicBcpgKey(bcpgIn);
                     break;
-                case PublicKeyAlgorithmTag.ECDsa:
-                case PublicKeyAlgorithmTag.EdDsa:
+                case PgpPublicKeyAlgorithm.ECDsa:
+                case PgpPublicKeyAlgorithm.EdDsa:
                     key = new ECDsaPublicBcpgKey(bcpgIn);
                     break;
                 default:
@@ -54,7 +54,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         /// <summary>Construct a version 4 public key packet.</summary>
         public PublicKeyPacket(
-            PublicKeyAlgorithmTag algorithm,
+            PgpPublicKeyAlgorithm algorithm,
             DateTime time,
             BcpgKey key)
         {
@@ -66,7 +66,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public int Version => version;
 
-        public PublicKeyAlgorithmTag Algorithm => algorithm;
+        public PgpPublicKeyAlgorithm Algorithm => algorithm;
 
         public int ValidDays => validDays;
 

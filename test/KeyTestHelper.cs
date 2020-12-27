@@ -14,8 +14,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var encodedStream = new MemoryStream();
 
             var messageGenerator = new PgpMessageGenerator(encodedStream);
-            using (var signedGenerator = messageGenerator.CreateSigned(PgpSignature.BinaryDocument, privateKey, HashAlgorithmTag.Sha256))
-            using (var literalStram = signedGenerator.CreateLiteral(PgpLiteralData.Binary, "", DateTime.UtcNow))
+            using (var signedGenerator = messageGenerator.CreateSigned(PgpSignature.BinaryDocument, privateKey, PgpHashAlgorithm.Sha256))
+            using (var literalStram = signedGenerator.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))
             {
                 literalStram.Write(msg);
             }

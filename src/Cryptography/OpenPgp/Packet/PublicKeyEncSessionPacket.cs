@@ -9,7 +9,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
     {
         private int version;
         private long keyId;
-        private PublicKeyAlgorithmTag algorithm;
+        private PgpPublicKeyAlgorithm algorithm;
         private byte[] sessionKey;
 
         internal PublicKeyEncSessionPacket(Stream bcpgIn)
@@ -25,16 +25,16 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             keyId |= (long)bcpgIn.ReadByte() << 8;
             keyId |= (uint)bcpgIn.ReadByte();
 
-            algorithm = (PublicKeyAlgorithmTag)bcpgIn.ReadByte();
+            algorithm = (PgpPublicKeyAlgorithm)bcpgIn.ReadByte();
 
             switch (algorithm)
             {
-                case PublicKeyAlgorithmTag.RsaEncrypt:
-                case PublicKeyAlgorithmTag.RsaGeneral:
+                case PgpPublicKeyAlgorithm.RsaEncrypt:
+                case PgpPublicKeyAlgorithm.RsaGeneral:
                     sessionKey = new MPInteger(bcpgIn).Value;
                     break;
-                case PublicKeyAlgorithmTag.ElGamalEncrypt:
-                case PublicKeyAlgorithmTag.ElGamalGeneral:
+                case PgpPublicKeyAlgorithm.ElGamalEncrypt:
+                case PgpPublicKeyAlgorithm.ElGamalGeneral:
                     MPInteger p = new MPInteger(bcpgIn);
                     MPInteger g = new MPInteger(bcpgIn);
                     int halfLength = Math.Max(p.Value.Length, g.Value.Length);
@@ -42,7 +42,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                     p.Value.CopyTo(sessionKey.AsSpan(halfLength - p.Value.Length));
                     g.Value.CopyTo(sessionKey.AsSpan(sessionKey.Length - g.Value.Length));
                     break;
-                case PublicKeyAlgorithmTag.ECDH:
+                case PgpPublicKeyAlgorithm.ECDH:
                     sessionKey = bcpgIn.ReadAll();
                     break;
                 default:
@@ -52,7 +52,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public PublicKeyEncSessionPacket(
             long keyId,
-            PublicKeyAlgorithmTag algorithm,
+            PgpPublicKeyAlgorithm algorithm,
             ReadOnlySpan<byte> sessionKey)
         {
             this.version = 3;
@@ -65,7 +65,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public long KeyId => keyId;
 
-        public PublicKeyAlgorithmTag Algorithm => algorithm;
+        public PgpPublicKeyAlgorithm Algorithm => algorithm;
 
         public byte[] SessionKey => sessionKey;
 
@@ -79,17 +79,17 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
             switch (algorithm)
             {
-                case PublicKeyAlgorithmTag.RsaEncrypt:
-                case PublicKeyAlgorithmTag.RsaGeneral:
+                case PgpPublicKeyAlgorithm.RsaEncrypt:
+                case PgpPublicKeyAlgorithm.RsaGeneral:
                     new MPInteger(sessionKey).Encode(bcpgOut);
                     break;
-                case PublicKeyAlgorithmTag.ElGamalEncrypt:
-                case PublicKeyAlgorithmTag.ElGamalGeneral:
+                case PgpPublicKeyAlgorithm.ElGamalEncrypt:
+                case PgpPublicKeyAlgorithm.ElGamalGeneral:
                     int halfLength = sessionKey.Length / 2;
                     new MPInteger(sessionKey.AsSpan(0, halfLength)).Encode(bcpgOut);
                     new MPInteger(sessionKey.AsSpan(halfLength)).Encode(bcpgOut);
                     break;
-                case PublicKeyAlgorithmTag.ECDH:
+                case PgpPublicKeyAlgorithm.ECDH:
                     bcpgOut.Write(sessionKey);
                     break;
                 default:

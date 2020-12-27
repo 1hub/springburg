@@ -24,9 +24,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         public long KeyId => onePassSignaturePacket != null ? onePassSignaturePacket.KeyId : signaturePacket.KeyId;
 
-        public PublicKeyAlgorithmTag KeyAlgorithm => onePassSignaturePacket != null ? onePassSignaturePacket.KeyAlgorithm : signaturePacket.KeyAlgorithm;
+        public PgpPublicKeyAlgorithm KeyAlgorithm => onePassSignaturePacket != null ? onePassSignaturePacket.KeyAlgorithm : signaturePacket.KeyAlgorithm;
 
-        public HashAlgorithmTag HashAlgorithm => onePassSignaturePacket != null ? onePassSignaturePacket.HashAlgorithm : signaturePacket.HashAlgorithm;
+        public PgpHashAlgorithm HashAlgorithm => onePassSignaturePacket != null ? onePassSignaturePacket.HashAlgorithm : signaturePacket.HashAlgorithm;
 
         public PgpMessage ReadMessage()
         {

@@ -63,10 +63,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public int Version => sigPck.Version;
 
         /// <summary>The key algorithm associated with this signature.</summary>
-        public PublicKeyAlgorithmTag KeyAlgorithm => sigPck.KeyAlgorithm;
+        public PgpPublicKeyAlgorithm KeyAlgorithm => sigPck.KeyAlgorithm;
 
         /// <summary>The hash algorithm associated with this signature.</summary>
-        public HashAlgorithmTag HashAlgorithm => sigPck.HashAlgorithm;
+        public PgpHashAlgorithm HashAlgorithm => sigPck.HashAlgorithm;
 
         /// <summary>Return true if this signature represents a certification.</summary>
         public bool IsCertification

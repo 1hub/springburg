@@ -11,7 +11,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         }
 
         /// <summary>Construct a version 4 public subkey packet.</summary>
-        public PublicSubkeyPacket(PublicKeyAlgorithmTag algorithm, DateTime time, BcpgKey key)
+        public PublicSubkeyPacket(PgpPublicKeyAlgorithm algorithm, DateTime time, BcpgKey key)
             : base(algorithm, time, key)
         {
         }

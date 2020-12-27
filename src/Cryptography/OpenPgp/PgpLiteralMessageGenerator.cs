@@ -7,13 +7,6 @@ namespace InflatablePalace.Cryptography.OpenPgp
     /// <summary>Class for producing literal data packets.</summary>
     class PgpLiteralMessageGenerator
     {
-        public const char Binary = PgpLiteralData.Binary;
-        public const char Text = PgpLiteralData.Text;
-        public const char Utf8 = PgpLiteralData.Utf8;
-
-        /// <summary>The special name indicating a "for your eyes only" packet.</summary>
-        public const string Console = PgpLiteralData.Console;
-
         private IPacketWriter writer;
         private Stream outputStream;
 
@@ -26,7 +19,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <param name="modificationTime">The time of last modification we want stored.</param>
         public PgpLiteralMessageGenerator(
             IPacketWriter writer,
-            char format,
+            PgpDataFormat format,
             string name,
             DateTime modificationTime)
         {
@@ -46,7 +39,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <param name="fileInfo">The FileInfo object containg the packet details.</param>
         public PgpLiteralMessageGenerator(
             IPacketWriter writer,
-            char format,
+            PgpDataFormat format,
             FileInfo fileInfo)
             : this(writer, format, fileInfo.Name, fileInfo.LastWriteTime)
         {

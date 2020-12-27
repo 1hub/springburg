@@ -85,12 +85,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
             DateTime time)
         {
             BcpgKey bcpgKey;
-            PublicKeyAlgorithmTag algorithm;
+            PgpPublicKeyAlgorithm algorithm;
             this.key = pubKey;
             if (pubKey is RSA rK)
             {
                 var rKParams = rK.ExportParameters(false);
-                algorithm = PublicKeyAlgorithmTag.RsaGeneral;
+                algorithm = PgpPublicKeyAlgorithm.RsaGeneral;
                 bcpgKey = new RsaPublicBcpgKey(
                     new MPInteger(rKParams.Modulus),
                     new MPInteger(rKParams.Exponent));
@@ -98,7 +98,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             else if (pubKey is DSA dK)
             {
                 var dKParams = dK.ExportParameters(false);
-                algorithm = PublicKeyAlgorithmTag.Dsa;
+                algorithm = PgpPublicKeyAlgorithm.Dsa;
                 bcpgKey = new DsaPublicBcpgKey(
                     new MPInteger(dKParams.P),
                     new MPInteger(dKParams.Q),
@@ -109,21 +109,21 @@ namespace InflatablePalace.Cryptography.OpenPgp
             else if (pubKey is X25519 x25519K)
             {
                 var ecdhKParams = x25519K.ExportParameters(false);
-                algorithm = PublicKeyAlgorithmTag.ECDH;
+                algorithm = PgpPublicKeyAlgorithm.ECDH;
                 bcpgKey = new ECDHPublicBcpgKey(
                     new Oid("1.3.6.1.4.1.3029.1.5.1"),
                     new MPInteger(new byte[] { 0x40 }.Concat(ecdhKParams.Q.X).ToArray()),
-                    HashAlgorithmTag.Sha256,
+                    PgpHashAlgorithm.Sha256,
                     SymmetricKeyAlgorithmTag.Aes128);
             }
             else if (pubKey is ECDiffieHellman ecdhK)
             {
                 var ecdhKParams = ecdhK.ExportParameters(false);
-                algorithm = PublicKeyAlgorithmTag.ECDH;
+                algorithm = PgpPublicKeyAlgorithm.ECDH;
                 bcpgKey = new ECDHPublicBcpgKey(
                     ecdhKParams.Curve.Oid,
                     PgpUtilities.EncodePoint(ecdhKParams.Q),
-                    HashAlgorithmTag.Sha256,
+                    PgpHashAlgorithm.Sha256,
                     SymmetricKeyAlgorithmTag.Aes128);
             }
             else if (pubKey is Ed25519Dsa ed25519K)
@@ -132,7 +132,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 var pointBytes = new byte[1 + ed25519KParams.Q.X.Length];
                 pointBytes[0] = 0x40;
                 Array.Copy(ed25519KParams.Q.X, 0, pointBytes, 1, ed25519KParams.Q.X.Length);
-                algorithm = PublicKeyAlgorithmTag.EdDsa;
+                algorithm = PgpPublicKeyAlgorithm.EdDsa;
                 bcpgKey = new ECDsaPublicBcpgKey(
                     new Oid("1.3.6.1.4.1.11591.15.1"),
                     new MPInteger(pointBytes));
@@ -140,7 +140,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             else if (pubKey is ECDsa ecdsaK)
             {
                 var ecdsaKParams = ecdsaK.ExportParameters(false);
-                algorithm = PublicKeyAlgorithmTag.ECDsa;
+                algorithm = PgpPublicKeyAlgorithm.ECDsa;
                 bcpgKey = new ECDsaPublicBcpgKey(
                     ecdsaKParams.Curve.Oid,
                     PgpUtilities.EncodePoint(ecdsaKParams.Q));
@@ -148,7 +148,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             else if (pubKey is ElGamal elgamalK)
             {
                 var elgamalKParams = elgamalK.ExportParameters(false);
-                algorithm = PublicKeyAlgorithmTag.ElGamalGeneral;
+                algorithm = PgpPublicKeyAlgorithm.ElGamalGeneral;
                 bcpgKey = new ElGamalPublicBcpgKey(
                     new MPInteger(elgamalKParams.P),
                     new MPInteger(elgamalKParams.G),
@@ -383,11 +383,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             {
                 switch (publicPk.Algorithm)
                 {
-                    case PublicKeyAlgorithmTag.ECDH:
-                    case PublicKeyAlgorithmTag.ElGamalEncrypt:
-                    case PublicKeyAlgorithmTag.ElGamalGeneral:
-                    case PublicKeyAlgorithmTag.RsaEncrypt:
-                    case PublicKeyAlgorithmTag.RsaGeneral:
+                    case PgpPublicKeyAlgorithm.ECDH:
+                    case PgpPublicKeyAlgorithm.ElGamalEncrypt:
+                    case PgpPublicKeyAlgorithm.ElGamalGeneral:
+                    case PgpPublicKeyAlgorithm.RsaEncrypt:
+                    case PgpPublicKeyAlgorithm.RsaGeneral:
                         return true;
                     default:
                         return false;
@@ -398,11 +398,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <summary>True, if this could be a master key.</summary>
         public bool IsMasterKey
         {
-            get { return (subSigs == null) && !(this.IsEncryptionKey && publicPk.Algorithm != PublicKeyAlgorithmTag.RsaGeneral); }
+            get { return (subSigs == null) && !(this.IsEncryptionKey && publicPk.Algorithm != PgpPublicKeyAlgorithm.RsaGeneral); }
         }
 
         /// <summary>The algorithm code associated with the public key.</summary>
-        public PublicKeyAlgorithmTag Algorithm
+        public PgpPublicKeyAlgorithm Algorithm
         {
             get { return publicPk.Algorithm; }
         }
@@ -419,16 +419,16 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             switch (publicPk.Algorithm)
             {
-                case PublicKeyAlgorithmTag.RsaEncrypt:
-                case PublicKeyAlgorithmTag.RsaGeneral:
-                case PublicKeyAlgorithmTag.RsaSign:
+                case PgpPublicKeyAlgorithm.RsaEncrypt:
+                case PgpPublicKeyAlgorithm.RsaGeneral:
+                case PgpPublicKeyAlgorithm.RsaSign:
                     RsaPublicBcpgKey rsaK = (RsaPublicBcpgKey)publicPk.Key;
                     return key = RSA.Create(new RSAParameters
                     {
                         Modulus = rsaK.Modulus.Value,
                         Exponent = rsaK.PublicExponent.Value
                     });
-                case PublicKeyAlgorithmTag.Dsa:
+                case PgpPublicKeyAlgorithm.Dsa:
                     DsaPublicBcpgKey dsaK = (DsaPublicBcpgKey)publicPk.Key;
                     return key = DSA.Create(new DSAParameters
                     {
@@ -437,15 +437,15 @@ namespace InflatablePalace.Cryptography.OpenPgp
                         Q = dsaK.Q.Value,
                         G = dsaK.G.Value,
                     });
-                case PublicKeyAlgorithmTag.ECDsa:
-                case PublicKeyAlgorithmTag.ECDH:
+                case PgpPublicKeyAlgorithm.ECDsa:
+                case PgpPublicKeyAlgorithm.ECDH:
                     ECPublicBcpgKey ecK = (ECPublicBcpgKey)publicPk.Key;
                     var curve = ECCurve.CreateFromOid(ecK.CurveOid);
                     var ecParameters = new ECParameters { Curve = curve, Q = PgpUtilities.DecodePoint(ecK.EncodedPoint) };
-                    key = publicPk.Algorithm == PublicKeyAlgorithmTag.ECDsa ? ECDsa.Create(ecParameters) : PgpUtilities.GetECDiffieHellman(ecParameters);
+                    key = publicPk.Algorithm == PgpPublicKeyAlgorithm.ECDsa ? ECDsa.Create(ecParameters) : PgpUtilities.GetECDiffieHellman(ecParameters);
                     return key;
 
-                case PublicKeyAlgorithmTag.EdDsa:
+                case PgpPublicKeyAlgorithm.EdDsa:
                     ecK = (ECPublicBcpgKey)publicPk.Key;
                     if (ecK.CurveOid.Value == "1.3.6.1.4.1.11591.15.1")
                     {
@@ -454,8 +454,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     }
                     goto default;
 
-                case PublicKeyAlgorithmTag.ElGamalEncrypt:
-                case PublicKeyAlgorithmTag.ElGamalGeneral:
+                case PgpPublicKeyAlgorithm.ElGamalEncrypt:
+                case PgpPublicKeyAlgorithm.ElGamalGeneral:
                     ElGamalPublicBcpgKey elK = (ElGamalPublicBcpgKey)publicPk.Key;
                     return key = ElGamal.Create(new ElGamalParameters { Y = elK.Y.Value, P = elK.P.Value, G = elK.G.Value });
 
@@ -511,7 +511,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             throw new NotImplementedException();
         }
 
-        public bool Verify(byte[] hash, byte[] signature, HashAlgorithmTag hashAlgorithm)
+        public bool Verify(byte[] hash, byte[] signature, PgpHashAlgorithm hashAlgorithm)
         {
             var key = GetKey();
 
@@ -527,9 +527,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         /// <summary>Allows enumeration of any user IDs associated with the key.</summary>
         /// <returns>An <c>IEnumerable</c> of <c>string</c> objects.</returns>
-        public IEnumerable<object> GetUserIds()
+        public IEnumerable<string> GetUserIds()
         {
-            return new List<object>(ids).AsReadOnly();
+            return ids.OfType<string>();
         }
 
         /// <summary>Allows enumeration of any user attribute vectors associated with the key.</summary>

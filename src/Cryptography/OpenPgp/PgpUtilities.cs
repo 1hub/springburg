@@ -25,18 +25,18 @@ namespace InflatablePalace.Cryptography.OpenPgp
             };
         }
 
-        public static string GetDigestName(HashAlgorithmTag hashAlgorithm)
+        public static string GetDigestName(PgpHashAlgorithm hashAlgorithm)
         {
             switch (hashAlgorithm)
             {
-                case HashAlgorithmTag.Sha1: return "SHA1";
-                case HashAlgorithmTag.MD2: return "MD2";
-                case HashAlgorithmTag.MD5: return "MD5";
-                case HashAlgorithmTag.RipeMD160: return "RIPEMD160";
-                case HashAlgorithmTag.Sha224: return "SHA224";
-                case HashAlgorithmTag.Sha256: return "SHA256";
-                case HashAlgorithmTag.Sha384: return "SHA384";
-                case HashAlgorithmTag.Sha512: return "SHA512";
+                case PgpHashAlgorithm.Sha1: return "SHA1";
+                case PgpHashAlgorithm.MD2: return "MD2";
+                case PgpHashAlgorithm.MD5: return "MD5";
+                case PgpHashAlgorithm.RipeMD160: return "RIPEMD160";
+                case PgpHashAlgorithm.Sha224: return "SHA224";
+                case PgpHashAlgorithm.Sha256: return "SHA256";
+                case PgpHashAlgorithm.Sha384: return "SHA384";
+                case PgpHashAlgorithm.Sha512: return "SHA512";
                 default:
                     throw new PgpException("unknown hash algorithm tag in GetDigestName: " + hashAlgorithm);
             }
@@ -312,7 +312,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return iv;
         }
 
-        internal static S2k GenerateS2k(HashAlgorithmTag hashAlgorithm, int s2kCount)
+        internal static S2k GenerateS2k(PgpHashAlgorithm hashAlgorithm, int s2kCount)
         {
             byte[] iv = GenerateIV(8);
             return new S2k(hashAlgorithm, iv, s2kCount);
@@ -345,46 +345,46 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return new MPInteger(pointBytes);
         }
 
-        public static HashAlgorithmTag GetHashAlgorithm(string name)
+        public static PgpHashAlgorithm GetHashAlgorithm(string name)
         {
             return name switch
             {
-                "SHA1" => HashAlgorithmTag.Sha1,
-                "MD2" => HashAlgorithmTag.MD2,
-                "MD5" => HashAlgorithmTag.MD5,
-                "RIPEMD160" => HashAlgorithmTag.RipeMD160,
-                "SHA224" => HashAlgorithmTag.Sha224,
-                "SHA256" => HashAlgorithmTag.Sha256,
-                "SHA384" => HashAlgorithmTag.Sha384,
-                "SHA512" => HashAlgorithmTag.Sha512,
+                "SHA1" => PgpHashAlgorithm.Sha1,
+                "MD2" => PgpHashAlgorithm.MD2,
+                "MD5" => PgpHashAlgorithm.MD5,
+                "RIPEMD160" => PgpHashAlgorithm.RipeMD160,
+                "SHA224" => PgpHashAlgorithm.Sha224,
+                "SHA256" => PgpHashAlgorithm.Sha256,
+                "SHA384" => PgpHashAlgorithm.Sha384,
+                "SHA512" => PgpHashAlgorithm.Sha512,
                 _ => throw new PgpException("unknown hash algorithm name in GetHashAlgorithm: " + name)
             };
         }
 
-        internal static HashAlgorithm GetHashAlgorithm(HashAlgorithmTag hashAlgorithmTag)
+        internal static HashAlgorithm GetHashAlgorithm(PgpHashAlgorithm hashAlgorithmTag)
         {
             switch (hashAlgorithmTag)
             {
-                case HashAlgorithmTag.Sha1: return SHA1.Create();
+                case PgpHashAlgorithm.Sha1: return SHA1.Create();
                 //case HashAlgorithmTag.Sha224: return HashAlgorithm.Create("2.16.840.1.101.3.4.2.4");
-                case HashAlgorithmTag.Sha256: return SHA256.Create();
-                case HashAlgorithmTag.Sha384: return SHA384.Create();
-                case HashAlgorithmTag.Sha512: return SHA512.Create();
-                case HashAlgorithmTag.MD5: return MD5.Create();
+                case PgpHashAlgorithm.Sha256: return SHA256.Create();
+                case PgpHashAlgorithm.Sha384: return SHA384.Create();
+                case PgpHashAlgorithm.Sha512: return SHA512.Create();
+                case PgpHashAlgorithm.MD5: return MD5.Create();
                 default: throw new NotImplementedException("unknown hash algorithm");
             }
         }
 
-        internal static HashAlgorithmName GetHashAlgorithmName(HashAlgorithmTag hashAlgorithmTag)
+        internal static HashAlgorithmName GetHashAlgorithmName(PgpHashAlgorithm hashAlgorithmTag)
         {
             switch (hashAlgorithmTag)
             {
-                case HashAlgorithmTag.Sha1: return HashAlgorithmName.SHA1;
+                case PgpHashAlgorithm.Sha1: return HashAlgorithmName.SHA1;
                 //case HashAlgorithmTag.Sha224: return HashAlgorithmName.FromOid("2.16.840.1.101.3.4.2.4");
-                case HashAlgorithmTag.Sha256: return HashAlgorithmName.SHA256;
-                case HashAlgorithmTag.Sha384: return HashAlgorithmName.SHA384;
-                case HashAlgorithmTag.Sha512: return HashAlgorithmName.SHA512;
-                case HashAlgorithmTag.MD5: return HashAlgorithmName.MD5;
+                case PgpHashAlgorithm.Sha256: return HashAlgorithmName.SHA256;
+                case PgpHashAlgorithm.Sha384: return HashAlgorithmName.SHA384;
+                case PgpHashAlgorithm.Sha512: return HashAlgorithmName.SHA512;
+                case PgpHashAlgorithm.MD5: return HashAlgorithmName.MD5;
                 default: throw new NotImplementedException("unknown hash algorithm");
             }
         }

@@ -5,7 +5,7 @@ using System.IO;
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
     /// <summary>The string to key specifier class.</summary>
-    public class S2k
+    class S2k
     {
         private const int ExpBias = 6;
 
@@ -17,7 +17,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         public const int GnuProtectionModeDivertToCard = 2;
 
         internal int type;
-        internal HashAlgorithmTag algorithm;
+        internal PgpHashAlgorithm algorithm;
         internal byte[] iv;
         internal int itCount = -1;
         internal int protectionMode = -1;
@@ -26,7 +26,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             Stream inStr)
         {
             type = inStr.ReadByte();
-            algorithm = (HashAlgorithmTag)inStr.ReadByte();
+            algorithm = (PgpHashAlgorithm)inStr.ReadByte();
 
             //
             // if this happens we have a dummy-S2k packet.
@@ -55,14 +55,14 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         }
 
         public S2k(
-            HashAlgorithmTag algorithm)
+            PgpHashAlgorithm algorithm)
         {
             this.type = 0;
             this.algorithm = algorithm;
         }
 
         public S2k(
-            HashAlgorithmTag algorithm,
+            PgpHashAlgorithm algorithm,
             byte[] iv)
         {
             this.type = 1;
@@ -71,7 +71,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         }
 
         public S2k(
-            HashAlgorithmTag algorithm,
+            PgpHashAlgorithm algorithm,
             byte[] iv,
             int itCount)
         {
@@ -84,7 +84,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         public int Type => type;
 
         /// <summary>The hash algorithm.</summary>
-        public HashAlgorithmTag HashAlgorithm => algorithm;
+        public PgpHashAlgorithm HashAlgorithm => algorithm;
 
         /// <summary>The IV for the key generation algorithm.</summary>
         public ReadOnlySpan<byte> GetIV() => iv;

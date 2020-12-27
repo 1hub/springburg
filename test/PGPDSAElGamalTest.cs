@@ -99,9 +99,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             DateTime testDateTime = new DateTime(1973, 7, 27);
 
             var messageGenerator = new PgpMessageGenerator(bOut);
-            using (var compressedGenerator = messageGenerator.CreateCompressed(CompressionAlgorithmTag.Zip))
-            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, privKey, HashAlgorithmTag.Sha1))
-            using (var literalStream = signingGenerator.CreateLiteral(PgpLiteralData.Binary, "_CONSOLE", testDateTime))
+            using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
+            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, privKey, PgpHashAlgorithm.Sha1))
+            using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
                 literalStream.Write(text);
 
             // Verify generated signature
@@ -155,7 +155,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.TripleDes))
             {
                 encryptedGenerator.AddMethod(secretKey.PublicKey);
-                using (var literalStream = encryptedGenerator.CreateLiteral(PgpLiteralData.Utf8, "", DateTime.UtcNow))
+                using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Utf8, "", DateTime.UtcNow))
                     literalStream.Write(text);
             }
 
@@ -197,7 +197,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5))
                 {
                     encryptedGenerator.AddMethod(elGamalKeyPair.PublicKey);
-                    using (var literalStream = encryptedGenerator.CreateLiteral(PgpLiteralData.Binary, "", DateTime.UtcNow))
+                    using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))
                         literalStream.Write(text);
                 }
 

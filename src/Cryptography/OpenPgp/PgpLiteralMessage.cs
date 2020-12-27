@@ -16,6 +16,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             this.inputStream = packet.Stream;
         }
 
+        public PgpDataFormat Format => literalDataPacket.Format;
+
         public DateTime ModificationTime => literalDataPacket.ModificationTime;
 
         public string FileName => literalDataPacket.FileName;

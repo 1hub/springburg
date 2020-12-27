@@ -126,11 +126,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return p == null ? TimeSpan.MaxValue : ((KeyExpirationTime)p).Time;
         }
 
-        public HashAlgorithmTag[] GetPreferredHashAlgorithms()
+        public PgpHashAlgorithm[] GetPreferredHashAlgorithms()
         {
             SignatureSubpacket p = GetSubpacket(SignatureSubpacketTag.PreferredHashAlgorithms);
 
-            return p == null ? null : ((PreferredAlgorithms)p).GetPreferences<HashAlgorithmTag>();
+            return p == null ? null : ((PreferredAlgorithms)p).GetPreferences<PgpHashAlgorithm>();
         }
 
         public SymmetricKeyAlgorithmTag[] GetPreferredSymmetricAlgorithms()
@@ -140,14 +140,14 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return p == null ? null : ((PreferredAlgorithms)p).GetPreferences<SymmetricKeyAlgorithmTag>();
         }
 
-        public CompressionAlgorithmTag[] GetPreferredCompressionAlgorithms()
+        public PgpCompressionAlgorithm[] GetPreferredCompressionAlgorithms()
         {
             SignatureSubpacket p = GetSubpacket(SignatureSubpacketTag.PreferredCompressionAlgorithms);
 
-            return p == null ? null : ((PreferredAlgorithms)p).GetPreferences<CompressionAlgorithmTag>();
+            return p == null ? null : ((PreferredAlgorithms)p).GetPreferences<PgpCompressionAlgorithm>();
         }
 
-        public KeyFlags GetKeyFlags()
+        public PgpKeyFlags GetKeyFlags()
         {
             SignatureSubpacket p = GetSubpacket(SignatureSubpacketTag.KeyFlags);
 
@@ -200,7 +200,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return list;
         }
 
-        public FeatureFlags GetFeatures()
+        public PgpFeatureFlags GetFeatures()
         {
             SignatureSubpacket p = this.GetSubpacket(SignatureSubpacketTag.Features);
 

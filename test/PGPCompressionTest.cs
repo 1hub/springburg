@@ -14,35 +14,35 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [Test]
         public void TestUncompressed()
         {
-            doTestCompression(CompressionAlgorithmTag.Uncompressed);
+            doTestCompression(PgpCompressionAlgorithm.Uncompressed);
         }
 
         [Test]
         public void TestZip()
         {
-            doTestCompression(CompressionAlgorithmTag.Zip);
+            doTestCompression(PgpCompressionAlgorithm.Zip);
         }
 
         [Test]
         public void TestZLib()
         {
-            doTestCompression(CompressionAlgorithmTag.ZLib);
+            doTestCompression(PgpCompressionAlgorithm.ZLib);
         }
 
         [Test]
         public void TestBZip2()
         {
-            doTestCompression(CompressionAlgorithmTag.BZip2);
+            doTestCompression(PgpCompressionAlgorithm.BZip2);
         }
 
-        private void doTestCompression(CompressionAlgorithmTag type)
+        private void doTestCompression(PgpCompressionAlgorithm type)
         {
             using MemoryStream bOut = new MemoryStream();
 
             // Compress data
             var messageGenerator = new PgpMessageGenerator(bOut);
             using (var compressedGenerator = messageGenerator.CreateCompressed(type))
-            using (var literalStream = compressedGenerator.CreateLiteral(PgpLiteralData.Binary, "", DateTime.UtcNow))
+            using (var literalStream = compressedGenerator.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))
                 literalStream.Write(Data);
 
             // Read it back

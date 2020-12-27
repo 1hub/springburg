@@ -27,7 +27,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 using MemoryStream bOut = new MemoryStream();
 
                 var messageGenerator = new PgpMessageGenerator(new PacketWriter(bOut, oldFormat));
-                using (var outputStream = messageGenerator.CreateLiteral(PgpLiteralData.Binary, PgpLiteralData.Console, DateTime.UtcNow))
+                using (var outputStream = messageGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", DateTime.UtcNow))
                     outputStream.Write(buf, 0, i);
 
                 bOut.Position = 0;

@@ -13,7 +13,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
     /// <summary>Class for producing compressed data packets.</summary>
     class PgpCompressedMessageGenerator : PgpMessageGenerator
     {
-        private readonly CompressionAlgorithmTag algorithm;
+        private readonly PgpCompressionAlgorithm algorithm;
         private readonly CompressionLevel compressionLevel;
 
         private Stream dOut;
@@ -22,15 +22,15 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         public PgpCompressedMessageGenerator(
             IPacketWriter packetWriter,
-            CompressionAlgorithmTag algorithm,
+            PgpCompressionAlgorithm algorithm,
             CompressionLevel compressionLevel = CompressionLevel.Optimal)
             : base(packetWriter)
         {
             switch (algorithm)
             {
-                case CompressionAlgorithmTag.Uncompressed:
-                case CompressionAlgorithmTag.Zip:
-                case CompressionAlgorithmTag.ZLib:
+                case PgpCompressionAlgorithm.Uncompressed:
+                case PgpCompressionAlgorithm.Zip:
+                case PgpCompressionAlgorithm.ZLib:
                 //case CompressionAlgorithmTag.BZip2:
                     break;
                 default:
@@ -60,13 +60,13 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             switch (algorithm)
             {
-                case CompressionAlgorithmTag.Uncompressed:
+                case PgpCompressionAlgorithm.Uncompressed:
                     dOut = pkOut;
                     break;
-                case CompressionAlgorithmTag.Zip:
+                case PgpCompressionAlgorithm.Zip:
                     dOut = new DeflateStream(pkOut, compressionLevel, leaveOpen: true);
                     break;
-                case CompressionAlgorithmTag.ZLib:
+                case PgpCompressionAlgorithm.ZLib:
                     checksum = new Adler32();
                     byte cmf = 0x78; // Deflate, 32K window size
                     byte flg = 0; // Fastest compression level

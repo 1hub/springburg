@@ -25,7 +25,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             list.Add(new Exportable(isCritical, isExportable));
         }
 
-        public void SetFeatures(bool isCritical, FeatureFlags features)
+        public void SetFeatures(bool isCritical, PgpFeatureFlags features)
         {
             list.Add(new Features(isCritical, features));
         }
@@ -75,7 +75,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             list.Add(new SignatureCreationTime(isCritical, time));
         }
 
-        public void SetPreferredHashAlgorithms(bool isCritical, HashAlgorithmTag[] algorithms)
+        public void SetPreferredHashAlgorithms(bool isCritical, PgpHashAlgorithm[] algorithms)
         {
             list.Add(new PreferredAlgorithms(SignatureSubpacketTag.PreferredHashAlgorithms, isCritical, algorithms.Cast<byte>().ToArray()));
         }
@@ -85,12 +85,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
             list.Add(new PreferredAlgorithms(SignatureSubpacketTag.PreferredSymmetricAlgorithms, isCritical, algorithms.Cast<byte>().ToArray()));
         }
 
-        public void SetPreferredCompressionAlgorithms(bool isCritical, CompressionAlgorithmTag[] algorithms)
+        public void SetPreferredCompressionAlgorithms(bool isCritical, PgpCompressionAlgorithm[] algorithms)
         {
             list.Add(new PreferredAlgorithms(SignatureSubpacketTag.PreferredCompressionAlgorithms, isCritical, algorithms.Cast<byte>().ToArray()));
         }
 
-        public void SetKeyFlags(bool isCritical, KeyFlags flags)
+        public void SetKeyFlags(bool isCritical, PgpKeyFlags flags)
         {
             list.Add(new Packet.Sig.KeyFlags(isCritical, flags));
         }
@@ -152,7 +152,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <summary>
         /// Sets revocation reason sub packet
         /// </summary>	    
-        public void SetRevocationReason(bool isCritical, RevocationReasonTag reason,
+        public void SetRevocationReason(bool isCritical, PgpRevocationReason reason,
             string description)
         {
             list.Add(new RevocationReason(isCritical, reason, description));
@@ -161,7 +161,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <summary>
         /// Sets revocation key sub packet
         /// </summary>	
-        public void SetRevocationKey(bool isCritical, PublicKeyAlgorithmTag keyAlgorithm, byte[] fingerprint)
+        public void SetRevocationKey(bool isCritical, PgpPublicKeyAlgorithm keyAlgorithm, byte[] fingerprint)
         {
             list.Add(new RevocationKey(isCritical, RevocationKeyTag.ClassDefault, keyAlgorithm, fingerprint));
         }

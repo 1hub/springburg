@@ -227,7 +227,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             SkipCloseParenthesis();
 
             // we have to return the actual iteration count provided.
-            return new MyS2k(HashAlgorithmTag.Sha1, iv, iterationCount);
+            return new MyS2k(PgpHashAlgorithm.Sha1, iv, iterationCount);
         }
 
         public void SkipWhitespace()
@@ -262,7 +262,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
             private readonly long mIterationCount64;
 
-            internal MyS2k(HashAlgorithmTag algorithm, byte[] iv, long iterationCount64)
+            internal MyS2k(PgpHashAlgorithm algorithm, byte[] iv, long iterationCount64)
                 : base(algorithm, iv, (int)iterationCount64)
             {
                 this.mIterationCount64 = iterationCount64;

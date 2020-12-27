@@ -90,7 +90,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             throw new NotImplementedException();
         }
 
-        public byte[] Sign(byte[] hash, HashAlgorithmTag hashAlgorithm)
+        public byte[] Sign(byte[] hash, PgpHashAlgorithm hashAlgorithm)
         {
             if (privateKey is RSA rsa)
                 return rsa.SignHash(hash, PgpUtilities.GetHashAlgorithmName(hashAlgorithm), RSASignaturePadding.Pkcs1);

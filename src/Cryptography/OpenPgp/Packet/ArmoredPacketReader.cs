@@ -52,7 +52,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 if (!generatedOnePassPacket)
                 {
                     generatedOnePassPacket = true;
-                    HashAlgorithmTag hashAlgorithmTag = HashAlgorithmTag.MD5;
+                    PgpHashAlgorithm hashAlgorithmTag = PgpHashAlgorithm.MD5;
                     foreach (var header in armoredInputStream.GetArmorHeaders())
                     {
                         if (header.StartsWith("Hash: ", StringComparison.OrdinalIgnoreCase))
@@ -83,7 +83,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                     throw new NotSupportedException();
 
                 var stream = new LiteralDataStream(armoredInputStream);
-                return (new LiteralDataPacket(PgpLiteralData.Utf8, "", DateTime.MinValue), stream);
+                return (new LiteralDataPacket(PgpDataFormat.Utf8, "", DateTime.MinValue), stream);
             }
 
             if (this.packetReader == null)

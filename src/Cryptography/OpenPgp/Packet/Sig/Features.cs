@@ -7,11 +7,11 @@
         {
         }
 
-        public Features(bool critical, FeatureFlags features)
+        public Features(bool critical, PgpFeatureFlags features)
             : base(SignatureSubpacketTag.Features, critical, false, new byte[] { (byte)features })
         {
         }
 
-        public FeatureFlags Flags => (FeatureFlags)data[0];
+        public PgpFeatureFlags Flags => (PgpFeatureFlags)data[0];
     }
 }

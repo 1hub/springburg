@@ -112,13 +112,13 @@ namespace InflatablePalace.Cryptography.OpenPgp
         }
 
         /// <summary>Add a PBE encryption method to the encrypted object.</summary>
-        public void AddMethod(string passPhrase, HashAlgorithmTag s2kDigest)
+        public void AddMethod(string passPhrase, PgpHashAlgorithm s2kDigest)
         {
             AddMethod(Encoding.UTF8.GetBytes(passPhrase), s2kDigest);
         }
 
         /// <summary>Add a PBE encryption method to the encrypted object.</summary>
-        public void AddMethod(byte[] rawPassPhrase, HashAlgorithmTag s2kDigest)
+        public void AddMethod(byte[] rawPassPhrase, PgpHashAlgorithm s2kDigest)
         {
             S2k s2k = PgpUtilities.GenerateS2k(s2kDigest, 0x60);
             methods.Add(new PbeMethod(defAlgorithm, s2k, PgpUtilities.DoMakeKeyFromPassPhrase(defAlgorithm, s2k, rawPassPhrase)));

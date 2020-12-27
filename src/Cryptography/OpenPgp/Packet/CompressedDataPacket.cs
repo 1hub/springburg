@@ -4,19 +4,19 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
     class CompressedDataPacket : StreamablePacket
     {
-        private readonly CompressionAlgorithmTag algorithm;
+        private readonly PgpCompressionAlgorithm algorithm;
 
         internal CompressedDataPacket(Stream bcpgIn)
         {
-            this.algorithm = (CompressionAlgorithmTag)bcpgIn.ReadByte();
+            this.algorithm = (PgpCompressionAlgorithm)bcpgIn.ReadByte();
         }
 
-        public CompressedDataPacket(CompressionAlgorithmTag algorithm)
+        public CompressedDataPacket(PgpCompressionAlgorithm algorithm)
         {
             this.algorithm = algorithm;
         }
 
-        public CompressionAlgorithmTag Algorithm => algorithm;
+        public PgpCompressionAlgorithm Algorithm => algorithm;
 
         public override PacketTag Tag => PacketTag.CompressedData;
 

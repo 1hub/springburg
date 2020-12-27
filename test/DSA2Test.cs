@@ -12,13 +12,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
     public class Dsa2Test
     {
         [Test]
-        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha224)]
-        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha256)]
-        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha384)]
-        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", HashAlgorithmTag.Sha512)]
-        [TestCase("DSA-2048-224.sec", "DSA-2048-224.pub", HashAlgorithmTag.Sha256)]
-        [TestCase("DSA-2048-224.sec", "DSA-2048-224.pub", HashAlgorithmTag.Sha512)]
-        public void GenerateTest(string privateKeyFile, string publicKeyFile, HashAlgorithmTag digest)
+        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", PgpHashAlgorithm.Sha224)]
+        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", PgpHashAlgorithm.Sha256)]
+        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", PgpHashAlgorithm.Sha384)]
+        [TestCase("DSA-1024-160.sec", "DSA-1024-160.pub", PgpHashAlgorithm.Sha512)]
+        [TestCase("DSA-2048-224.sec", "DSA-2048-224.pub", PgpHashAlgorithm.Sha256)]
+        [TestCase("DSA-2048-224.sec", "DSA-2048-224.pub", PgpHashAlgorithm.Sha512)]
+        public void GenerateTest(string privateKeyFile, string publicKeyFile, PgpHashAlgorithm digest)
         {
             PgpSecretKeyRing secRing = loadSecretKey(privateKeyFile);
             PgpPublicKeyRing pubRing = loadPublicKey(publicKeyFile);
@@ -29,7 +29,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             var messageGenerator = new PgpMessageGenerator(bOut);
             using (var signingGenerator = messageGenerator.CreateSigned(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test"), digest))
-            using (var literalStream = signingGenerator.CreateLiteral(PgpLiteralData.Binary, PgpLiteralData.Console, testDate))
+            using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDate))
             {
                 literalStream.Write(dataBytes);
             }
@@ -37,7 +37,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             bOut.Position = 0;
             var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(bOut);
             Assert.AreEqual(digest, signedMessage.HashAlgorithm);
-            Assert.AreEqual(PublicKeyAlgorithmTag.Dsa, signedMessage.KeyAlgorithm);
+            Assert.AreEqual(PgpPublicKeyAlgorithm.Dsa, signedMessage.KeyAlgorithm);
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             Assert.AreEqual(testDate, literalMessage.ModificationTime);
             literalMessage.GetStream().CopyTo(Stream.Null);

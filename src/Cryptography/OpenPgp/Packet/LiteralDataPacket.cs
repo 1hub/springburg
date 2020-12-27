@@ -7,13 +7,13 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
     class LiteralDataPacket : StreamablePacket
     {
-        private int format;
+        private PgpDataFormat format;
         private byte[] fileName;
         private long modificationTime;
 
         internal LiteralDataPacket(Stream bcpgIn)
         {
-            format = bcpgIn.ReadByte();
+            format = (PgpDataFormat)bcpgIn.ReadByte();
             int len = bcpgIn.ReadByte();
 
             fileName = new byte[len];
@@ -28,7 +28,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         }
 
         public LiteralDataPacket(
-            int format,
+            PgpDataFormat format,
             string fileName,
             DateTime modificationTime)
         {
@@ -38,14 +38,14 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         }
 
         /// <summary>The format tag value.</summary>
-        public int Format => format;
+        public PgpDataFormat Format => format;
 
         /// <summary>The modification time of the file in milli-seconds (since Jan 1, 1970 UTC)</summary>
         public DateTime ModificationTime => DateTimeOffset.FromUnixTimeSeconds(modificationTime).UtcDateTime;
 
         public string FileName => Encoding.UTF8.GetString(fileName);
 
-        public byte[] GetRawFileName() => (byte[])fileName.Clone();
+        public ReadOnlySpan<byte> GetRawFileName() => fileName;
 
         public override PacketTag Tag => PacketTag.LiteralData;
 

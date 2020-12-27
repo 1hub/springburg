@@ -1,6 +1,6 @@
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
+namespace InflatablePalace.Cryptography.OpenPgp
 {
-    public enum RevocationReasonTag : byte
+    public enum PgpRevocationReason : byte
     {
         NoReason = 0,                   // No reason specified (key revocations or cert revocations)
         KeySuperseded = 1,              // Key is superseded (key revocations)

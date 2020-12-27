@@ -12,8 +12,8 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         private int signatureType;
         private DateTime creationTime;
         private long keyId;
-        private PublicKeyAlgorithmTag keyAlgorithm;
-        private HashAlgorithmTag hashAlgorithm;
+        private PgpPublicKeyAlgorithm keyAlgorithm;
+        private PgpHashAlgorithm hashAlgorithm;
         private byte[] fingerprint;
         private SignatureSubpacket[] hashedData;
         private SignatureSubpacket[] unhashedData;
@@ -41,14 +41,14 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 keyId |= (long)bcpgIn.ReadByte() << 8;
                 keyId |= (uint)bcpgIn.ReadByte();
 
-                keyAlgorithm = (PublicKeyAlgorithmTag)bcpgIn.ReadByte();
-                hashAlgorithm = (HashAlgorithmTag)bcpgIn.ReadByte();
+                keyAlgorithm = (PgpPublicKeyAlgorithm)bcpgIn.ReadByte();
+                hashAlgorithm = (PgpHashAlgorithm)bcpgIn.ReadByte();
             }
             else if (version == 4)
             {
                 signatureType = bcpgIn.ReadByte();
-                keyAlgorithm = (PublicKeyAlgorithmTag)bcpgIn.ReadByte();
-                hashAlgorithm = (HashAlgorithmTag)bcpgIn.ReadByte();
+                keyAlgorithm = (PgpPublicKeyAlgorithm)bcpgIn.ReadByte();
+                hashAlgorithm = (PgpHashAlgorithm)bcpgIn.ReadByte();
 
                 int hashedLength = (bcpgIn.ReadByte() << 8) | bcpgIn.ReadByte();
                 byte[] hashed = new byte[hashedLength];
@@ -125,14 +125,14 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
             switch (keyAlgorithm)
             {
-                case PublicKeyAlgorithmTag.RsaGeneral:
-                case PublicKeyAlgorithmTag.RsaSign:
+                case PgpPublicKeyAlgorithm.RsaGeneral:
+                case PgpPublicKeyAlgorithm.RsaSign:
                     MPInteger v = new MPInteger(bcpgIn);
                     signature = v.Value;
                     break;
-                case PublicKeyAlgorithmTag.Dsa:
-                case PublicKeyAlgorithmTag.ECDsa:
-                case PublicKeyAlgorithmTag.EdDsa:
+                case PgpPublicKeyAlgorithm.Dsa:
+                case PgpPublicKeyAlgorithm.ECDsa:
+                case PgpPublicKeyAlgorithm.EdDsa:
                     MPInteger r = new MPInteger(bcpgIn);
                     MPInteger s = new MPInteger(bcpgIn);
                     int halfLength = Math.Max(r.Value.Length, s.Value.Length);
@@ -150,8 +150,8 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             int version,
             int signatureType,
             long keyId,
-            PublicKeyAlgorithmTag keyAlgorithm,
-            HashAlgorithmTag hashAlgorithm,
+            PgpPublicKeyAlgorithm keyAlgorithm,
+            PgpHashAlgorithm hashAlgorithm,
             DateTime creationTime,
             SignatureSubpacket[] hashedData,
             SignatureSubpacket[] unhashedData,
@@ -176,9 +176,9 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public long KeyId => keyId;
 
-        public PublicKeyAlgorithmTag KeyAlgorithm => keyAlgorithm;
+        public PgpPublicKeyAlgorithm KeyAlgorithm => keyAlgorithm;
 
-        public HashAlgorithmTag HashAlgorithm => hashAlgorithm;
+        public PgpHashAlgorithm HashAlgorithm => hashAlgorithm;
 
         public byte[] GetSignature() => signature;
 
@@ -226,13 +226,13 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
             switch (keyAlgorithm)
             {
-                case PublicKeyAlgorithmTag.RsaGeneral:
-                case PublicKeyAlgorithmTag.RsaSign:
+                case PgpPublicKeyAlgorithm.RsaGeneral:
+                case PgpPublicKeyAlgorithm.RsaSign:
                     new MPInteger(signature).Encode(bcpgOut);
                     break;
-                case PublicKeyAlgorithmTag.Dsa:
-                case PublicKeyAlgorithmTag.ECDsa:
-                case PublicKeyAlgorithmTag.EdDsa:
+                case PgpPublicKeyAlgorithm.Dsa:
+                case PgpPublicKeyAlgorithm.ECDsa:
+                case PgpPublicKeyAlgorithm.EdDsa:
                     int halfLength = signature.Length / 2;
                     new MPInteger(signature.AsSpan(0, halfLength)).Encode(bcpgOut);
                     new MPInteger(signature.AsSpan(halfLength)).Encode(bcpgOut);

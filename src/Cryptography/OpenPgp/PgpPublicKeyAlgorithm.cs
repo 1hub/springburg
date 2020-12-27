@@ -1,6 +1,6 @@
 namespace InflatablePalace.Cryptography.OpenPgp
 {
-    public enum PublicKeyAlgorithmTag
+    public enum PgpPublicKeyAlgorithm
     {
         RsaGeneral = 1,
         RsaEncrypt = 2,

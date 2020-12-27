@@ -8,7 +8,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
     class ECDHPublicBcpgKey : ECPublicBcpgKey
     {
         private byte reserved;
-        private HashAlgorithmTag hashFunctionId;
+        private PgpHashAlgorithm hashFunctionId;
         private SymmetricKeyAlgorithmTag symAlgorithmId;
 
         /// <param name="bcpgIn">The stream to read the packet from.</param>
@@ -24,7 +24,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 throw new EndOfStreamException();
 
             reserved = kdfParameters[0];
-            hashFunctionId = (HashAlgorithmTag)kdfParameters[1];
+            hashFunctionId = (PgpHashAlgorithm)kdfParameters[1];
             symAlgorithmId = (SymmetricKeyAlgorithmTag)kdfParameters[2];
 
             VerifyHashAlgorithm();
@@ -34,7 +34,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         public ECDHPublicBcpgKey(
             Oid oid,
             MPInteger encodedPoint,
-            HashAlgorithmTag hashAlgorithm,
+            PgpHashAlgorithm hashAlgorithm,
             SymmetricKeyAlgorithmTag symmetricKeyAlgorithm)
             : base(oid, encodedPoint)
         {
@@ -48,7 +48,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public byte Reserved => reserved;
 
-        public HashAlgorithmTag HashAlgorithm => hashFunctionId;
+        public PgpHashAlgorithm HashAlgorithm => hashFunctionId;
 
         public SymmetricKeyAlgorithmTag SymmetricKeyAlgorithm => symAlgorithmId;
 
@@ -65,9 +65,9 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         {
             switch (hashFunctionId)
             {
-                case HashAlgorithmTag.Sha256:
-                case HashAlgorithmTag.Sha384:
-                case HashAlgorithmTag.Sha512:
+                case PgpHashAlgorithm.Sha256:
+                case PgpHashAlgorithm.Sha384:
+                case PgpHashAlgorithm.Sha512:
                     break;
                 default:
                     throw new InvalidOperationException("Hash algorithm must be SHA-256 or stronger.");

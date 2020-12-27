@@ -12,14 +12,14 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
         {
         }
 
-        public RevocationKey(bool isCritical, RevocationKeyTag signatureClass, PublicKeyAlgorithmTag keyAlgorithm, byte[] fingerprint)
+        public RevocationKey(bool isCritical, RevocationKeyTag signatureClass, PgpPublicKeyAlgorithm keyAlgorithm, byte[] fingerprint)
             : base(SignatureSubpacketTag.RevocationKey, isCritical, false, CreateData(signatureClass, keyAlgorithm, fingerprint))
         {
         }
 
         private static byte[] CreateData(
             RevocationKeyTag signatureClass,
-            PublicKeyAlgorithmTag keyAlgorithm,
+            PgpPublicKeyAlgorithm keyAlgorithm,
             byte[] fingerprint)
         {
             // 1 octet of class, 
@@ -34,7 +34,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
 
         public RevocationKeyTag SignatureClass => (RevocationKeyTag)data[0];
 
-        public PublicKeyAlgorithmTag Algorithm => (PublicKeyAlgorithmTag)data[1];
+        public PgpPublicKeyAlgorithm Algorithm => (PgpPublicKeyAlgorithm)data[1];
 
         public ReadOnlySpan<byte> Fingerprint => data.AsSpan(2);
     }

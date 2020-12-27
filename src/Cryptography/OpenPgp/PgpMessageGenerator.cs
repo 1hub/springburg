@@ -36,22 +36,22 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return new NonDisposablePacketWriter(packetWriter);
         }
 
-        public Stream CreateLiteral(char format, string name, DateTime modificationTime)
+        public Stream CreateLiteral(PgpDataFormat format, string name, DateTime modificationTime)
         {
             return new PgpLiteralMessageGenerator(Open(), format, name, modificationTime).GetStream();
         }
 
-        public Stream CreateLiteral(char format, FileInfo fileInfo)
+        public Stream CreateLiteral(PgpDataFormat format, FileInfo fileInfo)
         {
             return new PgpLiteralMessageGenerator(Open(), format, fileInfo).GetStream();
         }
 
-        public PgpMessageGenerator CreateCompressed(CompressionAlgorithmTag algorithm, CompressionLevel compressionLevel = CompressionLevel.Optimal)
+        public PgpMessageGenerator CreateCompressed(PgpCompressionAlgorithm algorithm, CompressionLevel compressionLevel = CompressionLevel.Optimal)
         {
             return new PgpCompressedMessageGenerator(Open(), algorithm, compressionLevel);
         }
 
-        public PgpSignedMessageGenerator CreateSigned(int signatureType, PgpPrivateKey privateKey, HashAlgorithmTag hashAlgorithm, int version = 4)
+        public PgpSignedMessageGenerator CreateSigned(int signatureType, PgpPrivateKey privateKey, PgpHashAlgorithm hashAlgorithm, int version = 4)
         {
             return new PgpSignedMessageGenerator(Open(), signatureType, privateKey, hashAlgorithm, version);
         }

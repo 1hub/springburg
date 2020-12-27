@@ -3,7 +3,7 @@ using System;
 namespace InflatablePalace.Cryptography.OpenPgp
 {
     [Flags]
-    public enum FeatureFlags : byte
+    public enum PgpFeatureFlags : byte
     {
         ModificationDetection = 1,
         AeadEncryptedData = 2,

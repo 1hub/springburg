@@ -249,12 +249,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpPrivateKey pgpPrivKey = pgpSecKey.ExtractPrivateKey("");
             MemoryStream bOut = new MemoryStream();
             using (var messageGenerator = new PgpMessageGenerator(new ArmoredPacketWriter(bOut)))
-            using (var signedGenerator = messageGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, pgpPrivKey, HashAlgorithmTag.Sha256))
+            using (var signedGenerator = messageGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, pgpPrivKey, PgpHashAlgorithm.Sha256))
             {
                 PgpSignatureSubpacketGenerator spGen = new PgpSignatureSubpacketGenerator();
                 spGen.SetSignerUserId(false, (string)pgpSecKey.PublicKey.GetUserIds().First());
                 signedGenerator.SetHashedSubpackets(spGen.Generate());
-                using (var literalStream = signedGenerator.CreateLiteral(PgpLiteralData.Text, "", DateTime.MinValue))
+                using (var literalStream = signedGenerator.CreateLiteral(PgpDataFormat.Text, "", DateTime.MinValue))
                 {
                     literalStream.Write(Encoding.UTF8.GetBytes(message));
                 }

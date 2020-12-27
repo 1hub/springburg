@@ -1,7 +1,7 @@
 namespace InflatablePalace.Cryptography.OpenPgp
 {
     /// <summary>Basic tags for compression algorithms.</summary>
-    public enum CompressionAlgorithmTag : byte
+    public enum PgpCompressionAlgorithm : byte
     {
         Uncompressed = 0, // Uncompressed
         Zip = 1, // RFC 1951

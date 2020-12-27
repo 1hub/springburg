@@ -39,7 +39,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(message);
             var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(pass);
             var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
-            Assert.IsTrue(literalMessage.FileName.Equals("test.txt") || literalMessage.FileName.Equals(PgpLiteralData.Console));
+            Assert.IsTrue(literalMessage.FileName.Equals("test.txt") || literalMessage.FileName.Equals("_CONSOLE"));
             Assert.AreEqual(TestDateTime, literalMessage.ModificationTime);
             byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
             if (encryptedMessage.IsIntegrityProtected)
@@ -56,9 +56,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             using (var messageGenerator = new PgpMessageGenerator(bOut))
             using (var encryptedGenerator = messageGenerator.CreateEncrypted(SymmetricKeyAlgorithmTag.Cast5, withIntegrityPacket))
             {
-                encryptedGenerator.AddMethod(pass, HashAlgorithmTag.Sha1);
-                using (var compressedGenerator = encryptedGenerator.CreateCompressed(CompressionAlgorithmTag.Zip))
-                using (var literalStream = compressedGenerator.CreateLiteral(PgpLiteralData.Binary, PgpLiteralData.Console, TestDateTime))
+                encryptedGenerator.AddMethod(pass, PgpHashAlgorithm.Sha1);
+                using (var compressedGenerator = encryptedGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
+                using (var literalStream = compressedGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", TestDateTime))
                     literalStream.Write(msg);
             }
 

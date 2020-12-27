@@ -16,7 +16,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         private IList<PgpSecretKey> keys = new List<PgpSecretKey>();
         private string id;
         private SymmetricKeyAlgorithmTag encAlgorithm;
-        private HashAlgorithmTag hashAlgorithm;
+        private PgpHashAlgorithm hashAlgorithm;
         private int certificationLevel;
         private byte[] rawPassPhrase;
         private bool useSha1;
@@ -135,7 +135,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpKeyPair masterKey,
             string id,
             SymmetricKeyAlgorithmTag encAlgorithm,
-            HashAlgorithmTag hashAlgorithm,
+            PgpHashAlgorithm hashAlgorithm,
             byte[] rawPassPhrase,
             bool useSha1,
             PgpSignatureSubpacketVector hashedPackets,
@@ -166,7 +166,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// </summary>
         /// <param name="keyPair">The key pair.</param>
         /// <param name="hashAlgorithm">The hash algorithm.</param>
-        public void AddSubKey(PgpKeyPair keyPair, HashAlgorithmTag hashAlgorithm)
+        public void AddSubKey(PgpKeyPair keyPair, PgpHashAlgorithm hashAlgorithm)
         {
             this.AddSubKey(keyPair, this.hashedPacketVector, this.unhashedPacketVector, hashAlgorithm);
         }
@@ -186,7 +186,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
             try
             {
-                PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, masterKey.PrivateKey, HashAlgorithmTag.Sha1);
+                PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, masterKey.PrivateKey, PgpHashAlgorithm.Sha1);
 
                 //
                 // Generate the certification
@@ -225,7 +225,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpKeyPair keyPair,
             PgpSignatureSubpacketVector hashedPackets,
             PgpSignatureSubpacketVector unhashedPackets,
-            HashAlgorithmTag hashAlgorithm)
+            PgpHashAlgorithm hashAlgorithm)
         {
             try
             {

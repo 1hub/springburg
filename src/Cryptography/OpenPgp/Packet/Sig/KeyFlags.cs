@@ -1,5 +1,3 @@
-using PgpKeyFlags = InflatablePalace.Cryptography.OpenPgp.KeyFlags;
-
 namespace InflatablePalace.Cryptography.OpenPgp.Packet.Sig
 {
     class KeyFlags : SignatureSubpacket

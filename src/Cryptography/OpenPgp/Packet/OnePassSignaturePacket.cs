@@ -7,8 +7,8 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
     {
         private int version;
         private int sigType;
-        private HashAlgorithmTag hashAlgorithm;
-        private PublicKeyAlgorithmTag keyAlgorithm;
+        private PgpHashAlgorithm hashAlgorithm;
+        private PgpPublicKeyAlgorithm keyAlgorithm;
         private long keyId;
         private int nested;
 
@@ -16,8 +16,8 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         {
             version = bcpgIn.ReadByte();
             sigType = bcpgIn.ReadByte();
-            hashAlgorithm = (HashAlgorithmTag)bcpgIn.ReadByte();
-            keyAlgorithm = (PublicKeyAlgorithmTag)bcpgIn.ReadByte();
+            hashAlgorithm = (PgpHashAlgorithm)bcpgIn.ReadByte();
+            keyAlgorithm = (PgpPublicKeyAlgorithm)bcpgIn.ReadByte();
 
             keyId |= (long)bcpgIn.ReadByte() << 56;
             keyId |= (long)bcpgIn.ReadByte() << 48;
@@ -33,8 +33,8 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public OnePassSignaturePacket(
             int sigType,
-            HashAlgorithmTag hashAlgorithm,
-            PublicKeyAlgorithmTag keyAlgorithm,
+            PgpHashAlgorithm hashAlgorithm,
+            PgpPublicKeyAlgorithm keyAlgorithm,
             long keyId,
             bool isNested)
         {
@@ -48,9 +48,9 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public int SignatureType => sigType;
 
-        public PublicKeyAlgorithmTag KeyAlgorithm => keyAlgorithm;
+        public PgpPublicKeyAlgorithm KeyAlgorithm => keyAlgorithm;
 
-        public HashAlgorithmTag HashAlgorithm => hashAlgorithm;
+        public PgpHashAlgorithm HashAlgorithm => hashAlgorithm;
 
         public long KeyId => keyId;
 

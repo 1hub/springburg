@@ -287,14 +287,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             MemoryStream bOut = new MemoryStream();
             var messageGenerator = new PgpMessageGenerator(bOut);
-            using (var compressedGenerator = messageGenerator.CreateCompressed(CompressionAlgorithmTag.Zip))
-            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, pgpPrivKey, HashAlgorithmTag.Sha1))
+            using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
+            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, pgpPrivKey, PgpHashAlgorithm.Sha1))
             {
                 string primaryUserId = (string)secretKey.PublicKey.GetUserIds().First();
                 PgpSignatureSubpacketGenerator spGen = new PgpSignatureSubpacketGenerator();
                 spGen.SetSignerUserId(true, primaryUserId);
                 signingGenerator.SetHashedSubpackets(spGen.Generate());
-                using (var literalStream = signingGenerator.CreateLiteral(PgpLiteralData.Binary, "_CONSOLE", testDateTime))
+                using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
                 {
                     literalStream.Write(dataBytes);
                 }
@@ -317,9 +317,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             DateTime testDateTime = new DateTime(1973, 7, 27);
 
             var messageGenerator = new PgpMessageGenerator(bOut);
-            using (var compressedGenerator = messageGenerator.CreateCompressed(CompressionAlgorithmTag.Zip))
-            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, pgpPrivKey, HashAlgorithmTag.Sha1))
-            using (var literalStream = signingGenerator.CreateLiteral(PgpLiteralData.Binary, "_CONSOLE", testDateTime))
+            using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
+            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, pgpPrivKey, PgpHashAlgorithm.Sha1))
+            using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
             {
                 literalStream.Write(dataBytes);
             }

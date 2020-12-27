@@ -1,7 +1,7 @@
 namespace InflatablePalace.Cryptography.OpenPgp
 {
     /// <summary>Basic tags for hash algorithms.</summary>
-    public enum HashAlgorithmTag : byte
+    public enum PgpHashAlgorithm : byte
     {
         MD5 = 1,
         Sha1 = 2,

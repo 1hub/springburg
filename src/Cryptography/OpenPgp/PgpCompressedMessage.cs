@@ -26,13 +26,13 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
             switch (this.compressedDataPacket.Algorithm)
             {
-                case CompressionAlgorithmTag.Uncompressed:
+                case PgpCompressionAlgorithm.Uncompressed:
                     return inputStream;
 
-                case CompressionAlgorithmTag.Zip:
+                case PgpCompressionAlgorithm.Zip:
                     return new DeflateStream(inputStream, CompressionMode.Decompress);
 
-                case CompressionAlgorithmTag.ZLib:
+                case PgpCompressionAlgorithm.ZLib:
                     var cmf = inputStream.ReadByte();
                     var flg = inputStream.ReadByte();
                     if ((flg & 0x20) != 0)

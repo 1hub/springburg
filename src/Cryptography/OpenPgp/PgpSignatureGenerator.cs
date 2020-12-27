@@ -10,7 +10,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
     /// <summary>Generator for PGP signatures.</summary>
     public class PgpSignatureGenerator
     {
-        protected HashAlgorithmTag hashAlgorithm;
+        protected PgpHashAlgorithm hashAlgorithm;
 
         protected SignatureSubpacket[] unhashed = Array.Empty<SignatureSubpacket>();
         protected SignatureSubpacket[] hashed = Array.Empty<SignatureSubpacket>();
@@ -21,7 +21,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         protected int version;
 
         /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
-        public PgpSignatureGenerator(int signatureType, PgpPrivateKey privateKey, HashAlgorithmTag hashAlgorithm, int version = 4, bool ignoreTrailingWhitespace = false)
+        public PgpSignatureGenerator(int signatureType, PgpPrivateKey privateKey, PgpHashAlgorithm hashAlgorithm, int version = 4, bool ignoreTrailingWhitespace = false)
         {
             // TODO: Add version 5 support
             if (version < 3 || version > 4)
@@ -33,7 +33,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             this.privateKey = privateKey;
         }
 
-        public HashAlgorithmTag HashAlgorithm => helper.HashAlgorithm;
+        public PgpHashAlgorithm HashAlgorithm => helper.HashAlgorithm;
 
         public int SignatureType => helper.SignatureType;
 
