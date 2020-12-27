@@ -1,14 +1,14 @@
-using InflatablePalace.Cryptography.OpenPgp.Packet.Attr;
+using InflatablePalace.Cryptography.OpenPgp.Packet.UserAttribute;
 using InflatablePalace.IO;
 using System.IO;
 
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
-    class UserAttributeSubpacketsParser
+    class UserAttributeSubpacketParser
     {
         private readonly Stream input;
 
-        public UserAttributeSubpacketsParser(
+        public UserAttributeSubpacketParser(
             Stream input)
         {
             this.input = input;

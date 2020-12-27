@@ -68,7 +68,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 else
                 {
                     UserAttributePacket user = (UserAttributePacket)obj;
-                    ids.Add(new PgpUserAttributeSubpacketVector(user.GetSubpackets()));
+                    ids.Add(new PgpUserAttributes(user.GetSubpackets()));
                 }
 
                 idTrusts.Add(ReadOptionalTrustPacket(packetReader));

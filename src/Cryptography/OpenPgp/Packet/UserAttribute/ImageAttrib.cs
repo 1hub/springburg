@@ -1,10 +1,10 @@
 using System;
 using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Attr
+namespace InflatablePalace.Cryptography.OpenPgp.Packet.UserAttribute
 {
     /// <summary>Basic type for a image attribute packet.</summary>
-    public class ImageAttrib : UserAttributeSubpacket
+    class ImageAttrib : UserAttributeSubpacket
     {
         public enum Format : byte
         {
@@ -53,17 +53,17 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet.Attr
             return bOut.ToArray();
         }
 
-        public virtual int Version
+        public int Version
         {
             get { return _version; }
         }
 
-        public virtual int Encoding
+        public int Encoding
         {
             get { return _encoding; }
         }
 
-        public virtual byte[] GetImageData()
+        public byte[] GetImageData()
         {
             return imageData;
         }

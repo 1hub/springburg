@@ -378,7 +378,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var pubKey = pgpPub.GetPublicKey();
 
             int count = 0;
-            foreach (PgpUserAttributeSubpacketVector attributes in pubKey.GetUserAttributes())
+            foreach (PgpUserAttributes attributes in pubKey.GetUserAttributes())
             {
                 int sigCount = 0;
                 foreach (object sigs in pubKey.GetSignaturesForUserAttribute(attributes))

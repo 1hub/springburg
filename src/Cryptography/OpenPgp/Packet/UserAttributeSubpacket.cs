@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
-    public class UserAttributeSubpacket
+    class UserAttributeSubpacket
     {
         internal readonly UserAttributeSubpacketTag	type;
         private readonly bool longLength;   // we preserve this as not everyone encodes length properly.

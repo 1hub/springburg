@@ -10,7 +10,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public UserAttributePacket(Stream bcpgIn)
         {
-            UserAttributeSubpacketsParser sIn = new UserAttributeSubpacketsParser(bcpgIn);
+            UserAttributeSubpacketParser sIn = new UserAttributeSubpacketParser(bcpgIn);
             UserAttributeSubpacket sub;
 
             IList<UserAttributeSubpacket> v = new List<UserAttributeSubpacket>();

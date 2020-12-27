@@ -131,7 +131,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <param name="pubKey">The key we are certifying against the ID.</param>
         /// <returns>The certification.</returns>
         public PgpSignature GenerateCertification(
-            PgpUserAttributeSubpacketVector userAttributes,
+            PgpUserAttributes userAttributes,
             PgpPublicKey pubKey)
         {
             this.helper.UpdateWithPublicKey(pubKey);

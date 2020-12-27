@@ -530,9 +530,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         /// <summary>Allows enumeration of any user attribute vectors associated with the key.</summary>
         /// <returns>An <c>IEnumerable</c> of <c>PgpUserAttributeSubpacketVector</c> objects.</returns>
-        public IEnumerable<PgpUserAttributeSubpacketVector> GetUserAttributes()
+        public IEnumerable<PgpUserAttributes> GetUserAttributes()
         {
-            return ids.OfType<PgpUserAttributeSubpacketVector>();
+            return ids.OfType<PgpUserAttributes>();
         }
 
         /// <summary>Allows enumeration of any signatures associated with the passed in id.</summary>
@@ -557,7 +557,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <summary>Allows enumeration of signatures associated with the passed in user attributes.</summary>
         /// <param name="userAttributes">The vector of user attributes to be matched.</param>
         /// <returns>An <c>IEnumerable</c> of <c>PgpSignature</c> objects.</returns>
-        public IEnumerable<PgpSignature> GetSignaturesForUserAttribute(PgpUserAttributeSubpacketVector userAttributes)
+        public IEnumerable<PgpSignature> GetSignaturesForUserAttribute(PgpUserAttributes userAttributes)
         {
             for (int i = 0; i != ids.Count; i++)
             {
@@ -631,7 +631,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     }
                     else
                     {
-                        PgpUserAttributeSubpacketVector v = (PgpUserAttributeSubpacketVector)ids[i];
+                        PgpUserAttributes v = (PgpUserAttributes)ids[i];
                         outStr.WritePacket(new UserAttributePacket(v.ToSubpacketArray()));
                     }
 
@@ -704,7 +704,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <returns>The re-certified key.</returns>
         public static PgpPublicKey AddCertification(
             PgpPublicKey key,
-            PgpUserAttributeSubpacketVector userAttributes,
+            PgpUserAttributes userAttributes,
             PgpSignature certification)
         {
             return AddCert(key, userAttributes, certification);
@@ -752,7 +752,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// </returns>
         public static PgpPublicKey RemoveCertification(
             PgpPublicKey key,
-            PgpUserAttributeSubpacketVector userAttributes)
+            PgpUserAttributes userAttributes)
         {
             return RemoveCert(key, userAttributes);
         }
@@ -809,7 +809,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <returns>The re-certified key, or null if the certification was not found.</returns>
         public static PgpPublicKey RemoveCertification(
             PgpPublicKey key,
-            PgpUserAttributeSubpacketVector userAttributes,
+            PgpUserAttributes userAttributes,
             PgpSignature certification)
         {
             return RemoveCert(key, userAttributes, certification);
@@ -915,7 +915,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
                 if (!found)
                 {
-                    foreach (PgpUserAttributeSubpacketVector id in key.GetUserAttributes())
+                    foreach (PgpUserAttributes id in key.GetUserAttributes())
                     {
                         foreach (object sig in key.GetSignaturesForUserAttribute(id))
                         {

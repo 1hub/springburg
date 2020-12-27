@@ -106,7 +106,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <returns>True, if the signature matches, false otherwise.</returns>
         public bool VerifyCertification(
             PgpPublicKey masterKey,
-            PgpUserAttributeSubpacketVector userAttributes,
+            PgpUserAttributes userAttributes,
             PgpPublicKey key)
         {
             var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace: false);

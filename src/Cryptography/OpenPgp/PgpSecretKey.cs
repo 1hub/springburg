@@ -348,7 +348,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public IEnumerable<string> UserIds => pub.GetUserIds();
 
         /// <summary>Allows enumeration of any user attribute vectors associated with the key.</summary>
-        public IEnumerable<PgpUserAttributeSubpacketVector> UserAttributes => pub.GetUserAttributes();
+        public IEnumerable<PgpUserAttributes> UserAttributes => pub.GetUserAttributes();
 
         private byte[] ExtractKeyData(byte[] rawPassPhrase)
         {
@@ -644,7 +644,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     }
                     else
                     {
-                        PgpUserAttributeSubpacketVector v = (PgpUserAttributeSubpacketVector)pubID;
+                        PgpUserAttributes v = (PgpUserAttributes)pubID;
                         outStr.WritePacket(new UserAttributePacket(v.ToSubpacketArray()));
                     }
 

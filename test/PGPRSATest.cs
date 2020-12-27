@@ -5,7 +5,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using InflatablePalace.Cryptography.OpenPgp;
-using InflatablePalace.Cryptography.OpenPgp.Packet.Attr;
 using NUnit.Framework;
 using Org.BouncyCastle.Utilities.Test;
 
@@ -385,7 +384,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpPublicKey pubKey = pgpPub.GetPublicKey();
 
             int count = 0;
-            foreach (PgpUserAttributeSubpacketVector attributes in pubKey.GetUserAttributes())
+            foreach (PgpUserAttributes attributes in pubKey.GetUserAttributes())
             {
                 int sigCount = 0;
                 foreach (PgpSignature sig in pubKey.GetSignaturesForUserAttribute(attributes))
@@ -409,20 +408,18 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpPublicKey pubKey = pgpPub.GetPublicKey();
 
-            PgpUserAttributeSubpacketVectorGenerator vGen = new PgpUserAttributeSubpacketVectorGenerator();
+            PgpUserAttributes vGen = new PgpUserAttributes();
 
-            vGen.SetImageAttribute(ImageAttrib.Format.Jpeg, jpegImage);
-
-            PgpUserAttributeSubpacketVector uVec = vGen.Generate();
+            vGen.JpegImageAttribute = jpegImage;
 
             PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.PositiveCertification, pgpSec.GetSecretKey().ExtractPrivateKey(pass), PgpHashAlgorithm.Sha1);
 
-            PgpSignature sig = sGen.GenerateCertification(uVec, pubKey);
+            PgpSignature sig = sGen.GenerateCertification(vGen, pubKey);
 
-            PgpPublicKey nKey = PgpPublicKey.AddCertification(pubKey, uVec, sig);
+            PgpPublicKey nKey = PgpPublicKey.AddCertification(pubKey, vGen, sig);
 
             int count = 0;
-            foreach (PgpUserAttributeSubpacketVector attributes in nKey.GetUserAttributes())
+            foreach (PgpUserAttributes attributes in nKey.GetUserAttributes())
             {
                 int sigCount = 0;
                 foreach (PgpSignature s in nKey.GetSignaturesForUserAttribute(attributes))
@@ -437,7 +434,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             Assert.AreEqual(1, count);
 
-            nKey = PgpPublicKey.RemoveCertification(nKey, uVec);
+            nKey = PgpPublicKey.RemoveCertification(nKey, vGen);
             Assert.IsFalse(nKey.GetUserAttributes().Any());
         }
 
