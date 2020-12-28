@@ -119,14 +119,5 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 unhashedAttributes == null ? Array.Empty<SignatureSubpacket>() : unhashedAttributes.ToSubpacketArray(),
                 helper.Hash.AsSpan(0, 2).ToArray(), signature);
         }
-
-        /// <summary>Generate a certification, such as a revocation, for the passed in key.</summary>
-        /// <param name="pubKey">The key we are certifying.</param>
-        /// <returns>The certification.</returns>
-        public PgpSignature GenerateRevokation(PgpPublicKey pubKey)
-        {
-            this.helper.UpdateWithPublicKey(pubKey);
-            return new PgpSignature(Generate());
-        }
     }
 }

@@ -2,8 +2,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq.Expressions;
-using System.Resources;
 using System.Text;
 
 namespace InflatablePalace.Cryptography.OpenPgp

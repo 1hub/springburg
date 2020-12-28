@@ -1,7 +1,6 @@
 ﻿using InflatablePalace.Cryptography.OpenPgp.Packet;
 using System;
 using System.Buffers;
-using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 
@@ -42,18 +41,6 @@ namespace InflatablePalace.Cryptography.OpenPgp
         int ICryptoTransform.InputBlockSize => 1;
 
         int ICryptoTransform.OutputBlockSize => 1;
-
-        private void Update(byte b)
-        {
-            if (signatureType == PgpSignature.CanonicalTextDocument)
-            {
-                doCanonicalUpdateByte(b);
-            }
-            else
-            {
-                sig.TransformBlock(new byte[] { b }, 0, 1, null, 0);
-            }
-        }
 
         private void doCanonicalUpdateByte(byte b)
         {
@@ -102,11 +89,6 @@ namespace InflatablePalace.Cryptography.OpenPgp
             sig.TransformBlock(new byte[] { (byte)'\r', (byte)'\n' }, 0, 2, null, 0);
         }
 
-        private void Update(params byte[] bytes)
-        {
-            Update(bytes, 0, bytes.Length);
-        }
-
         private void Update(
             byte[] bytes,
             int off,
@@ -127,28 +109,6 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
         }
 
-        internal void UpdateWithIdData(int header, byte[] idBytes)
-        {
-            this.Update(
-                (byte)header,
-                (byte)(idBytes.Length >> 24),
-                (byte)(idBytes.Length >> 16),
-                (byte)(idBytes.Length >> 8),
-                (byte)(idBytes.Length));
-            this.Update(idBytes);
-        }
-
-        internal void UpdateWithPublicKey(PgpPublicKey key)
-        {
-            byte[] keyBytes = key.publicPk.GetEncodedContents();
-
-            this.Update(
-                (byte)0x99,
-                (byte)(keyBytes.Length >> 8),
-                (byte)(keyBytes.Length));
-            this.Update(keyBytes);
-        }
-
         public void Finish(
             int version,
             PgpPublicKeyAlgorithm keyAlgorithm,
@@ -159,38 +119,38 @@ namespace InflatablePalace.Cryptography.OpenPgp
             {
                 long time = new DateTimeOffset(creationTime, TimeSpan.Zero).ToUnixTimeSeconds();
 
-                Update(new byte[] {
+                sig.TransformBlock(new byte[] {
                     (byte)signatureType,
                     (byte)(time >> 24),
                     (byte)(time >> 16),
                     (byte)(time >> 8),
-                    (byte)(time) });
+                    (byte)(time) }, 0, 5, null, 0);
             }
             else
             {
-                Update((byte)version);
-                Update((byte)this.SignatureType);
-                Update((byte)keyAlgorithm);
-                Update((byte)this.HashAlgorithm);
+                sig.TransformBlock(new byte[] {
+                    (byte)version,
+                    (byte)this.SignatureType,
+                    (byte)keyAlgorithm,
+                    (byte)this.HashAlgorithm }, 0, 4, null, 0);
 
                 MemoryStream hOut = new MemoryStream();
-
                 foreach (var hashedSubpacket in hashedSubpackets)
                 {
                     hashedSubpacket.Encode(hOut);
                 }
 
-                Update((byte)(hOut.Length >> 8));
-                Update((byte)hOut.Length);
-                Update(hOut.GetBuffer(), 0, (int)hOut.Length);
+                sig.TransformBlock(new byte[] { (byte)(hOut.Length >> 8), (byte)hOut.Length }, 0, 2, null, 0);
+                sig.TransformBlock(hOut.GetBuffer(), 0, (int)hOut.Length, null, 0);
 
-                Update((byte)version);
-                Update((byte)0xff);
                 int hDataLength = 4 + (int)hOut.Length + 2;
-                Update((byte)(hDataLength >> 24));
-                Update((byte)(hDataLength >> 16));
-                Update((byte)(hDataLength >> 8));
-                Update((byte)(hDataLength));
+                sig.TransformBlock(new byte[] {
+                    (byte)version,
+                    (byte)0xff,
+                    (byte)(hDataLength >> 24),
+                    (byte)(hDataLength >> 16),
+                    (byte)(hDataLength >> 8),
+                    (byte)(hDataLength) }, 0, 6, null, 0);
             }
 
             sig.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
