@@ -406,11 +406,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             vGen.JpegImageAttribute = jpegImage;
 
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.PositiveCertification, pgpSec.GetSecretKey().ExtractPrivateKey(pass), PgpHashAlgorithm.Sha1);
+            var certification = PgpCertification.GenerateUserCertification(
+                PgpSignature.PositiveCertification,
+                new PgpKeyPair(pubKey, pgpSec.GetSecretKey().ExtractPrivateKey(pass)),
+                vGen,
+                pubKey);
 
-            PgpSignature sig = sGen.GenerateCertification(vGen, pubKey);
-
-            PgpPublicKey nKey = PgpPublicKey.AddCertification(pubKey, vGen, sig);
+            PgpPublicKey nKey = PgpPublicKey.AddCertification(pubKey, vGen, certification.Signature);
 
             int count = 0;
             foreach (PgpUser user in nKey.GetUserAttributes())
@@ -633,11 +635,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             keyEnc = key.GetEncoded();
 
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.KeyRevocation, secretKey.ExtractPrivateKey(passPhrase), PgpHashAlgorithm.Sha1);
+            var revocation = PgpCertification.GenerateKeyRevokation(
+                new PgpKeyPair(secretKey.PublicKey, secretKey.ExtractPrivateKey(passPhrase)),
+                key);
 
-            var sig = sGen.GenerateRevokation(key);
-
-            key = PgpPublicKey.AddCertification(key, sig);
+            key = PgpPublicKey.AddCertification(key, revocation.Signature);
 
             keyEnc = key.GetEncoded();
 
@@ -645,11 +647,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             key = tmpRing.GetPublicKey();
 
-            IEnumerator sgEnum = key.KeyCertifications.Select(c => c.Signature).Where(s => s.SignatureType == PgpSignature.KeyRevocation).GetEnumerator();
-            sgEnum.MoveNext();
-            sig = (PgpSignature)sgEnum.Current;
-
-            Assert.IsTrue(sig.VerifyRevocation(key));
+            revocation = key.KeyCertifications.Where(c => c.Signature.SignatureType == PgpSignature.KeyRevocation).FirstOrDefault();
+            Assert.NotNull(revocation);
+            Assert.IsTrue(revocation.Verify(key));
 
             //
             // use of PgpKeyPair

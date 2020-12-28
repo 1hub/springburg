@@ -79,68 +79,6 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return publicKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
         }
 
-        /// <summary>
-        /// Verify the signature as certifying the passed in public key as associated
-        /// with the passed in ID.
-        /// </summary>
-        /// <param name="id">ID the key was stored under.</param>
-        /// <param name="key">The key to be verified.</param>
-        /// <returns>True, if the signature matches, false otherwise.</returns>
-        public bool VerifyCertification(
-            PgpPublicKey masterKey,
-            string id,
-            PgpPublicKey pubKey)
-        {
-            var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace: false);
-
-            Debug.Assert(masterKey.KeyId == KeyId);
-
-            helper.UpdateWithPublicKey(pubKey);
-            helper.UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
-
-            helper.Finish(sigPck);
-            return masterKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
-        }
-
-        /// <summary>Verify a certification for the passed in key against the passed in master key.</summary>
-        /// <param name="masterKey">The key we are verifying against.</param>
-        /// <param name="pubKey">The key we are verifying.</param>
-        /// <returns>True, if the certification is valid, false otherwise.</returns>
-        public bool VerifyCertification(
-            PgpPublicKey masterKey,
-            PgpPublicKey pubKey)
-        {
-            var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace: false);
-
-            Debug.Assert(masterKey.KeyId == KeyId);
-
-            helper.UpdateWithPublicKey(masterKey);
-            helper.UpdateWithPublicKey(pubKey);
-
-            helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
-            return masterKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
-        }
-
-        /// <summary>Verify a key certification, such as revocation, for the passed in key.</summary>
-        /// <param name="pubKey">The key we are checking.</param>
-        /// <returns>True, if the certification is valid, false otherwise.</returns>
-        public bool VerifyRevocation(PgpPublicKey pubKey)
-        {
-            var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace: false);
-
-            Debug.Assert(pubKey.KeyId == KeyId);
-
-            if (SignatureType != KeyRevocation && SignatureType != SubkeyRevocation)
-            {
-                throw new InvalidOperationException("signature is not a key signature");
-            }
-
-            helper.UpdateWithPublicKey(pubKey);
-
-            helper.Finish(sigPck);
-            return pubKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
-        }
-
         public int SignatureType => sigPck.SignatureType;
 
         /// <summary>The ID of the key that created the signature.</summary>

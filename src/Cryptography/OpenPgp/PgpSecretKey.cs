@@ -216,22 +216,15 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpSignatureAttributes unhashedPackets,
             PgpHashAlgorithm hashAlgorithm)
         {
-            var userId = new UserIdPacket(id);
-            var sGen = new PgpSignatureGenerator(certificationLevel, keyPair.PrivateKey, hashAlgorithm);
-
-            // Generate the certification
-            sGen.HashedAttributes = hashedPackets;
-            sGen.UnhashedAttributes = unhashedPackets;
-
-            try
-            {
-                PgpSignature certification = sGen.GenerateCertification(id, keyPair.PublicKey);
-                return PgpPublicKey.AddCertification(keyPair.PublicKey, id, certification);
-            }
-            catch (Exception e)
-            {
-                throw new PgpException("Exception doing certification: " + e.Message, e);
-            }
+            var selfCertification = PgpCertification.GenerateUserCertification(
+                certificationLevel,
+                keyPair,
+                id,
+                keyPair.PublicKey,
+                hashedPackets,
+                unhashedPackets,
+                hashAlgorithm);
+            return PgpPublicKey.AddCertification(keyPair.PublicKey, id, selfCertification.Signature);
         }
 
         public PgpSecretKey(

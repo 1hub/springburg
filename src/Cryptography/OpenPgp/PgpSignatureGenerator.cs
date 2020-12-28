@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
 
@@ -31,7 +32,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             this.privateKey = privateKey;
         }
 
-        public PgpHashAlgorithm HashAlgorithm => helper.HashAlgorithm;
+        public PgpHashAlgorithm HashAlgorithm => hashAlgorithm;
 
         public int SignatureType => helper.SignatureType;
 
@@ -73,6 +74,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
         }
 
+        public PgpSignature Generate(Stream stream)
+        {
+            new CryptoStream(stream, helper, CryptoStreamMode.Read).CopyTo(Stream.Null);
+            return new PgpSignature(Generate());
+        }
+
         /// <summary>Return a signature object containing the current signature state.</summary>
         internal SignaturePacket Generate()
         {
@@ -111,60 +118,6 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 hashedPackets,
                 unhashedAttributes == null ? Array.Empty<SignatureSubpacket>() : unhashedAttributes.ToSubpacketArray(),
                 helper.Hash.AsSpan(0, 2).ToArray(), signature);
-        }
-
-        /// <summary>Generate a certification for the passed in ID and key.</summary>
-        /// <param name="id">The ID we are certifying against the public key.</param>
-        /// <param name="pubKey">The key we are certifying against the ID.</param>
-        /// <returns>The certification.</returns>
-        public PgpSignature GenerateCertification(string id, PgpPublicKey pubKey)
-        {
-            this.helper.UpdateWithPublicKey(pubKey);
-            this.helper.UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
-            return new PgpSignature(Generate());
-        }
-
-        /// <summary>Generate a certification for the passed in userAttributes.</summary>
-        /// <param name="userAttributes">The ID we are certifying against the public key.</param>
-        /// <param name="pubKey">The key we are certifying against the ID.</param>
-        /// <returns>The certification.</returns>
-        public PgpSignature GenerateCertification(
-            PgpUserAttributes userAttributes,
-            PgpPublicKey pubKey)
-        {
-            this.helper.UpdateWithPublicKey(pubKey);
-
-            //
-            // hash in the attributes
-            //
-            try
-            {
-                MemoryStream bOut = new MemoryStream();
-                foreach (UserAttributeSubpacket packet in userAttributes.ToSubpacketArray())
-                {
-                    packet.Encode(bOut);
-                }
-                this.helper.UpdateWithIdData(0xd1, bOut.ToArray());
-            }
-            catch (IOException e)
-            {
-                throw new PgpException("cannot encode subpacket array", e);
-            }
-
-            return new PgpSignature(Generate());
-        }
-
-        /// <summary>Generate a certification for the passed in key against the passed in master key.</summary>
-        /// <param name="masterKey">The key we are certifying against.</param>
-        /// <param name="pubKey">The key we are certifying.</param>
-        /// <returns>The certification.</returns>
-        public PgpSignature GenerateCertification(
-            PgpPublicKey masterKey,
-            PgpPublicKey pubKey)
-        {
-            this.helper.UpdateWithPublicKey(masterKey);
-            this.helper.UpdateWithPublicKey(pubKey);
-            return new PgpSignature(Generate());
         }
 
         /// <summary>Generate a certification, such as a revocation, for the passed in key.</summary>

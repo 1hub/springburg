@@ -4,8 +4,13 @@ using System.Diagnostics;
 
 namespace InflatablePalace.Cryptography.OpenPgp
 {
+    /// <summary>
+    /// Class that represents OpenPGP user id or user attribute and all its associated
+    /// certification signatures.
+    /// </summary>
     public class PgpUser : PgpEncodable
     {
+        //readonly PgpPublicKey publicKey;
         readonly ContainedPacket userPacket;
         readonly TrustPacket? trustPacket;
         readonly List<PgpCertification> selfCertifications;
@@ -16,9 +21,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
             Debug.Assert(packetReader.NextPacketTag() == PacketTag.UserId || packetReader.NextPacketTag() == PacketTag.UserAttribute);
 
-            userPacket = packetReader.ReadContainedPacket();
-
-            trustPacket = packetReader.NextPacketTag() == PacketTag.Trust ? (TrustPacket)packetReader.ReadContainedPacket() : null;
+            //this.publicKey = publicKey;
+            this.userPacket = packetReader.ReadContainedPacket();
+            this.trustPacket = packetReader.NextPacketTag() == PacketTag.Trust ? (TrustPacket)packetReader.ReadContainedPacket() : null;
 
             selfCertifications = new List<PgpCertification>();
             otherCertifications = new List<PgpCertification>();
@@ -36,6 +41,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         internal PgpUser(PgpUser user, PgpPublicKey publicKey)
         {
             this.userPacket = user.userPacket;
+            //this.publicKey = publicKey;
             this.selfCertifications = new List<PgpCertification>();
             this.otherCertifications = new List<PgpCertification>();
             this.revocationSignatures = new List<PgpCertification>();
@@ -50,6 +56,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         internal PgpUser(ContainedPacket userPacket, PgpPublicKey publicKey, PgpSignature signature)
         {
             this.userPacket = userPacket;
+            //this.publicKey = publicKey;
             this.selfCertifications = new List<PgpCertification>();
             this.otherCertifications = new List<PgpCertification>();
             this.revocationSignatures = new List<PgpCertification>();
@@ -104,6 +111,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public PgpUserAttributes? UserAttributes => userPacket is UserAttributePacket userAttributePacket ? new PgpUserAttributes(userAttributePacket.GetSubpackets()) : null;
 
         internal object UserIdOrAttributes => (object)UserId ?? UserAttributes;
+
+        internal ContainedPacket UserPacket => userPacket;
+
+        //internal PgpPublicKey PublicKey => publicKey;
 
         public IList<PgpCertification> SelfCertifications => selfCertifications.AsReadOnly();
 

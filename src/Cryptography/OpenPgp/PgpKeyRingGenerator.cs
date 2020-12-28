@@ -152,19 +152,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
             keys.Add(new PgpSecretKey(certificationLevel, masterKey, id, encAlgorithm, hashAlgorithm, rawPassPhrase, useSha1, hashedPackets, unhashedPackets));
         }
 
-        /// <summary>Add a subkey to the key ring to be generated with default certification.</summary>
-        public void AddSubKey(PgpKeyPair keyPair)
-        {
-            AddSubKey(keyPair, this.hashedPacketVector, this.unhashedPacketVector);
-        }
-
-
         /// <summary>
         /// Add a subkey to the key ring to be generated with default certification.
         /// </summary>
         /// <param name="keyPair">The key pair.</param>
         /// <param name="hashAlgorithm">The hash algorithm.</param>
-        public void AddSubKey(PgpKeyPair keyPair, PgpHashAlgorithm hashAlgorithm)
+        public void AddSubKey(PgpKeyPair keyPair, PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             this.AddSubKey(keyPair, this.hashedPacketVector, this.unhashedPacketVector, hashAlgorithm);
         }
@@ -176,66 +169,18 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <param name="keyPair">Public/private key pair.</param>
         /// <param name="hashedPackets">Hashed packet values to be included in certification.</param>
         /// <param name="unhashedPackets">Unhashed packets values to be included in certification.</param>
-        /// <exception cref="PgpException"></exception>
-        public void AddSubKey(
-            PgpKeyPair keyPair,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
-        {
-            try
-            {
-                PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, masterKey.PrivateKey, PgpHashAlgorithm.Sha1);
-
-                //
-                // Generate the certification
-                //
-
-                sGen.HashedAttributes = hashedPackets;
-                sGen.UnhashedAttributes = unhashedPackets;
-
-                IList<PgpSignature> subSigs = new List<PgpSignature>();
-
-                subSigs.Add(sGen.GenerateCertification(masterKey.PublicKey, keyPair.PublicKey));
-
-                keys.Add(new PgpSecretKey(keyPair.PrivateKey, new PgpPublicKey(keyPair.PublicKey, null, subSigs), encAlgorithm, rawPassPhrase, useSha1, false));
-            }
-            catch (PgpException e)
-            {
-                throw e;
-            }
-            catch (Exception e)
-            {
-                throw new PgpException("exception adding subkey: ", e);
-            }
-        }
-
-        /// <summary>
-        /// Add a subkey with specific hashed and unhashed packets associated with it and
-        /// default certification.
-        /// </summary>
-        /// <param name="keyPair">Public/private key pair.</param>
-        /// <param name="hashedPackets">Hashed packet values to be included in certification.</param>
-        /// <param name="unhashedPackets">Unhashed packets values to be included in certification.</param>
         /// <param name="hashAlgorithm">The hash algorithm.</param>
-        /// <exception cref="Org.BouncyCastle.Bcpg.OpenPgp.PgpException">exception adding subkey: </exception>
-        /// <exception cref="PgpException"></exception>
         public void AddSubKey(
             PgpKeyPair keyPair,
             PgpSignatureAttributes hashedPackets,
             PgpSignatureAttributes unhashedPackets,
-            PgpHashAlgorithm hashAlgorithm)
+            PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             try
             {
-                PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, masterKey.PrivateKey, hashAlgorithm);
-
-                // Generate the certification
-                sGen.HashedAttributes = hashedPackets;
-                sGen.UnhashedAttributes = unhashedPackets;
-
-                IList<PgpSignature> subSigs = new List<PgpSignature>();
-                subSigs.Add(sGen.GenerateCertification(masterKey.PublicKey, keyPair.PublicKey));
-
+                PgpCertification certification = PgpCertification.GenerateSubkeyBinding(masterKey, keyPair.PublicKey, hashedPackets, unhashedPackets, hashAlgorithm);
+                IList<PgpSignature> subSigs = new List<PgpSignature>(1);
+                subSigs.Add(certification.Signature);
                 keys.Add(new PgpSecretKey(keyPair.PrivateKey, new PgpPublicKey(keyPair.PublicKey, null, subSigs), encAlgorithm, rawPassPhrase, useSha1, false));
             }
             catch (PgpException)

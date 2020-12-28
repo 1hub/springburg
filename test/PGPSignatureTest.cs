@@ -383,46 +383,31 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // certifications
             //
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(PgpSignature.KeyRevocation, pgpPrivKey, PgpHashAlgorithm.Sha1);
+            var revocation = PgpCertification.GenerateKeyRevokation(new PgpKeyPair(secretKey.PublicKey, pgpPrivKey), secretKey.PublicKey);
 
-            PgpSignature sig = sGen.GenerateRevokation(secretKey.PublicKey);
-
-            Assert.IsTrue(sig.VerifyRevocation(secretKey.PublicKey));
+            Assert.IsTrue(revocation.Verify(secretKey.PublicKey));
+            Assert.IsTrue(revocation.Verify());
 
             PgpSecretKeyRing pgpDSAPriv = new PgpSecretKeyRing(dsaKeyRing);
             PgpSecretKey secretDSAKey = pgpDSAPriv.GetSecretKey();
             PgpPrivateKey pgpPrivDSAKey = secretDSAKey.ExtractPrivateKey(dsaPass);
 
-            sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, pgpPrivDSAKey, PgpHashAlgorithm.Sha1);
+            var hashedAttributes = new PgpSignatureAttributes();
+            hashedAttributes.SetSignatureExpirationTime(false, TEST_EXPIRATION_TIME);
+            hashedAttributes.SetSignerUserId(true, TEST_USER_ID);
+            hashedAttributes.SetPreferredCompressionAlgorithms(false, PREFERRED_COMPRESSION_ALGORITHMS);
+            hashedAttributes.SetPreferredHashAlgorithms(false, PREFERRED_HASH_ALGORITHMS);
+            hashedAttributes.SetPreferredSymmetricAlgorithms(false, PREFERRED_SYMMETRIC_ALGORITHMS);
 
-            sGen.HashedAttributes.SetSignatureExpirationTime(false, TEST_EXPIRATION_TIME);
-            sGen.HashedAttributes.SetSignerUserId(true, TEST_USER_ID);
-            sGen.HashedAttributes.SetPreferredCompressionAlgorithms(false, PREFERRED_COMPRESSION_ALGORITHMS);
-            sGen.HashedAttributes.SetPreferredHashAlgorithms(false, PREFERRED_HASH_ALGORITHMS);
-            sGen.HashedAttributes.SetPreferredSymmetricAlgorithms(false, PREFERRED_SYMMETRIC_ALGORITHMS);
+            var subkeyBinding = PgpCertification.GenerateSubkeyBinding(
+                new PgpKeyPair(secretDSAKey.PublicKey, pgpPrivDSAKey),
+                secretKey.PublicKey,
+                hashedAttributes);
 
-            sig = sGen.GenerateCertification(secretDSAKey.PublicKey, secretKey.PublicKey);
+            Assert.IsTrue(subkeyBinding.Verify(secretDSAKey.PublicKey));
 
-            /*byte[] sigBytes = sig.GetEncoded();
-
-            PgpObjectFactory f = new PgpObjectFactory(sigBytes);
-
-            sig = ((PgpSignatureList)f.NextPgpObject())[0];*/
-
-            Assert.IsTrue(sig.VerifyCertification(secretDSAKey.PublicKey, secretKey.PublicKey));
-
-            PgpSignatureAttributes hashedPcks = sig.HashedAttributes;
-            PgpSignatureAttributes unhashedPcks = sig.UnhashedAttributes;
-
-            /*if (hashedPcks.Count != 6)
-            {
-                Fail("wrong number of hashed packets found.");
-            }
-
-            if (unhashedPcks.Count != 1)
-            {
-                Fail("wrong number of unhashed packets found.");
-            }*/
+            PgpSignatureAttributes hashedPcks = subkeyBinding.HashedAttributes;
+            PgpSignatureAttributes unhashedPcks = subkeyBinding.UnhashedAttributes;
 
             Assert.AreEqual(TEST_USER_ID, hashedPcks.SignerUserId);
             Assert.AreEqual(TEST_EXPIRATION_TIME, hashedPcks.SignatureExpirationTime);
@@ -447,19 +432,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // no packets passed
             //
-            sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, pgpPrivDSAKey, PgpHashAlgorithm.Sha1);
 
-            sig = sGen.GenerateCertification(TEST_USER_ID, secretKey.PublicKey);
+            subkeyBinding = PgpCertification.GenerateSubkeyBinding(
+                new PgpKeyPair(secretDSAKey.PublicKey, pgpPrivDSAKey),
+                secretKey.PublicKey);
 
-            if (!sig.VerifyCertification(secretDSAKey.PublicKey, TEST_USER_ID, secretKey.PublicKey))
-            {
-                Fail("subkey binding verification failed.");
-            }
+            Assert.IsTrue(subkeyBinding.Verify(secretDSAKey.PublicKey));
 
-            hashedPcks = sig.HashedAttributes;
+            hashedPcks = subkeyBinding.HashedAttributes;
             Assert.IsTrue(hashedPcks.SignatureCreationTime.HasValue);
 
-            unhashedPcks = sig.UnhashedAttributes;
+            unhashedPcks = subkeyBinding.UnhashedAttributes;
             Assert.IsTrue(unhashedPcks.IssuerKeyId.HasValue);
 
             /*try
@@ -476,19 +459,19 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // override hash packets
             //
-            sGen = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, pgpPrivDSAKey, PgpHashAlgorithm.Sha1);
-
             DateTime creationTime = new DateTime(1973, 7, 27);
-            sGen.HashedAttributes.SetSignatureCreationTime(false, creationTime);
 
-            sig = sGen.GenerateCertification(TEST_USER_ID, secretKey.PublicKey);
+            hashedAttributes = new PgpSignatureAttributes();
+            hashedAttributes.SetSignatureCreationTime(false, creationTime);
 
-            if (!sig.VerifyCertification(secretDSAKey.PublicKey, TEST_USER_ID, secretKey.PublicKey))
-            {
-                Fail("subkey binding verification failed.");
-            }
+            subkeyBinding = PgpCertification.GenerateSubkeyBinding(
+                new PgpKeyPair(secretDSAKey.PublicKey, pgpPrivDSAKey),
+                secretKey.PublicKey,
+                hashedAttributes);
 
-            hashedPcks = sig.HashedAttributes;
+            Assert.IsTrue(subkeyBinding.Verify(secretDSAKey.PublicKey));
+
+            hashedPcks = subkeyBinding.HashedAttributes;
 
             Assert.IsTrue(hashedPcks.SignatureCreationTime.HasValue);
             Assert.AreEqual(creationTime, hashedPcks.SignatureCreationTime);
@@ -501,7 +484,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             Assert.AreEqual(null, hashedPcks.SignatureExpirationTime);
             Assert.AreEqual(null, hashedPcks.SignerUserId);
 
-            unhashedPcks = sig.UnhashedAttributes;
+            unhashedPcks = subkeyBinding.UnhashedAttributes;
 
             Assert.IsTrue(unhashedPcks.IssuerKeyId.HasValue);
 
