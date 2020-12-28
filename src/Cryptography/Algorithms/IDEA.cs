@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 
 namespace InflatablePalace.Cryptography.Algorithms
 {
-    class IDEA : SymmetricAlgorithm
+    public sealed class IDEA : SymmetricAlgorithm
     {
         public IDEA()
         {

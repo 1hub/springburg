@@ -7,7 +7,7 @@ namespace InflatablePalace.Cryptography.Algorithms
     /// <summary>
     /// Twofish encryption algorithm
     /// </summary>
-    sealed class Twofish : SymmetricAlgorithm
+    public sealed class Twofish : SymmetricAlgorithm
     {
         public Twofish()
         {

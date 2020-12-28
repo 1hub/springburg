@@ -3,9 +3,9 @@ using InflatablePalace.Cryptography.Algorithms.Modes;
 using System;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.OpenPGP
+namespace InflatablePalace.Cryptography.Algorithms
 {
-    class CAST5 : SymmetricAlgorithm
+    public sealed class CAST5 : SymmetricAlgorithm
     {
         public CAST5()
         {
