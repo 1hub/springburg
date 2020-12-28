@@ -1,4 +1,5 @@
-﻿using NSec.Cryptography;
+﻿using Internal.Cryptography;
+using NSec.Cryptography;
 using System;
 using System.Diagnostics;
 using System.Formats.Asn1;
@@ -34,6 +35,9 @@ namespace InflatablePalace.Cryptography.Algorithms
 
         protected override byte[] SignHashCore(ReadOnlySpan<byte> hash, DSASignatureFormat signatureFormat)
         {
+            if (this.privateKey == null)
+                throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
+
             byte[] signature = NSec.Cryptography.SignatureAlgorithm.Ed25519.Sign(this.privateKey, hash).ToArray();
 
             if (signatureFormat == DSASignatureFormat.Rfc3279DerSequence)
@@ -79,10 +83,13 @@ namespace InflatablePalace.Cryptography.Algorithms
 
         public override ECParameters ExportParameters(bool includePrivateParameters)
         {
+            if (this.privateKey == null && includePrivateParameters)
+                throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
+
             return new ECParameters
             {
                 Curve = ECCurve.CreateFromOid(new Oid("1.3.6.1.4.1.11591.15.1")),
-                D = includePrivateParameters ? privateKey.Export(KeyBlobFormat.RawPrivateKey) : null,
+                D = includePrivateParameters ? privateKey!.Export(KeyBlobFormat.RawPrivateKey) : null,
                 Q = new ECPoint { X = publicKey.Export(KeyBlobFormat.RawPublicKey), Y = new byte[32] }
             };
         }

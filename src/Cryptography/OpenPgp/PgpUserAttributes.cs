@@ -10,7 +10,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
     /// <summary>Container for a list of user attribute subpackets.</summary>
     public class PgpUserAttributes
     {
-        private readonly UserAttributeSubpacket[] orginalPackets;
+        private readonly UserAttributeSubpacket[]? orginalPackets;
         private readonly IDictionary<UserAttributeSubpacketTag, UserAttributeSubpacket> packets;
 
         public PgpUserAttributes()
@@ -24,7 +24,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             this.packets = new ReadOnlyDictionary<UserAttributeSubpacketTag, UserAttributeSubpacket>(packets.ToDictionary(s => s.SubpacketType));
         }
 
-        public byte[] JpegImageAttribute
+        public byte[]? JpegImageAttribute
         {
             get
             {
@@ -35,8 +35,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
             set
             {
                 if (value == null)
-                    throw new ArgumentNullException(nameof(value));
-                packets[UserAttributeSubpacketTag.ImageAttribute] = new ImageAttrib(ImageAttrib.Format.Jpeg, value);
+                    packets.Remove(UserAttributeSubpacketTag.ImageAttribute);
+                else
+                    packets[UserAttributeSubpacketTag.ImageAttribute] = new ImageAttrib(ImageAttrib.Format.Jpeg, value);
             }
         }
 
@@ -45,7 +46,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return orginalPackets ?? packets.Values.ToArray();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(obj, this))
                 return true;

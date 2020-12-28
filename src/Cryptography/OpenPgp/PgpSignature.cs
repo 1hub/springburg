@@ -76,7 +76,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace);
             new CryptoStream(stream, helper, CryptoStreamMode.Read).CopyTo(Stream.Null);
             helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
-            return publicKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
+            return publicKey.Verify(helper.Hash!, sigPck.GetSignature(), helper.HashAlgorithm);
         }
 
         public int SignatureType => sigPck.SignatureType;

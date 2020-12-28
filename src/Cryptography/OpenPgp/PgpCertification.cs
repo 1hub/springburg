@@ -39,13 +39,13 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public PgpSignature Signature => signature;
 
         private static MemoryStream GenerateCertificationData(
-            PgpPublicKey? signingKey,
+            PgpPublicKey signingKey,
             ContainedPacket? userPacket,
             PgpPublicKey publicKey)
         {
             var data = new MemoryStream();
 
-            if (!signingKey.GetFingerprint().SequenceEqual(publicKey.GetFingerprint()) && userPacket == null)
+            if (!signingKey.Fingerprint.SequenceEqual(publicKey.Fingerprint) && userPacket == null)
             {
                 byte[] signingKeyBytes = signingKey.PublicKeyPacket.GetEncodedContents();
                 data.Write(new[] {
@@ -121,8 +121,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public static PgpCertification GenerateSubkeyBinding(
             PgpKeyPair masterKey,
             PgpPublicKey subKey,
-            PgpSignatureAttributes hashedAttributes = null,
-            PgpSignatureAttributes unhashedAttributes = null,
+            PgpSignatureAttributes? hashedAttributes = null,
+            PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             return GenerateKeyBinding(PgpSignature.SubkeyBinding, masterKey, subKey, hashedAttributes, unhashedAttributes, hashAlgorithm);
@@ -131,8 +131,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /*public static PgpCertification GeneratePrimaryKeyBinding(
             PgpKeyPair masterKey,
             PgpPublicKey subKey,
-            PgpSignatureAttributes hashedAttributes = null,
-            PgpSignatureAttributes unhashedAttributes = null,
+            PgpSignatureAttributes hashedAttributes? = null,
+            PgpSignatureAttributes unhashedAttributes? = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             return GenerateKeyBinding(PgpSignature.PrimaryKeyBinding, masterKey, subKey, hashedAttributes, unhashedAttributes, hashAlgorithm);
@@ -142,8 +142,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int signatureType,
             PgpKeyPair masterKey,
             PgpPublicKey subKey,
-            PgpSignatureAttributes hashedAttributes = null,
-            PgpSignatureAttributes unhashedAttributes = null,
+            PgpSignatureAttributes? hashedAttributes = null,
+            PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             var signatureGenerator = new PgpSignatureGenerator(signatureType, masterKey.PrivateKey, hashAlgorithm);
@@ -161,8 +161,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpKeyPair signingKey,
             string userId,
             PgpPublicKey userPublicKey,
-            PgpSignatureAttributes hashedAttributes = null,
-            PgpSignatureAttributes unhashedAttributes = null,
+            PgpSignatureAttributes? hashedAttributes = null,
+            PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             var userPacket = new UserIdPacket(userId);
@@ -181,8 +181,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpKeyPair signingKey,
             PgpUserAttributes userAttributes,
             PgpPublicKey userPublicKey,
-            PgpSignatureAttributes hashedAttributes = null,
-            PgpSignatureAttributes unhashedAttributes = null,
+            PgpSignatureAttributes? hashedAttributes = null,
+            PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             var userPacket = new UserAttributePacket(userAttributes.ToSubpacketArray());
@@ -198,8 +198,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public static PgpCertification GenerateKeyRevokation(
             PgpKeyPair signingKey,
             PgpPublicKey revokedKey,
-            PgpSignatureAttributes hashedAttributes = null,
-            PgpSignatureAttributes unhashedAttributes = null,
+            PgpSignatureAttributes? hashedAttributes = null,
+            PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             var signatureGenerator = new PgpSignatureGenerator(revokedKey.IsMasterKey ? PgpSignature.KeyRevocation : PgpSignature.SubkeyRevocation, signingKey.PrivateKey, hashAlgorithm);

@@ -3,6 +3,7 @@ using InflatablePalace.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
@@ -43,6 +44,9 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
                 keyAlgorithm = (PgpPublicKeyAlgorithm)bcpgIn.ReadByte();
                 hashAlgorithm = (PgpHashAlgorithm)bcpgIn.ReadByte();
+
+                hashedData = Array.Empty<SignatureSubpacket>();
+                unhashedData = Array.Empty<SignatureSubpacket>();
             }
             else if (version == 4)
             {
@@ -59,32 +63,20 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 //
                 // read the signature sub packet data.
                 //
-                SignatureSubpacketParser sIn = new SignatureSubpacketParser(
-                    new MemoryStream(hashed, false));
+                SignatureSubpacketParser sIn = new SignatureSubpacketParser(new MemoryStream(hashed, false));
 
                 IList<SignatureSubpacket> v = new List<SignatureSubpacket>();
-                SignatureSubpacket sub;
+                SignatureSubpacket? sub;
                 while ((sub = sIn.ReadPacket()) != null)
                 {
                     v.Add(sub);
+                    if (sub is IssuerKeyId issuerKeyId)
+                        keyId = issuerKeyId.KeyId;
+                    else if (sub is SignatureCreationTime signatureCreationTime)
+                        creationTime = signatureCreationTime.Time;
                 }
 
-                hashedData = new SignatureSubpacket[v.Count];
-
-                for (int i = 0; i != hashedData.Length; i++)
-                {
-                    SignatureSubpacket p = (SignatureSubpacket)v[i];
-                    if (p is IssuerKeyId)
-                    {
-                        keyId = ((IssuerKeyId)p).KeyId;
-                    }
-                    else if (p is SignatureCreationTime)
-                    {
-                        creationTime = ((SignatureCreationTime)p).Time;
-                    }
-
-                    hashedData[i] = p;
-                }
+                hashedData = v.ToArray();
 
                 int unhashedLength = (bcpgIn.ReadByte() << 8) | bcpgIn.ReadByte();
                 byte[] unhashed = new byte[unhashedLength];
@@ -95,28 +87,18 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 sIn = new SignatureSubpacketParser(new MemoryStream(unhashed, false));
 
                 v.Clear();
-
                 while ((sub = sIn.ReadPacket()) != null)
                 {
                     v.Add(sub);
+                    if (sub is IssuerKeyId issuerKeyId && keyId == 0)
+                        keyId = issuerKeyId.KeyId;
                 }
 
-                unhashedData = new SignatureSubpacket[v.Count];
-
-                for (int i = 0; i != unhashedData.Length; i++)
-                {
-                    SignatureSubpacket p = (SignatureSubpacket)v[i];
-                    if (p is IssuerKeyId)
-                    {
-                        keyId = ((IssuerKeyId)p).KeyId;
-                    }
-
-                    unhashedData[i] = p;
-                }
+                unhashedData = v.ToArray();
             }
             else
             {
-                throw new Exception("unsupported version: " + version);
+                throw new PgpException("unsupported version: " + version);
             }
 
             fingerprint = new byte[2];
@@ -202,7 +184,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 long time = new DateTimeOffset(creationTime, TimeSpan.Zero).ToUnixTimeSeconds();
                 bcpgOut.Write(new byte[] { (byte)(time >> 24), (byte)(time >> 16), (byte)(time >> 8), (byte)time });
 
-                bcpgOut.Write(OpenPgp.PgpUtilities.KeyIdToBytes(keyId));
+                bcpgOut.Write(PgpUtilities.KeyIdToBytes(keyId));
 
                 bcpgOut.WriteByte((byte)keyAlgorithm);
                 bcpgOut.WriteByte((byte)hashAlgorithm);

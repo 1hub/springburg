@@ -10,7 +10,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
     {
         private Stream stream;
         private bool preferOldFormat;
-        private Stream currentPacketStream;
+        private Stream? currentPacketStream;
 
         public PacketWriter(Stream stream, bool preferOldFormat = true)
         {
@@ -123,7 +123,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         {
             private PacketWriter writer;
             private Stream outputStream;
-            private List<byte[]> bufferedPackets;
+            private List<byte[]>? bufferedPackets;
             private PacketTag packetTag;
             private bool delayedHeader;
             private bool canBePartial;
@@ -292,7 +292,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                     if (partialBuffer != null)
                     {
                         ArrayPool<byte>.Shared.Return(partialBuffer, true);
-                        partialBuffer = null;
+                        partialBuffer = Array.Empty<byte>();
                     }
 
                     Debug.Assert(writer.currentPacketStream == this);

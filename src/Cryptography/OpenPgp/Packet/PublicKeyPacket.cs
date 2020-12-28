@@ -110,7 +110,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
             digest.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
 
-            return digest.Hash; ;
+            return digest.Hash!;
         }
 
 

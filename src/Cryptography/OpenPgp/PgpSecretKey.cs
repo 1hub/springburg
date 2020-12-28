@@ -3,6 +3,7 @@ using InflatablePalace.Cryptography.Helpers;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -99,10 +100,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
             else
             {
-                S2k s2k;
-                byte[] iv;
-
+                S2k? s2k;
+                byte[]? iv;
                 byte[] encData;
+
                 if (pub.Version >= 4)
                 {
                     encData = EncryptKeyDataV4(keyData, encAlgorithm, PgpHashAlgorithm.Sha1, rawPassPhrase, out s2k, out iv);
@@ -165,9 +166,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
             get
             {
-                byte[] secKeyData = secret.GetSecretKeyData();
-
-                return secKeyData == null || secKeyData.Length < 1;
+                byte[]? secKeyData = secret.GetSecretKeyData();
+                return secKeyData == null || secKeyData.Length == 0;
             }
         }
 
@@ -192,7 +192,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         private byte[] ExtractKeyData(byte[] rawPassPhrase)
         {
             PgpSymmetricKeyAlgorithm encAlgorithm = secret.EncAlgorithm;
-            byte[] encData = secret.GetSecretKeyData();
+            byte[] encData = secret.GetSecretKeyData() ?? Array.Empty<byte>();
 
             if (encAlgorithm == PgpSymmetricKeyAlgorithm.Null)
                 // TODO Check checksum here?
@@ -201,6 +201,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             // TODO Factor this block out as 'decryptData'
             try
             {
+                Debug.Assert(secret.S2k != null);
                 byte[] key = PgpUtilities.DoMakeKeyFromPassPhrase(secret.EncAlgorithm, secret.S2k, rawPassPhrase);
                 byte[] iv = secret.GetIV().ToArray();
                 byte[] data;
@@ -300,7 +301,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <remarks>
         /// The passphrase is encoded to bytes using UTF8 (Encoding.UTF8.GetBytes).
         /// </remarks>
-        public PgpPrivateKey ExtractPrivateKey(string passPhrase)
+        public PgpPrivateKey? ExtractPrivateKey(string passPhrase)
         {
             return ExtractPrivateKey(Encoding.UTF8.GetBytes(passPhrase));
         }
@@ -309,7 +310,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <remarks>
         /// Allows the caller to handle the encoding of the passphrase to bytes.
         /// </remarks>
-        public PgpPrivateKey ExtractPrivateKey(byte[] rawPassPhrase)
+        public PgpPrivateKey? ExtractPrivateKey(byte[] rawPassPhrase)
         {
             if (IsPrivateKeyEmpty)
                 return null;
@@ -512,8 +513,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             byte[] rawKeyData = key.ExtractKeyData(rawOldPassPhrase);
             S2kUsageTag s2kUsage = key.secret.S2kUsage;
-            byte[] iv = null;
-            S2k s2k = null;
+            byte[]? iv = null;
+            S2k? s2k = null;
             byte[] keyData;
             PublicKeyPacket pubKeyPacket = key.secret.PublicKeyPacket;
 
@@ -596,8 +597,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             byte[] rawKeyData,
             PgpSymmetricKeyAlgorithm encAlgorithm,
             byte[] rawPassPhrase,
-            out S2k s2k,
-            out byte[] iv)
+            out S2k? s2k,
+            out byte[]? iv)
         {
             // Version 2 or 3 - RSA Keys only
 
@@ -629,7 +630,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 }
                 else
                 {
-                    byte[] tmpIv = keyData.AsSpan(pos - iv.Length, iv.Length).ToArray();
+                    Debug.Assert(iv != null); // iv is generated on the first round
+                    byte[]? tmpIv = keyData.AsSpan(pos - iv.Length, iv.Length).ToArray();
                     tmp = EncryptData(encAlgorithm, encKey, rawKeyData, pos + 2, encLen, ref tmpIv);
                 }
 
@@ -651,8 +653,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpSymmetricKeyAlgorithm encAlgorithm,
             PgpHashAlgorithm hashAlgorithm,
             byte[] rawPassPhrase,
-            out S2k s2k,
-            out byte[] iv)
+            out S2k? s2k,
+            out byte[]? iv)
         {
             s2k = PgpUtilities.GenerateS2k(hashAlgorithm, 0x60);
             byte[] key = PgpUtilities.DoMakeKeyFromPassPhrase(encAlgorithm, s2k, rawPassPhrase);
@@ -666,7 +668,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             byte[] data,
             int dataOff,
             int dataLen,
-            ref byte[] iv)
+            ref byte[]? iv)
         {
             var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
             if (iv == null)
@@ -712,7 +714,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <summary>
         /// Parse a secret key from one of the GPG S expression keys.
         /// </summary>
-        internal static PgpSecretKey DoParseSecretKeyFromSExpr(Stream inputStream, byte[] rawPassPhrase, PgpPublicKey pubKey)
+        internal static PgpSecretKey DoParseSecretKeyFromSExpr(Stream inputStream, byte[] rawPassPhrase, PgpPublicKey? pubKey)
         {
             SXprReader reader = new SXprReader(inputStream);
 
@@ -756,7 +758,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 }
 
                 byte[] qVal;
-                string flags = null;
+                string? flags = null;
 
                 reader.SkipOpenParenthesis();
 
@@ -797,7 +799,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             throw new PgpException("unknown key type found");
         }
 
-        private static void WriteSExprPublicKey(SXprWriter writer, PublicKeyPacket pubPacket, string curveName, string protectedAt)
+        private static void WriteSExprPublicKey(SXprWriter writer, PublicKeyPacket pubPacket, string curveName, string? protectedAt)
         {
             writer.StartList();
             switch (pubPacket.Algorithm)
@@ -858,7 +860,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             reader.SkipOpenParenthesis();
 
             string protection;
-            string protectedAt = null;
+            string? protectedAt = null;
             S2k s2k;
             byte[] iv;
             byte[] secKeyData;
@@ -915,7 +917,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     data = c.DoFinal(secKeyData, 0, secKeyData.Length);*/
                     // TODO: AES/OCB support
                     throw new NotImplementedException();
-                    break;
+                    //break;
 
                 case "openpgp-native":
                 default:

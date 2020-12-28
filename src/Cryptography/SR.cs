@@ -10,6 +10,8 @@
         public static string Cryptography_CipherModeNotSupported = "The specified CipherMode '{0}' is not supported.";
         public static string Cryptography_Xml_KW_BadKeySize = "The length of the encrypted data in Key Wrap is either 32, 40 or 48 bytes.";
         public static string Cryptography_Xml_BadWrappedKeySize = "Bad wrapped key size.";
+        public static string Cryptography_CSP_NoPrivateKey = "Object contains only the public half of a key pair.A private key must also be provided.";
+        public static string Cryptography_HashAlgorithmNameNullOrEmpty = "The hash algorithm name cannot be null or empty.";
         public static string Argument_DestinationTooShort = "Destination is too short.";
     }
 }

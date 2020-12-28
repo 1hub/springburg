@@ -11,12 +11,12 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
     public class ArmoredPacketWriter : IPacketWriter
     {
         private Stream stream;
-        private PacketWriter writer;
-        private Crc24 crc24;
-        private Stream base64OutputStream;
+        private PacketWriter? writer;
+        private Crc24? crc24;
+        private Stream? base64OutputStream;
         private bool useClearText;
         private bool inClearText;
-        private string type;
+        private string? type;
 
         public ArmoredPacketWriter(Stream stream, bool useClearText = true)
         {
@@ -35,7 +35,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             if (this.base64OutputStream != null)
             {
                 this.base64OutputStream.Close();
-                this.stream.Write(Encoding.ASCII.GetBytes("=" + Convert.ToBase64String(this.crc24.Hash) + "\r\n"));
+                this.stream.Write(Encoding.ASCII.GetBytes("=" + Convert.ToBase64String(this.crc24!.Hash!) + "\r\n"));
                 this.stream.Write(Encoding.ASCII.GetBytes("-----END PGP " + type + "-----\r\n"));
                 this.base64OutputStream = null;
             }
@@ -59,6 +59,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             if (this.writer == null)
             {
                 StartArmor(packet.Tag);
+                Debug.Assert(this.writer != null);
             }
             return this.writer.GetPacketStream(packet);
         }
@@ -83,6 +84,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 if (this.writer == null)
                 {
                     StartArmor(packet.Tag);
+                    Debug.Assert(this.writer != null);
                 }
                 this.writer.WritePacket(packet);
             }

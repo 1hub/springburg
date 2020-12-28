@@ -22,8 +22,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         internal int itCount = -1;
         internal int protectionMode = -1;
 
-        internal S2k(
-            Stream inStr)
+        internal S2k(Stream inStr)
         {
             type = inStr.ReadByte();
             algorithm = (PgpHashAlgorithm)inStr.ReadByte();
@@ -44,9 +43,14 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                         itCount = inStr.ReadByte();
                     }
                 }
+                else
+                {
+                    iv = Array.Empty<byte>();
+                }
             }
             else
             {
+                iv = Array.Empty<byte>();
                 inStr.ReadByte(); // G
                 inStr.ReadByte(); // N
                 inStr.ReadByte(); // U
@@ -59,6 +63,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         {
             this.type = 0;
             this.algorithm = algorithm;
+            iv = Array.Empty<byte>();
         }
 
         public S2k(

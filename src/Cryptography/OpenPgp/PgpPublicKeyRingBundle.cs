@@ -82,7 +82,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             foreach (PgpPublicKeyRing pubRing in GetKeyRings())
             {
-                foreach (string nextUserID in pubRing.GetPublicKey().GetUserIds().Select(u => u.UserId))
+                foreach (string nextUserID in pubRing.GetPublicKey().GetUserIds().Select(u => u.UserId!))
                 {
                     if ((matchPartial && nextUserID.IndexOf(userId, comparison) >= 0) ||
                         (!matchPartial && nextUserID.Equals(userId, comparison)))
@@ -97,11 +97,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         /// <summary>Return the PGP public key associated with the given key id.</summary>
         /// <param name="keyId">The ID of the public key to return.</param>
-        public PgpPublicKey GetPublicKey(long keyId)
+        public PgpPublicKey? GetPublicKey(long keyId)
         {
             foreach (PgpPublicKeyRing pubRing in GetKeyRings())
             {
-                PgpPublicKey pub = pubRing.GetPublicKey(keyId);
+                PgpPublicKey? pub = pubRing.GetPublicKey(keyId);
                 if (pub != null)
                 {
                     return pub;
@@ -113,7 +113,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         /// <summary>Return the public key ring which contains the key referred to by keyId</summary>
         /// <param name="keyId">key ID to match against</param>
-        public PgpPublicKeyRing GetPublicKeyRing(long keyId)
+        public PgpPublicKeyRing? GetPublicKeyRing(long keyId)
         {
             if (pubRings.TryGetValue(keyId, out var keyRing))
             {
@@ -122,7 +122,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             foreach (PgpPublicKeyRing pubRing in GetKeyRings())
             {
-                PgpPublicKey pub = pubRing.GetPublicKey(keyId);
+                PgpPublicKey? pub = pubRing.GetPublicKey(keyId);
 
                 if (pub != null)
                 {

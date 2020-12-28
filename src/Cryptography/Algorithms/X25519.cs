@@ -1,12 +1,9 @@
-﻿using NSec.Cryptography;
+﻿using Internal.Cryptography;
+using NSec.Cryptography;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace InflatablePalace.Cryptography.Algorithms
 {
@@ -29,25 +26,35 @@ namespace InflatablePalace.Cryptography.Algorithms
             this.publicKey = NSec.Cryptography.PublicKey.Import(KeyAgreementAlgorithm.X25519, parameters.Q.X, KeyBlobFormat.RawPublicKey);
         }
 
+        // TODO: Implement other key derivation methods:
+        // https://github.com/dotnet/runtime/blob/1d9e50cb4735df46d3de0cee5791e97295eaf588/src/libraries/Common/src/System/Security/Cryptography/ECDiffieHellmanDerivation.cs
+
         public override byte[] DeriveKeyFromHash(ECDiffieHellmanPublicKey otherPartyPublicKey, HashAlgorithmName hashAlgorithm, byte[]? secretPrepend, byte[]? secretAppend)
         {
+            if (this.privateKey == null)
+                throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
+            if (string.IsNullOrEmpty(hashAlgorithm.Name))
+                throw new ArgumentException(SR.Cryptography_HashAlgorithmNameNullOrEmpty, nameof(hashAlgorithm));
+
             using var sharedSecret = KeyAgreementAlgorithm.X25519.Agree(this.privateKey, ((X25519PublicKey)otherPartyPublicKey).publicKey);
 
             // NSec doesn't offer a way to export the shared secret. Unfortunately it also doesn't provide
             // the correct key derivation function so we have to resort to using the private API.
-            var memoryHandle = (SafeHandle)typeof(SharedSecret).GetProperty("Handle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetMethod.Invoke(sharedSecret, null);
+            var memoryHandle = (SafeHandle?)typeof(SharedSecret).GetProperty("Handle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetMethod?.Invoke(sharedSecret, null);
+            Debug.Assert(memoryHandle != null);
             byte[] secretBytes = new byte[32];
             Marshal.Copy(memoryHandle.DangerousGetHandle(), secretBytes, 0, 32);
 
-            var hashAlg = System.Security.Cryptography.HashAlgorithm.Create(hashAlgorithm.Name);
-            if (secretPrepend != null)
-                hashAlg.TransformBlock(secretPrepend, 0, secretPrepend.Length, null, 0);
-            hashAlg.TransformBlock(secretBytes, 0, secretBytes.Length, null, 0);
-            if (secretAppend != null)
-                hashAlg.TransformBlock(secretAppend, 0, secretAppend.Length, null, 0);
-            hashAlg.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-
-            return hashAlg.Hash;
+            using (var hash = System.Security.Cryptography.IncrementalHash.CreateHash(hashAlgorithm))
+            {
+                if (secretPrepend != null)
+                    hash.AppendData(secretPrepend);
+                hash.AppendData(secretBytes);
+                if (secretAppend != null)
+                    hash.AppendData(secretAppend);
+                
+                return hash.GetHashAndReset();
+            }
 
             // Uses HMAC :/
             //if (hashAlgorithm == HashAlgorithmName.SHA256)
@@ -56,10 +63,13 @@ namespace InflatablePalace.Cryptography.Algorithms
 
         public override ECParameters ExportParameters(bool includePrivateParameters)
         {
+            if (this.privateKey == null && includePrivateParameters)
+                throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
+
             return new ECParameters
             {
                 Curve = ECCurve.CreateFromOid(new Oid("1.3.6.1.4.1.3029.1.5.1")),
-                D = includePrivateParameters ? privateKey.Export(KeyBlobFormat.RawPrivateKey) : null,
+                D = includePrivateParameters ? privateKey!.Export(KeyBlobFormat.RawPrivateKey) : null,
                 Q = new ECPoint { X = publicKey.Export(KeyBlobFormat.RawPublicKey), Y = new byte[32] }
             };
         }

@@ -11,8 +11,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
     {
         private PgpHashAlgorithm hashAlgorithm;
 
-        private PgpSignatureAttributes hashedAttributes;
-        private PgpSignatureAttributes unhashedAttributes;
+        private PgpSignatureAttributes? hashedAttributes;
+        private PgpSignatureAttributes? unhashedAttributes;
 
         internal PgpSignatureTransformation helper;
         private PgpPrivateKey privateKey;
@@ -93,7 +93,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 }
                 else
                 {
-                    creationTime = hashedAttributes.SignatureCreationTime.Value;
+                    creationTime = HashedAttributes.SignatureCreationTime.Value;
                 }
 
                 if (!HashedAttributes.IssuerKeyId.HasValue &&
@@ -111,7 +111,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 creationTime,
                 hashedPackets);
 
-            var signature = privateKey.Sign(helper.Hash, helper.HashAlgorithm);
+            var signature = privateKey.Sign(helper.Hash!, helper.HashAlgorithm);
             return new SignaturePacket(
                 version, helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
                 hashAlgorithm, creationTime,

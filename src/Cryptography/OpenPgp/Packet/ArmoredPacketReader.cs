@@ -7,14 +7,13 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
     {
         private Stream stream;
         private ArmoredInputStream armoredInputStream;
-        private PacketReader packetReader;
+        private PacketReader? packetReader;
         private bool generatedOnePassPacket;
 
         public ArmoredPacketReader(Stream stream)
         {
             this.stream = stream;
             this.armoredInputStream = new ArmoredInputStream(stream);
-            //this.packetReader = new PacketReader(armoredInputStream);
         }
 
         public IPacketReader CreateNestedReader(Stream stream)
@@ -53,7 +52,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 {
                     generatedOnePassPacket = true;
                     PgpHashAlgorithm hashAlgorithmTag = PgpHashAlgorithm.MD5;
-                    foreach (var header in armoredInputStream.GetArmorHeaders())
+                    foreach (var header in armoredInputStream.GetArmorHeaders()!)
                     {
                         if (header.StartsWith("Hash: ", StringComparison.OrdinalIgnoreCase))
                         {

@@ -9,7 +9,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 {
     public class PgpSignatureAttributes
     {
-        private SignatureSubpacket[] orginalSubpackets;
+        private SignatureSubpacket[]? orginalSubpackets;
         private IDictionary<SignatureSubpacketTag, SignatureSubpacket> subpackets;
         private IList<NotationData> notations;
 
@@ -147,7 +147,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             subpackets[SignatureSubpacketTag.SignatureCreationTime] = new SignatureCreationTime(isCritical, time);
         }
 
-        public PgpHashAlgorithm[] PreferredHashAlgorithms
+        public PgpHashAlgorithm[]? PreferredHashAlgorithms
         {
             get
             {
@@ -162,7 +162,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             subpackets[SignatureSubpacketTag.PreferredHashAlgorithms] = new PreferredAlgorithms(SignatureSubpacketTag.PreferredHashAlgorithms, isCritical, algorithms.Cast<byte>().ToArray());
         }
 
-        public PgpSymmetricKeyAlgorithm[] PreferredSymmetricAlgorithms
+        public PgpSymmetricKeyAlgorithm[]? PreferredSymmetricAlgorithms
         {
             get
             {
@@ -177,7 +177,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             subpackets[SignatureSubpacketTag.PreferredSymmetricAlgorithms] = new PreferredAlgorithms(SignatureSubpacketTag.PreferredSymmetricAlgorithms, isCritical, algorithms.Cast<byte>().ToArray());
         }
 
-        public PgpCompressionAlgorithm[] PreferredCompressionAlgorithms
+        public PgpCompressionAlgorithm[]? PreferredCompressionAlgorithms
         {
             get
             {

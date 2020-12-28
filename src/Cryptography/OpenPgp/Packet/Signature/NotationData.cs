@@ -41,7 +41,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
             os.WriteByte(0x0);
             os.WriteByte(0x0);
 
-            byte[] nameData, valueData = null;
+            byte[] nameData, valueData;
             int nameLength, valueLength;
 
             nameData = Encoding.UTF8.GetBytes(notationName);

@@ -42,7 +42,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             }
 
             if (nextB < 0)
-                return (PacketTag)nextB;
+                return PacketTag.EndOfFile;
 
             int maskB = nextB & 0x3f;
             if ((nextB & 0x40) == 0)    // old
@@ -53,16 +53,14 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             return (PacketTag)maskB;
         }
 
-        private (Packet Packet, Stream Stream) ReadPacket()
+        private (Packet Packet, Stream? Stream) ReadPacket()
         {
             int hdr = next ? nextB : inputStream.ReadByte();
 
             next = false;
 
             if (hdr < 0)
-            {
-                return (null, null);
-            }
+                throw new EndOfStreamException();
 
             if ((hdr & 0x80) == 0)
             {
@@ -201,6 +199,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         {
             var packet = ReadPacket();
             Debug.Assert(packet.Packet is StreamablePacket);
+            Debug.Assert(packet.Stream is Stream);
             return ((StreamablePacket)packet.Packet, packet.Stream);
         }
 

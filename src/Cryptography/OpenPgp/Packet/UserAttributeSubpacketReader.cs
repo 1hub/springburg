@@ -8,13 +8,12 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
     {
         private readonly Stream input;
 
-        public UserAttributeSubpacketParser(
-            Stream input)
+        public UserAttributeSubpacketParser(Stream input)
         {
             this.input = input;
         }
 
-        public virtual UserAttributeSubpacket ReadPacket()
+        public UserAttributeSubpacket? ReadPacket()
         {
             int l = input.ReadByte();
             if (l < 0)

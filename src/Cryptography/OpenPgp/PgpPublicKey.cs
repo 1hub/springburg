@@ -25,13 +25,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         private void Init()
         {
-            BcpgKey key = publicPk.Key;
-
             this.fingerprint = publicPk.CalculateFingerprint();
 
             if (publicPk.Version <= 3)
             {
-                RsaPublicBcpgKey rK = (RsaPublicBcpgKey)key;
+                RsaPublicBcpgKey rK = (RsaPublicBcpgKey)publicPk.Key;
                 var modulus = rK.Modulus.Value;
 
                 this.keyId = (long)(((ulong)modulus[modulus.Length - 8] << 56)
@@ -155,6 +153,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             this.ids = new List<PgpUser>();
 
             Init();
+            Debug.Assert(this.fingerprint != null);
         }
 
         internal PgpPublicKey(PublicKeyPacket publicPk)
@@ -164,6 +163,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             this.ids = new List<PgpUser>();
 
             Init();
+            Debug.Assert(this.fingerprint != null);
         }
 
         internal PgpPublicKey(IPacketReader packetReader, PublicKeyPacket publicKeyPacket, bool subKey)
@@ -189,6 +189,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
 
             Init();
+            Debug.Assert(this.fingerprint != null);
 
             if (!subKey)
             {
@@ -198,23 +199,6 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     ids.Add(new PgpUser(packetReader, this));
                 }
             }
-        }
-
-        /// <summary>
-        /// Create subkey out of an existing public key.
-        /// </summary>
-        internal PgpPublicKey(
-            PublicSubkeyPacket subkeyPacket,
-            TrustPacket trust,
-            IList<PgpSignature> keySigs)
-        {
-            this.publicPk = subkeyPacket; 
-            this.trustPk = trust;
-            this.keyCertifications = new List<PgpCertification>();
-            foreach (var keySig in keySigs)
-                this.keyCertifications.Add(new PgpCertification(keySig, null, this));
-
-            Init();
         }
 
         /// <summary>Copy constructor.</summary>
@@ -322,7 +306,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public long KeyId => keyId;
 
         /// <summary>The fingerprint of the key</summary>
-        public ReadOnlySpan<byte> GetFingerprint() => fingerprint;
+        public ReadOnlySpan<byte> Fingerprint => fingerprint;
 
         /// <summary>
         /// Check if this key has an algorithm type that makes it suitable to use for encryption.
@@ -713,7 +697,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <param name="key">The key the certifications are to be removed from.</param>
         /// <param name="certification">The certfication to be removed.</param>
         /// <returns>The modified key, null if the certification was not found.</returns>
-        public static PgpPublicKey RemoveCertification(
+        public static PgpPublicKey? RemoveCertification(
             PgpPublicKey key,
             PgpCertification certification)
         {

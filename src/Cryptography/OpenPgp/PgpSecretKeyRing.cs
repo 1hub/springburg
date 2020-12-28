@@ -81,7 +81,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <returns>An <c>IEnumerable</c> of <c>PgpSecretKey</c> objects.</returns>
         public IEnumerable<PgpSecretKey> GetSecretKeys() => keys;
 
-        public PgpSecretKey GetSecretKey(long keyId) => keys.Where(k => k.KeyId == keyId).FirstOrDefault();
+        public PgpSecretKey? GetSecretKey(long keyId) => keys.Where(k => k.KeyId == keyId).FirstOrDefault();
 
         /// <summary>
         /// Return an iterator of the public keys in the secret key ring that
@@ -115,9 +115,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             foreach (PgpSecretKey sk in secretRing.keys)
             {
-                PgpPublicKey pk = publicRing.GetPublicKey(sk.KeyId);
-
-                newList.Add(PgpSecretKey.ReplacePublicKey(sk, pk));
+                PgpPublicKey? pk = publicRing.GetPublicKey(sk.KeyId);
+                if (pk != null)
+                    newList.Add(PgpSecretKey.ReplacePublicKey(sk, pk));
             }
 
             return new PgpSecretKeyRing(newList);
@@ -174,7 +174,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <param name="secRing">The secret key ring to be modified.</param>
         /// <param name="secKey">The secret key to be removed.</param>
         /// <returns>A new <c>PgpSecretKeyRing</c>, or null if secKey is not found.</returns>
-        public static PgpSecretKeyRing RemoveSecretKey(
+        public static PgpSecretKeyRing? RemoveSecretKey(
             PgpSecretKeyRing secRing,
             PgpSecretKey secKey)
         {

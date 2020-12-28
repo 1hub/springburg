@@ -42,12 +42,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
         }
 
-        public static string GetSymmetricCipherName(
-                PgpSymmetricKeyAlgorithm algorithm)
+        public static string GetSymmetricCipherName(PgpSymmetricKeyAlgorithm algorithm)
         {
             switch (algorithm)
             {
-                case PgpSymmetricKeyAlgorithm.Null: return null;
+                case PgpSymmetricKeyAlgorithm.Null: return "Null";
                 case PgpSymmetricKeyAlgorithm.TripleDes: return "DESEDE";
                 case PgpSymmetricKeyAlgorithm.Idea: return "IDEA";
                 case PgpSymmetricKeyAlgorithm.Cast5: return "CAST5";
@@ -92,7 +91,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
         }
 
-        internal static byte[] DoMakeKeyFromPassPhrase(PgpSymmetricKeyAlgorithm algorithm, S2k s2k, byte[] rawPassPhrase)
+        internal static byte[] DoMakeKeyFromPassPhrase(PgpSymmetricKeyAlgorithm algorithm, S2k? s2k, byte[] rawPassPhrase)
         {
             int keySize = GetKeySize(algorithm);
             byte[] pBytes = rawPassPhrase;
@@ -188,7 +187,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
                 digest.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
 
-                byte[] dig = digest.Hash;
+                byte[] dig = digest.Hash!;
 
                 if (dig.Length > (keyBytes.Length - generatedBytes))
                 {

@@ -82,7 +82,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             foreach (PgpSecretKeyRing pubRing in GetKeyRings())
             {
-                foreach (string nextUserID in pubRing.GetSecretKey().UserIds.Select(u => u.UserId))
+                foreach (string nextUserID in pubRing.GetSecretKey().UserIds.Select(u => u.UserId!))
                 {
                     if ((matchPartial && nextUserID.IndexOf(userId, comparison) >= 0) ||
                         (!matchPartial && nextUserID.Equals(userId, comparison)))
@@ -97,22 +97,23 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         /// <summary>Return the PGP secret key associated with the given key id.</summary>
         /// <param name="keyId">The ID of the secret key to return.</param>
-        public PgpSecretKey GetSecretKey(long keyId)
+        public PgpSecretKey? GetSecretKey(long keyId)
         {
             foreach (PgpSecretKeyRing secRing in GetKeyRings())
             {
-                PgpSecretKey sec = secRing.GetSecretKey(keyId);
+                PgpSecretKey? sec = secRing.GetSecretKey(keyId);
                 if (sec != null)
                 {
                     return sec;
                 }
             }
+
             return null;
         }
 
         /// <summary>Return the secret key ring which contains the key referred to by keyId</summary>
         /// <param name="keyId">The ID of the secret key</param>
-        public PgpSecretKeyRing GetSecretKeyRing(long keyId)
+        public PgpSecretKeyRing? GetSecretKeyRing(long keyId)
         {
             long id = keyId;
 
@@ -123,7 +124,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             foreach (PgpSecretKeyRing secretRing in GetKeyRings())
             {
-                PgpSecretKey secret = secretRing.GetSecretKey(keyId);
+                PgpSecretKey? secret = secretRing.GetSecretKey(keyId);
                 if (secret != null)
                 {
                     return secretRing;

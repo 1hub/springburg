@@ -35,8 +35,8 @@ namespace InflatablePalace.Cryptography.Helpers
 
         public void Dispose()
         {
-            CryptoPool.Return(rollingBuffer);
-            rollingBuffer = null;
+            CryptoPool.Return(rollingBuffer.Array!);
+            rollingBuffer = Array.Empty<byte>();
         }
 
         public int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
@@ -49,7 +49,7 @@ namespace InflatablePalace.Cryptography.Helpers
                 rollingBufferOffset += numBytesToConsume;
                 if (rollingBufferOffset == rollingBuffer.Count)
                 {
-                    int blockSize = innerTransform.TransformBlock(rollingBuffer.Array, 0, rollingBuffer.Count - tailEndSize, outputBuffer, outputOffset);
+                    int blockSize = innerTransform.TransformBlock(rollingBuffer.Array!, 0, rollingBuffer.Count - tailEndSize, outputBuffer, outputOffset);
                     outputOffset += blockSize;
                     outputCount += blockSize;
                     rollingBuffer.AsSpan(rollingBuffer.Count - tailEndSize, tailEndSize).CopyTo(rollingBuffer);
@@ -64,7 +64,7 @@ namespace InflatablePalace.Cryptography.Helpers
                 int bytesToConsume = rollingBufferOffset - tailEndSize;
                 int reminder = bytesToConsume % InputBlockSize;
                 bytesToConsume -= reminder;
-                int blockSize = innerTransform.TransformBlock(rollingBuffer.Array, 0, bytesToConsume, outputBuffer, outputOffset);
+                int blockSize = innerTransform.TransformBlock(rollingBuffer.Array!, 0, bytesToConsume, outputBuffer, outputOffset);
                 outputCount += blockSize;
                 rollingBuffer.AsSpan(rollingBufferOffset - reminder - tailEndSize, reminder + tailEndSize).CopyTo(rollingBuffer);
                 rollingBufferOffset = reminder + tailEndSize;
@@ -87,7 +87,7 @@ namespace InflatablePalace.Cryptography.Helpers
                 rollingBufferOffset += numBytesToConsume;
                 if (rollingBufferOffset == rollingBuffer.Count)
                 {
-                    int blockSize = innerTransform.TransformBlock(rollingBuffer.Array, 0, rollingBuffer.Count - tailEndSize, outputBuffer, outputOffset);
+                    int blockSize = innerTransform.TransformBlock(rollingBuffer.Array!, 0, rollingBuffer.Count - tailEndSize, outputBuffer, outputOffset);
                     outputOffset += blockSize;
                     outputCount += blockSize;
                     rollingBuffer.AsSpan(rollingBuffer.Count - tailEndSize, tailEndSize).CopyTo(rollingBuffer);
@@ -98,7 +98,7 @@ namespace InflatablePalace.Cryptography.Helpers
             }
 
             Debug.Assert(rollingBufferOffset >= tailEndSize);
-            byte[] finalBlock = innerTransform.TransformFinalBlock(rollingBuffer.Array, 0, rollingBufferOffset - tailEndSize);
+            byte[] finalBlock = innerTransform.TransformFinalBlock(rollingBuffer.Array!, 0, rollingBufferOffset - tailEndSize);
             Debug.Assert(finalBlock.Length == outputBuffer.Length - outputOffset);
             finalBlock.CopyTo(outputBuffer, outputOffset);
             outputCount += finalBlock.Length;

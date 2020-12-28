@@ -42,8 +42,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int certificationLevel = PgpSignature.DefaultCertification,
             PgpSymmetricKeyAlgorithm encAlgorithm = PgpSymmetricKeyAlgorithm.Aes128,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1,
-            PgpSignatureAttributes hashedAttributes = null,
-            PgpSignatureAttributes unhashedAttributes = null)
+            PgpSignatureAttributes? hashedAttributes = null,
+            PgpSignatureAttributes? unhashedAttributes = null)
             : this(masterKey, id, Encoding.UTF8.GetBytes(passPhrase), creationTime, useSha1, certificationLevel, encAlgorithm, hashAlgorithm, hashedAttributes, unhashedAttributes)
         {
         }
@@ -64,21 +64,21 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public PgpKeyRingGenerator(
             AsymmetricAlgorithm masterKey,
             string id,
-            byte[] rawPassPhrase = null,
+            byte[]? rawPassPhrase = null,
             DateTime creationTime = default(DateTime),
             bool useSha1 = true,
             int certificationLevel = PgpSignature.DefaultCertification,
             PgpSymmetricKeyAlgorithm encAlgorithm = PgpSymmetricKeyAlgorithm.Aes128,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1,
-            PgpSignatureAttributes hashedAttributes = null,
-            PgpSignatureAttributes unhashedAttributes = null)
+            PgpSignatureAttributes? hashedAttributes = null,
+            PgpSignatureAttributes? unhashedAttributes = null)
         {
             this.masterKey = new PgpKeyPair(masterKey, creationTime == default(DateTime) ? DateTime.UtcNow : creationTime);
 
             //this.certificationLevel = certificationLevel;
             this.id = id;
             this.encAlgorithm = encAlgorithm;
-            this.rawPassPhrase = rawPassPhrase;
+            this.rawPassPhrase = rawPassPhrase ?? Array.Empty<byte>();
             this.useSha1 = useSha1;
             //this.hashedAttributes = hashedAttributes;
             //this.unhashedAttributes = unhashedAttributes;
@@ -95,7 +95,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 hashAlgorithm);
             var certifiedPublicKey = PgpPublicKey.AddCertification(this.masterKey.PublicKey, id, selfCertification);
 
-            keys.Add(new PgpSecretKey(this.masterKey.PrivateKey, certifiedPublicKey, encAlgorithm, rawPassPhrase, useSha1, true));
+            keys.Add(new PgpSecretKey(this.masterKey.PrivateKey, certifiedPublicKey, encAlgorithm, this.rawPassPhrase, useSha1, true));
         }
 
         /// <summary>
@@ -107,8 +107,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public void AddSubKey(
             AsymmetricAlgorithm subKey,
             DateTime creationTime = default(DateTime),
-            PgpSignatureAttributes hashedAttributes = null,
-            PgpSignatureAttributes unhashedAttributes = null)
+            PgpSignatureAttributes? hashedAttributes = null,
+            PgpSignatureAttributes? unhashedAttributes = null)
         {
             var publicSubKey = new PgpPublicKey(
                 subKey,

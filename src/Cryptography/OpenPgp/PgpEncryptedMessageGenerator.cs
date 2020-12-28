@@ -14,26 +14,24 @@ namespace InflatablePalace.Cryptography.OpenPgp
     /// <summary>Generator for encrypted objects.</summary>
     public class PgpEncryptedMessageGenerator : PgpMessageGenerator
     {
-        private Stream pOut;
-        private CryptoStream cOut;
-        private SymmetricAlgorithm c;
         private bool withIntegrityPacket;
-        private CryptoStream digestOut;
-        private HashAlgorithm digest;
+        private Stream? pOut;
+        private CryptoStream? cOut;
+        private CryptoStream? digestOut;
+        private HashAlgorithm? digest;
 
-        private abstract class EncMethod : ContainedPacket
+        private abstract class EncMethod
         {
-            public abstract void AddSessionInfo(byte[] si);
+            public abstract ContainedPacket GetSessionInfoPacket(byte[] sessionInfo);
         }
 
         private class PbeMethod : EncMethod
         {
             private S2k s2k;
-            private byte[] sessionInfo;
             private PgpSymmetricKeyAlgorithm encAlgorithm;
             private byte[] key;
 
-            internal PbeMethod(
+            public PbeMethod(
                 PgpSymmetricKeyAlgorithm encAlgorithm,
                 S2k s2k,
                 byte[] key)
@@ -43,55 +41,34 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 this.key = key;
             }
 
-            public byte[] GetKey()
+            public byte[] GetKey() => key;
+
+            public SymmetricKeyEncSessionPacket GetSessionInfoPacket()
             {
-                return key;
+                return new SymmetricKeyEncSessionPacket(encAlgorithm, s2k, null);
             }
 
-            public override void AddSessionInfo(byte[] si)
+            public override ContainedPacket GetSessionInfoPacket(byte[] sessionInfo)
             {
                 using var symmetricAlgorithm = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
                 using var encryptor = new ZeroPaddedCryptoTransform(symmetricAlgorithm.CreateEncryptor(key, new byte[(symmetricAlgorithm.BlockSize + 7) / 8]));
-                this.sessionInfo = encryptor.TransformFinalBlock(si, 0, si.Length - 2);
-            }
-
-            public override PacketTag Tag => PacketTag.SymmetricKeyEncryptedSessionKey;
-
-            public override void Encode(Stream pOut)
-            {
-                SymmetricKeyEncSessionPacket pk = new SymmetricKeyEncSessionPacket(encAlgorithm, s2k, sessionInfo);
-                pk.Encode(pOut);
+                return new SymmetricKeyEncSessionPacket(encAlgorithm, s2k, encryptor.TransformFinalBlock(sessionInfo, 0, sessionInfo.Length - 2));
             }
         }
 
         private class PubMethod : EncMethod
         {
-            internal PgpPublicKey pubKey;
-            internal bool sessionKeyObfuscation;
-            internal byte[] data;
+            private PgpPublicKey pubKey;
 
-            internal PubMethod(PgpPublicKey pubKey, bool sessionKeyObfuscation)
+            public PubMethod(PgpPublicKey pubKey)
             {
                 this.pubKey = pubKey;
-                this.sessionKeyObfuscation = sessionKeyObfuscation;
             }
 
-            public override void AddSessionInfo(byte[] sessionInfo)
+            public override ContainedPacket GetSessionInfoPacket(byte[] sessionInfo)
             {
-                this.data = EncryptSessionInfo(sessionInfo);
-            }
-
-            private byte[] EncryptSessionInfo(byte[] sessionInfo)
-            {
-                return pubKey.EncryptSessionInfo(sessionInfo);
-            }
-
-            public override PacketTag Tag => PacketTag.PublicKeyEncryptedSession;
-
-            public override void Encode(Stream pOut)
-            {
-                PublicKeyEncSessionPacket pk = new PublicKeyEncSessionPacket(pubKey.KeyId, pubKey.Algorithm, data);
-                pk.Encode(pOut);
+                Debug.Assert(sessionInfo != null);
+                return new PublicKeyEncSessionPacket(pubKey.KeyId, pubKey.Algorithm, pubKey.EncryptSessionInfo(sessionInfo));
             }
         }
 
@@ -125,14 +102,14 @@ namespace InflatablePalace.Cryptography.OpenPgp
         }
 
         /// <summary>Add a public key encrypted session key to the encrypted object.</summary>
-        public void AddMethod(PgpPublicKey key, bool sessionKeyObfuscation = true)
+        public void AddMethod(PgpPublicKey key)
         {
             if (!key.IsEncryptionKey)
             {
                 throw new ArgumentException("passed in key not an encryption key!");
             }
 
-            methods.Add(new PubMethod(key, sessionKeyObfuscation));
+            methods.Add(new PubMethod(key));
         }
 
         private void AddCheckSum(
@@ -172,16 +149,17 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             if (cOut != null)
                 throw new InvalidOperationException("generator already in open state");
+            // TODO: Do we want compatibility with old PGP? (IDEA + no password iirc)
             if (methods.Count == 0)
                 throw new InvalidOperationException("No encryption methods specified");
 
-            c = PgpUtilities.GetSymmetricAlgorithm(defAlgorithm);
+            var c = PgpUtilities.GetSymmetricAlgorithm(defAlgorithm);
 
             if (methods.Count == 1 && methods[0] is PbeMethod)
             {
                 PbeMethod m = (PbeMethod)methods[0];
                 c.Key = m.GetKey();
-                writer.WritePacket(methods[0]);
+                writer.WritePacket(m.GetSessionInfoPacket());
             }
             else
             {
@@ -190,8 +168,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
                 foreach (EncMethod m in methods)
                 {
-                    m.AddSessionInfo(sessionInfo);
-                    writer.WritePacket(m);
+                    writer.WritePacket(m.GetSessionInfoPacket(sessionInfo));
                 }
             }
 
@@ -246,25 +223,25 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         void Close()
         {
-            if (cOut != null)
+            Debug.Assert(cOut != null);
+            Debug.Assert(pOut != null);
+
+            // TODO Should this all be under the try/catch block?
+            if (digestOut != null)
             {
-                // TODO Should this all be under the try/catch block?
-                if (digestOut != null)
-                {
-                    // hand code a mod detection packet
-                    digestOut.Write(new byte[] { 0xd3, 0x14 });
-                    digestOut.FlushFinalBlock();
+                // hand code a mod detection packet
+                digestOut.Write(new byte[] { 0xd3, 0x14 });
+                digestOut.FlushFinalBlock();
 
-                    byte[] dig = digest.Hash;
-                    cOut.Write(dig, 0, dig.Length);
-                }
-
-                cOut.FlushFinalBlock();
-                cOut = null;
-
-                pOut.Close();
-                pOut = null;
+                byte[] dig = digest!.Hash!;
+                cOut.Write(dig, 0, dig.Length);
             }
+
+            cOut.FlushFinalBlock();
+            cOut = null;
+
+            pOut.Close();
+            pOut = null;
         }
     }
 }

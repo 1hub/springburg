@@ -57,7 +57,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public PgpPublicKey GetPublicKey() => keys[0];
 
         /// <summary>Return the public key referred to by the passed in key ID if it is present.</summary>
-        public PgpPublicKey GetPublicKey(long keyId) => keys.Where(k => k.KeyId == keyId).FirstOrDefault();
+        public PgpPublicKey? GetPublicKey(long keyId) => keys.Where(k => k.KeyId == keyId).FirstOrDefault();
 
         /// <summary>Allows enumeration of all the public keys.</summary>
         /// <returns>An <c>IEnumerable</c> of <c>PgpPublicKey</c> objects.</returns>
@@ -92,7 +92,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <param name="pubRing">The public key ring to be modified.</param>
         /// <param name="pubKey">The public key to be removed.</param>
         /// <returns>A new <c>PgpPublicKeyRing</c>, or null if pubKey is not found.</returns>
-        public static PgpPublicKeyRing RemovePublicKey(
+        public static PgpPublicKeyRing? RemovePublicKey(
             PgpPublicKeyRing pubRing,
             PgpPublicKey pubKey)
         {

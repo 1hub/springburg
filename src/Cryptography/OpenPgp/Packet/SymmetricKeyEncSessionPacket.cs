@@ -5,10 +5,10 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
     class SymmetricKeyEncSessionPacket : ContainedPacket
     {
-        private int version;
-        private PgpSymmetricKeyAlgorithm encAlgorithm;
-        private S2k s2k;
-        private readonly byte[] secKeyData;
+        private readonly int version;
+        private readonly PgpSymmetricKeyAlgorithm encAlgorithm;
+        private readonly S2k s2k;
+        private readonly byte[]? secKeyData;
 
         internal SymmetricKeyEncSessionPacket(Stream bcpgIn)
         {
@@ -20,7 +20,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             secKeyData = bcpgIn.ReadAll();
         }
 
-        public SymmetricKeyEncSessionPacket(PgpSymmetricKeyAlgorithm encAlgorithm, S2k s2k, byte[] secKeyData)
+        public SymmetricKeyEncSessionPacket(PgpSymmetricKeyAlgorithm encAlgorithm, S2k s2k, byte[]? secKeyData)
         {
             this.version = 4;
             this.encAlgorithm = encAlgorithm;
@@ -32,7 +32,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public S2k S2k => s2k;
 
-        public byte[] SecKeyData => secKeyData;
+        public byte[]? SecKeyData => secKeyData;
 
         public int Version => version;
 

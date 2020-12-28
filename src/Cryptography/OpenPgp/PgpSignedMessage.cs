@@ -8,10 +8,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
 {
     public class PgpSignedMessage : PgpMessage
     {
-        private OnePassSignaturePacket onePassSignaturePacket;
-        private SignaturePacket signaturePacket;
+        private OnePassSignaturePacket? onePassSignaturePacket;
+        private SignaturePacket? signaturePacket;
         private IPacketReader packetReader;
-        private PgpSignatureTransformation signatureHelper;
+        private PgpSignatureTransformation? signatureHelper;
 
         internal PgpSignedMessage(IPacketReader packetReader)
         {
@@ -22,21 +22,30 @@ namespace InflatablePalace.Cryptography.OpenPgp
             this.packetReader = packetReader;
         }
 
-        public long KeyId => onePassSignaturePacket != null ? onePassSignaturePacket.KeyId : signaturePacket.KeyId;
+        public long KeyId =>
+            onePassSignaturePacket != null ? onePassSignaturePacket.KeyId :
+            signaturePacket != null ? signaturePacket.KeyId :
+            0;
 
-        public PgpPublicKeyAlgorithm KeyAlgorithm => onePassSignaturePacket != null ? onePassSignaturePacket.KeyAlgorithm : signaturePacket.KeyAlgorithm;
+        public int SignatureType =>
+            onePassSignaturePacket != null ? onePassSignaturePacket.SignatureType :
+            signaturePacket != null ? signaturePacket.SignatureType :
+            0;
 
-        public PgpHashAlgorithm HashAlgorithm => onePassSignaturePacket != null ? onePassSignaturePacket.HashAlgorithm : signaturePacket.HashAlgorithm;
+        public PgpPublicKeyAlgorithm KeyAlgorithm =>
+            onePassSignaturePacket != null ? onePassSignaturePacket.KeyAlgorithm :
+            signaturePacket != null ? signaturePacket.KeyAlgorithm :
+            0;
+
+        public PgpHashAlgorithm HashAlgorithm =>
+            onePassSignaturePacket != null ? onePassSignaturePacket.HashAlgorithm :
+            signaturePacket != null ? signaturePacket.HashAlgorithm :
+            0;
 
         public PgpMessage ReadMessage()
         {
-            signatureHelper = new PgpSignatureTransformation(
-                onePassSignaturePacket != null ? onePassSignaturePacket.SignatureType : signaturePacket.SignatureType,
-                onePassSignaturePacket != null ? onePassSignaturePacket.HashAlgorithm : signaturePacket.HashAlgorithm,
-                packetReader is ArmoredPacketReader);
-
+            signatureHelper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, packetReader is ArmoredPacketReader);
             var signingReader = new SigningPacketReader(packetReader, signatureHelper);
-
             return ReadMessage(signingReader);
         }
 
@@ -46,15 +55,16 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         public bool Verify(PgpPublicKey publicKey, out DateTime creationTime)
         {
+            if (signatureHelper == null)
+                throw new InvalidOperationException();
+
             if (signaturePacket == null)
-            {
                 signaturePacket = (SignaturePacket)packetReader.ReadContainedPacket();
-            }
 
             creationTime = signaturePacket.CreationTime;
 
             signatureHelper.Finish(signaturePacket.Version, signaturePacket.KeyAlgorithm, signaturePacket.CreationTime, signaturePacket.GetHashedSubPackets());
-            return publicKey.Verify(signatureHelper.Hash, signaturePacket.GetSignature(), signatureHelper.HashAlgorithm);
+            return publicKey.Verify(signatureHelper.Hash!, signaturePacket.GetSignature(), signatureHelper.HashAlgorithm);
         }
 
         class SigningPacketReader : IPacketReader

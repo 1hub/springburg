@@ -57,6 +57,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             T keyToRemove)
             where T : IPgpKey
         {
+            // FIXME: Disallow removing the master key?
+
             for (int i = 0; i < keys.Count; i++)
             {
                 if (keys[i].KeyId == keyToRemove.KeyId)

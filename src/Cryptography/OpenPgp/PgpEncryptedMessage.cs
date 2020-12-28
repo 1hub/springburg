@@ -4,6 +4,7 @@ using InflatablePalace.Cryptography.OpenPgp.Packet;
 using InflatablePalace.IO;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -18,9 +19,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
         private StreamablePacket encryptedPacket;
         private Stream inputStream;
         private IPacketReader packetReader;
-        private CryptoStream encStream;
-        private HashAlgorithm hashAlgorithm;
-        private TailEndCryptoTransform tailEndCryptoTransform;
+        private CryptoStream? encStream;
+        private HashAlgorithm? hashAlgorithm;
+        private TailEndCryptoTransform? tailEndCryptoTransform;
 
         internal PgpEncryptedMessage(IPacketReader packetReader)
         {
@@ -118,6 +119,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <returns>True, if the message verifies, false otherwise</returns>
         public bool Verify()
         {
+            if (encStream == null)
+                throw new InvalidOperationException();
             if (!IsIntegrityProtected)
                 return false;
 
@@ -125,6 +128,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             encStream.CopyTo(Stream.Null);
 
             // process the MDC packet
+            Debug.Assert(hashAlgorithm != null);
+            Debug.Assert(tailEndCryptoTransform != null);
             var digest = hashAlgorithm.Hash;
             var streamDigest = tailEndCryptoTransform.TailEnd;
 

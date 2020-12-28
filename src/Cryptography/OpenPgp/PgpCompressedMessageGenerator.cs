@@ -16,9 +16,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
         private readonly PgpCompressionAlgorithm algorithm;
         private readonly CompressionLevel compressionLevel;
 
-        private Stream dOut;
-        private Stream pkOut;
-        private Adler32 checksum;
+        private Stream? dOut;
+        private Stream? pkOut;
+        private Adler32? checksum;
 
         public PgpCompressedMessageGenerator(
             IPacketWriter packetWriter,
@@ -92,9 +92,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return writer.CreateNestedWriter(new WrappedGeneratorStream(dOut, _ => Close()));
         }
 
-        /// <summary>Close the compressed object.</summary>summary>
+        /// <summary>Close the compressed object.</summary>
         void Close()
         {
+            Debug.Assert(pkOut != null);
+
             if (dOut != null)
             {
                 if (dOut != pkOut)

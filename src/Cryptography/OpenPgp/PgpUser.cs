@@ -110,7 +110,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         public PgpUserAttributes? UserAttributes => userPacket is UserAttributePacket userAttributePacket ? new PgpUserAttributes(userAttributePacket.GetSubpackets()) : null;
 
-        internal object UserIdOrAttributes => (object)UserId ?? UserAttributes;
+        internal object UserIdOrAttributes => ((object)UserId! ?? UserAttributes)!;
 
         internal ContainedPacket UserPacket => userPacket;
 

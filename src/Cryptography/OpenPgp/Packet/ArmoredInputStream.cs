@@ -90,7 +90,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         Crc24 crc = new Crc24();
         bool crcFound = false;
         bool hasHeaders = true;
-        string header = null;
+        string? header = null;
         bool newLineFound = false;
         bool clearText = false;
         bool restart = false;
@@ -262,7 +262,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         * Return the armor header line (if there is one)
         * @return the armor header line, null if none present.
         */
-        public string GetArmorHeaderLine()
+        public string? GetArmorHeaderLine()
         {
             return header;
         }
@@ -271,7 +271,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         * Return the armor headers (the lines after the armor header line),
         * @return an array of armor headers, null if there aren't any.
         */
-        public string[] GetArmorHeaders()
+        public string[]? GetArmorHeaders()
         {
             if (headerList.Count <= 1)
             {

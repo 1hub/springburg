@@ -25,6 +25,8 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         Experimental1 = 60,							// Private or Experimental Values
         Experimental2 = 61,
         Experimental3 = 62,
-        Experimental4 = 63
+        Experimental4 = 63,
+
+        EndOfFile = -1
     }
 }

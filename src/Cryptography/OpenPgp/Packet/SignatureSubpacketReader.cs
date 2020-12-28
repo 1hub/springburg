@@ -15,7 +15,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             this.input = input;
         }
 
-        public SignatureSubpacket ReadPacket()
+        public SignatureSubpacket? ReadPacket()
         {
             int l = input.ReadByte();
             if (l < 0)

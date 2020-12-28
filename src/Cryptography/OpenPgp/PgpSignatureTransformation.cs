@@ -1,6 +1,7 @@
 ﻿using InflatablePalace.Cryptography.OpenPgp.Packet;
 using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 
@@ -12,7 +13,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         private byte lastb; // Initial value anything but '\r'
         private int signatureType;
         private PgpHashAlgorithm hashAlgorithm;
-        private byte[] pendingWhitespace;
+        private byte[]? pendingWhitespace;
         private int pendingWhitespacePosition = 0;
         private bool ignoreTrailingWhitespace;
 
@@ -74,6 +75,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             {
                 if (pendingWhitespacePosition > 0)
                 {
+                    Debug.Assert(pendingWhitespace != null);
                     sig.TransformBlock(pendingWhitespace, 0, pendingWhitespacePosition, null, 0);
                     pendingWhitespacePosition = 0;
                 }
@@ -181,7 +183,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             if (pendingWhitespace != null)
             {
                 ArrayPool<byte>.Shared.Return(pendingWhitespace);
-                pendingWhitespace = null;
+                pendingWhitespace = Array.Empty<byte>();
             }
         }
     }

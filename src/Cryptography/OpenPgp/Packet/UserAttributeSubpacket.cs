@@ -60,18 +60,15 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             os.Write(data, 0, data.Length);
         }
 
-        public override bool Equals(
-            object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == this)
                 return true;
 
-            UserAttributeSubpacket other = obj as UserAttributeSubpacket;
+            if (obj is UserAttributeSubpacket other)
+                return type == other.type && data.SequenceEqual(other.data);
 
-            if (other == null)
-                return false;
-
-            return type == other.type && data.SequenceEqual(other.data);
+            return false;
         }
 
         public override int GetHashCode()

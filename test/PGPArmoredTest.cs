@@ -84,7 +84,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             using MemoryStream bOut = new MemoryStream();
             using (var aOut = new ArmoredPacketWriter(bOut))
-                ;
+            {
+            }
             byte[] data = bOut.ToArray();
             Assert.AreEqual(0, data.Length, "No data should have been written");
         }

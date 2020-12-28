@@ -49,16 +49,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         void Close()
         {
-            if (this.outputStream != null)
-            {
-                this.outputStream.Close();
-                this.outputStream = null;
-            }
-            if (this.writer != null)
-            {
-                this.writer.Dispose();
-                this.writer = null;
-            }
+            this.outputStream.Close();
+            this.writer.Dispose();
         }
     }
 }
