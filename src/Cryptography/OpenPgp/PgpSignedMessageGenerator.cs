@@ -1,4 +1,5 @@
 using InflatablePalace.Cryptography.OpenPgp.Packet;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
@@ -8,6 +9,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
     public class PgpSignedMessageGenerator : PgpMessageGenerator
     {
         private PgpSignatureGenerator signatureGenerator;
+        private bool onePassWritten;
         private bool literalDataWritten;
 
         /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
@@ -17,15 +19,6 @@ namespace InflatablePalace.Cryptography.OpenPgp
             signatureGenerator = new PgpSignatureGenerator(
                 signatureType, privateKey, hashAlgorithm, version,
                 ignoreTrailingWhitespace: writer is ArmoredPacketWriter);
-
-            // FIXME: Nesting
-            var onePassPacket = new OnePassSignaturePacket(
-                signatureGenerator.SignatureType,
-                signatureGenerator.HashAlgorithm,
-                signatureGenerator.PrivateKey.PublicKeyPacket.Algorithm,
-                signatureGenerator.PrivateKey.KeyId,
-                /*isNested*/ false);
-            writer.WritePacket(onePassPacket);
         }
 
         public PgpSignatureAttributes HashedAttributes => signatureGenerator.HashedAttributes;
@@ -43,6 +36,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             ICryptoTransform hashTransform;
             PgpSignedMessageGenerator generator;
             bool nested;
+            
 
             public SigningPacketWriter(IPacketWriter innerWriter, ICryptoTransform hashTransform, PgpSignedMessageGenerator generator)
             {
@@ -72,6 +66,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             public Stream GetPacketStream(StreamablePacket packet)
             {
+                if (!generator.onePassWritten)
+                {
+                    WriteOnePassSignature(false);
+                }
                 if (packet is LiteralDataPacket)
                 {
                     // TODO: Version 5 signatures
@@ -85,7 +83,40 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 }
             }
 
-            public void WritePacket(ContainedPacket packet) => innerWriter.WritePacket(packet);
+            public void WritePacket(ContainedPacket packet)
+            {
+                // The only packets that should be writtern here are the streamable ones
+                // or nested signature.
+                if (packet is OnePassSignaturePacket && !generator.onePassWritten)
+                {
+                    // Nested signature, write our one-pass packet first
+                    WriteOnePassSignature(true);
+                    innerWriter.WritePacket(packet);
+                }
+                else if (packet is SignaturePacket)
+                {
+                    Debug.Assert(generator.onePassWritten);
+                    Debug.Assert(generator.literalDataWritten);
+                    innerWriter.WritePacket(packet);
+                }
+                else
+                {
+                    throw new InvalidOperationException();
+                }
+            }
+
+            private void WriteOnePassSignature(bool isNested)
+            {
+                Debug.Assert(!generator.onePassWritten);
+                var onePassPacket = new OnePassSignaturePacket(
+                    generator.signatureGenerator.SignatureType,
+                    generator.signatureGenerator.HashAlgorithm,
+                    generator.signatureGenerator.PrivateKey.PublicKeyPacket.Algorithm,
+                    generator.signatureGenerator.PrivateKey.KeyId,
+                    isNested);
+                innerWriter.WritePacket(onePassPacket);
+                generator.onePassWritten = true;
+            }
         }
     }
 }
