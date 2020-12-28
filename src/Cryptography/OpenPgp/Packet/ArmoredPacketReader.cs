@@ -23,6 +23,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public void Dispose()
         {
+            this.packetReader?.Dispose();
             this.armoredInputStream.Dispose();
             this.stream.Dispose();
         }

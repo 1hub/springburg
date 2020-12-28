@@ -17,11 +17,11 @@ namespace InflatablePalace.Cryptography.Algorithms
             this.Mode = CipherMode.ECB;
         }
 
-        public override ICryptoTransform CreateEncryptor(byte[] key, byte[]? iv) =>
-            ModeHelper.CreateEncryptor(ModeValue, PaddingValue, key, iv, (key, encryption) => new CAST5Transform(key, encryption));
+        public override ICryptoTransform CreateEncryptor(byte[] rgbKey, byte[]? rgbIV) =>
+            ModeHelper.CreateEncryptor(ModeValue, PaddingValue, rgbKey, rgbIV, (key, encryption) => new CAST5Transform(key, encryption));
 
-        public override ICryptoTransform CreateDecryptor(byte[] key, byte[]? iv) =>
-            ModeHelper.CreateDecryptor(ModeValue, PaddingValue, key, iv, (key, encryption) => new CAST5Transform(key, encryption));
+        public override ICryptoTransform CreateDecryptor(byte[] rgbKey, byte[]? rgbIV) =>
+            ModeHelper.CreateDecryptor(ModeValue, PaddingValue, rgbKey, rgbIV, (key, encryption) => new CAST5Transform(key, encryption));
 
         public override void GenerateIV()
         {
@@ -360,8 +360,8 @@ namespace InflatablePalace.Cryptography.Algorithms
                 0x04f19130, 0xba6e4ec0, 0x99265164, 0x1ee7230d, 0x50b2ad80, 0xeaee6801, 0x8db2a283, 0xea8bf59e
             };
 
-            private static readonly int MAX_ROUNDS = 16;
-            private static readonly int RED_ROUNDS = 12;
+            private const int MAX_ROUNDS = 16;
+            private const int RED_ROUNDS = 12;
 
             private int[] Kr = new int[17];        // the rotating round key
             private uint[] Km = new uint[17];        // the masking round key

@@ -69,7 +69,7 @@ namespace InflatablePalace.Cryptography.Algorithms
         public ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> data, RSAEncryptionPadding padding)
         {
             if (padding != RSAEncryptionPadding.Pkcs1)
-                throw new ArgumentOutOfRangeException(SR.Cryptography_UnknownPaddingMode, nameof(padding));
+                throw new ArgumentOutOfRangeException(nameof(padding), SR.Cryptography_UnknownPaddingMode);
 
             long maxLength = 2 * (KeySizeValue / 2);
             if (data.Length > maxLength)
@@ -94,7 +94,7 @@ namespace InflatablePalace.Cryptography.Algorithms
         public ReadOnlySpan<byte> Encrypt(ReadOnlySpan<byte> data, RSAEncryptionPadding padding)
         {
             if (padding != RSAEncryptionPadding.Pkcs1)
-                throw new ArgumentOutOfRangeException(SR.Cryptography_UnknownPaddingMode, nameof(padding));
+                throw new ArgumentOutOfRangeException(nameof(padding), SR.Cryptography_UnknownPaddingMode);
 
             if (data.Length > (KeySizeValue / 8) - 1 - 2) // - 2 for padding
                 throw new CryptographicException("Input too large for ElGamal cipher");

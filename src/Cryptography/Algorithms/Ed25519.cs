@@ -21,16 +21,33 @@ namespace InflatablePalace.Cryptography.Algorithms
 
         public Ed25519(byte[] publicKey)
         {
+            if (publicKey == null)
+                throw new ArgumentNullException(nameof(publicKey));
+
             Debug.Assert(publicKey.Length == 32);
             this.publicKey = PublicKey.Import(NSec.Cryptography.SignatureAlgorithm.Ed25519, publicKey, KeyBlobFormat.RawPublicKey);
         }
 
         public Ed25519(byte[] privateKey, byte[] publicKey)
         {
+            if (privateKey == null)
+                throw new ArgumentNullException(nameof(privateKey));
+            if (publicKey == null)
+                throw new ArgumentNullException(nameof(publicKey));
+
             Debug.Assert(publicKey.Length == 32);
             Debug.Assert(privateKey.Length == 32);
             this.privateKey = Key.Import(NSec.Cryptography.SignatureAlgorithm.Ed25519, privateKey, KeyBlobFormat.RawPrivateKey);
             this.publicKey = PublicKey.Import(NSec.Cryptography.SignatureAlgorithm.Ed25519, publicKey, KeyBlobFormat.RawPublicKey);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                privateKey?.Dispose();
+            }
+            base.Dispose(disposing);
         }
 
         protected override byte[] SignHashCore(ReadOnlySpan<byte> hash, DSASignatureFormat signatureFormat)

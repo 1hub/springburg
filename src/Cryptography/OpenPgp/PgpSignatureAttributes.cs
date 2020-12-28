@@ -220,7 +220,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public void SetSignerUserId(bool isCritical, string userId)
         {
             if (userId == null)
-                throw new ArgumentNullException("userId");
+                throw new ArgumentNullException(nameof(userId));
 
             subpackets[SignatureSubpacketTag.SignerUserId] = new SignerUserId(isCritical, userId);
         }
@@ -228,7 +228,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public void SetSignerUserId(bool isCritical, byte[] rawUserId)
         {
             if (rawUserId == null)
-                throw new ArgumentNullException("rawUserId");
+                throw new ArgumentNullException(nameof(rawUserId));
 
             subpackets[SignatureSubpacketTag.SignerUserId] = new SignerUserId(isCritical, false, rawUserId);
         }
@@ -237,6 +237,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
             bool isCritical,
             PgpSignature pgpSignature)
         {
+            if (pgpSignature == null)
+                throw new ArgumentNullException(nameof(pgpSignature));
+
             byte[] sig = pgpSignature.GetEncoded();
             byte[] data;
 

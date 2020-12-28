@@ -100,17 +100,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             while (generatedBytes < keyBytes.Length)
             {
-                HashAlgorithm digest;
+                byte[] hashValue;
+
                 if (s2k != null)
                 {
-                    try
-                    {
-                        digest = GetHashAlgorithm(s2k.HashAlgorithm);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new PgpException("can't find S2k digest", e);
-                    }
+                    using var digest = GetHashAlgorithm(s2k.HashAlgorithm);
 
                     for (int i = 0; i != loopCount; i++)
                     {
@@ -163,144 +157,42 @@ namespace InflatablePalace.Cryptography.OpenPgp
                         default:
                             throw new PgpException("unknown S2k type: " + s2k.Type);
                     }
+
+                    digest.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                    hashValue = digest.Hash!;
                 }
                 else
                 {
-                    try
-                    {
-                        digest = MD5.Create();
+                    using var digest = MD5.Create();
 
-                        for (int i = 0; i != loopCount; i++)
-                        {
-                            digest.TransformBlock(new byte[] { 0 }, 0, 1, null, 0);
-                        }
-
-                        digest.TransformBlock(pBytes, 0, pBytes.Length, null, 0);
-                    }
-                    catch (Exception e)
+                    for (int i = 0; i != loopCount; i++)
                     {
-                        throw new PgpException("can't find MD5 digest", e);
+                        digest.TransformBlock(new byte[] { 0 }, 0, 1, null, 0);
                     }
+
+                    digest.TransformBlock(pBytes, 0, pBytes.Length, null, 0);
+
+                    digest.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                    hashValue = digest.Hash!;
                 }
 
-                digest.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
 
-                byte[] dig = digest.Hash!;
-
-                if (dig.Length > (keyBytes.Length - generatedBytes))
+                if (hashValue.Length > (keyBytes.Length - generatedBytes))
                 {
-                    Array.Copy(dig, 0, keyBytes, generatedBytes, keyBytes.Length - generatedBytes);
+                    Array.Copy(hashValue, 0, keyBytes, generatedBytes, keyBytes.Length - generatedBytes);
                 }
                 else
                 {
-                    Array.Copy(dig, 0, keyBytes, generatedBytes, dig.Length);
+                    Array.Copy(hashValue, 0, keyBytes, generatedBytes, hashValue.Length);
                 }
 
-                generatedBytes += dig.Length;
+                generatedBytes += hashValue.Length;
 
                 loopCount++;
             }
 
             return keyBytes;// MakeKey(algorithm, keyBytes);
         }
-
-        private const int ReadAhead = 60;
-
-        private static bool IsPossiblyBase64(
-            int ch)
-        {
-            return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')
-                    || (ch >= '0' && ch <= '9') || (ch == '+') || (ch == '/')
-                    || (ch == '\r') || (ch == '\n');
-        }
-
-        /// <summary>
-        /// Return either an ArmoredInputStream or a BcpgInputStream based on whether
-        /// the initial characters of the stream are binary PGP encodings or not.
-        /// </summary>
-        /*public static Stream GetDecoderStream(
-            Stream inputStream)
-        {
-            // TODO Remove this restriction?
-            if (!inputStream.CanSeek)
-                throw new ArgumentException("inputStream must be seek-able", "inputStream");
-
-            long markedPos = inputStream.Position;
-
-            int ch = inputStream.ReadByte();
-            if ((ch & 0x80) != 0)
-            {
-                inputStream.Position = markedPos;
-
-                return inputStream;
-            }
-
-            if (!IsPossiblyBase64(ch))
-            {
-                inputStream.Position = markedPos;
-
-                return new ArmoredInputStream(inputStream);
-            }
-
-            byte[] buf = new byte[ReadAhead];
-            int count = 1;
-            int index = 1;
-
-            buf[0] = (byte)ch;
-            while (count != ReadAhead && (ch = inputStream.ReadByte()) >= 0)
-            {
-                if (!IsPossiblyBase64(ch))
-                {
-                    inputStream.Position = markedPos;
-
-                    return new ArmoredInputStream(inputStream);
-                }
-
-                if (ch != '\n' && ch != '\r')
-                {
-                    buf[index++] = (byte)ch;
-                }
-
-                count++;
-            }
-
-            inputStream.Position = markedPos;
-
-            //
-            // nothing but new lines, little else, assume regular armoring
-            //
-            if (count < 4)
-            {
-                return new ArmoredInputStream(inputStream);
-            }
-
-            //
-            // test our non-blank data
-            //
-            byte[] firstBlock = new byte[8];
-
-            Array.Copy(buf, 0, firstBlock, 0, firstBlock.Length);
-
-            try
-            {
-                byte[] decoded = Base64.Decode(firstBlock);
-
-                //
-                // it's a base64 PGP block.
-                //
-                bool hasHeaders = (decoded[0] & 0x80) == 0;
-
-                return new ArmoredInputStream(inputStream, hasHeaders);
-            }
-            catch (IOException e)
-            {
-                throw e;
-            }
-            catch (Exception e)
-            {
-                throw new IOException(e.Message);
-            }
-        }*/
 
         internal static byte[] GenerateIV(int length)
         {

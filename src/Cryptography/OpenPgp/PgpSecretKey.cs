@@ -199,100 +199,89 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 return encData;
 
             // TODO Factor this block out as 'decryptData'
-            try
+            byte[] key = PgpUtilities.DoMakeKeyFromPassPhrase(secret.EncAlgorithm, secret.S2k, rawPassPhrase);
+            byte[] iv = secret.GetIV().ToArray();
+            byte[] data;
+
+            if (secret.PublicKeyPacket.Version >= 4)
             {
-                byte[] key = PgpUtilities.DoMakeKeyFromPassPhrase(secret.EncAlgorithm, secret.S2k, rawPassPhrase);
-                byte[] iv = secret.GetIV().ToArray();
-                byte[] data;
+                data = RecoverKeyData(encAlgorithm, CipherMode.CFB, key, iv, encData, 0, encData.Length);
 
-                if (secret.PublicKeyPacket.Version >= 4)
+                bool useSha1 = secret.S2kUsage == S2kUsageTag.Sha1;
+                byte[] check = Checksum(useSha1, data, (useSha1) ? data.Length - 20 : data.Length - 2);
+
+                for (int i = 0; i != check.Length; i++)
                 {
-                    data = RecoverKeyData(encAlgorithm, CipherMode.CFB, key, iv, encData, 0, encData.Length);
-
-                    bool useSha1 = secret.S2kUsage == S2kUsageTag.Sha1;
-                    byte[] check = Checksum(useSha1, data, (useSha1) ? data.Length - 20 : data.Length - 2);
-
-                    for (int i = 0; i != check.Length; i++)
+                    if (check[i] != data[data.Length - check.Length + i])
                     {
-                        if (check[i] != data[data.Length - check.Length + i])
-                        {
-                            throw new PgpException("Checksum mismatch at " + i + " of " + check.Length);
-                        }
+                        throw new PgpException("Checksum mismatch at " + i + " of " + check.Length);
                     }
                 }
-                else // version 2 or 3, RSA only.
+            }
+            else // version 2 or 3, RSA only.
+            {
+                data = new byte[encData.Length];
+
+                iv = (byte[])iv.Clone();
+
+                //
+                // read in the four numbers
+                //
+                int pos = 0;
+
+                for (int i = 0; i != 4; i++)
                 {
-                    data = new byte[encData.Length];
-
-                    iv = (byte[])iv.Clone();
-
-                    //
-                    // read in the four numbers
-                    //
-                    int pos = 0;
-
-                    for (int i = 0; i != 4; i++)
-                    {
-                        int encLen = ((((encData[pos] & 0xff) << 8) | (encData[pos + 1] & 0xff)) + 7) / 8;
-
-                        data[pos] = encData[pos];
-                        data[pos + 1] = encData[pos + 1];
-                        pos += 2;
-
-                        if (encLen > (encData.Length - pos))
-                            throw new PgpException("out of range encLen found in encData");
-
-                        byte[] tmp = RecoverKeyData(encAlgorithm, CipherMode.CFB, key, iv, encData, pos, encLen);
-                        Array.Copy(tmp, 0, data, pos, encLen);
-                        pos += encLen;
-
-                        if (i != 3)
-                        {
-                            Array.Copy(encData, pos - iv.Length, iv, 0, iv.Length);
-                        }
-                    }
-
-                    //
-                    // verify and copy checksum
-                    //
+                    int encLen = ((((encData[pos] & 0xff) << 8) | (encData[pos + 1] & 0xff)) + 7) / 8;
 
                     data[pos] = encData[pos];
                     data[pos + 1] = encData[pos + 1];
+                    pos += 2;
 
-                    int cs = ((encData[pos] << 8) & 0xff00) | (encData[pos + 1] & 0xff);
-                    int calcCs = 0;
-                    for (int j = 0; j < pos; j++)
-                    {
-                        calcCs += data[j] & 0xff;
-                    }
+                    if (encLen > (encData.Length - pos))
+                        throw new PgpException("out of range encLen found in encData");
 
-                    calcCs &= 0xffff;
-                    if (calcCs != cs)
+                    byte[] tmp = RecoverKeyData(encAlgorithm, CipherMode.CFB, key, iv, encData, pos, encLen);
+                    Array.Copy(tmp, 0, data, pos, encLen);
+                    pos += encLen;
+
+                    if (i != 3)
                     {
-                        throw new PgpException("Checksum mismatch: passphrase wrong, expected "
-                            + cs.ToString("X")
-                            + " found " + calcCs.ToString("X"));
+                        Array.Copy(encData, pos - iv.Length, iv, 0, iv.Length);
                     }
                 }
 
-                return data;
+                //
+                // verify and copy checksum
+                //
+
+                data[pos] = encData[pos];
+                data[pos + 1] = encData[pos + 1];
+
+                int cs = ((encData[pos] << 8) & 0xff00) | (encData[pos + 1] & 0xff);
+                int calcCs = 0;
+                for (int j = 0; j < pos; j++)
+                {
+                    calcCs += data[j] & 0xff;
+                }
+
+                calcCs &= 0xffff;
+                if (calcCs != cs)
+                {
+                    throw new PgpException("Checksum mismatch: passphrase wrong, expected "
+                        + cs.ToString("X")
+                        + " found " + calcCs.ToString("X"));
+                }
             }
-            catch (PgpException e)
-            {
-                throw e;
-            }
-            catch (Exception e)
-            {
-                throw new PgpException("Exception decrypting key", e);
-            }
+
+            return data;
         }
 
         private static byte[] RecoverKeyData(PgpSymmetricKeyAlgorithm encAlgorithm, CipherMode cipherMode,
             byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
         {
-            var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
+            using var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
             c.Mode = cipherMode;
-            var decryptor = new ZeroPaddedCryptoTransform(c.CreateDecryptor(key, iv));
+            using var decryptor = new ZeroPaddedCryptoTransform(c.CreateDecryptor(key, iv.ToArray()));
             return decryptor.TransformFinalBlock(keyData, keyOff, keyLen);
         }
 
@@ -400,7 +389,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return new PgpPrivateKey(KeyId, pubPk, privateKey);
         }
 
-        private byte[] ExportKeyParameter(byte[] value, int length)
+        private static byte[] ExportKeyParameter(byte[] value, int length)
         {
             if (value.Length < length)
             {
@@ -411,7 +400,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return value;
         }
 
-        private byte[] ExportKeyParameter(BigInteger value, int length)
+        private static byte[] ExportKeyParameter(BigInteger value, int length)
         {
             byte[] target = new byte[length];
 
@@ -429,13 +418,6 @@ namespace InflatablePalace.Cryptography.OpenPgp
             throw new CryptographicException(); //SR.Cryptography_NotValidPublicOrPrivateKey);
         }
 
-        /*private ECPrivateKeyParameters GetECKey(string algorithm, BcpgInputStream bcpgIn)
-         {
-             ECPublicBcpgKey ecdsaPub = (ECPublicBcpgKey)secret.PublicKeyPacket.Key;
-             ECSecretBcpgKey ecdsaPriv = new ECSecretBcpgKey(bcpgIn);
-             return new ECPrivateKeyParameters(algorithm, ecdsaPriv.X, ecdsaPub.CurveOid);
-         }*/
-
         private static byte[] Checksum(
             bool useSha1,
             byte[] bytes,
@@ -443,7 +425,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
             if (useSha1)
             {
-                return SHA1.Create().ComputeHash(bytes, 0, length);
+                using var sha1 = SHA1.Create();
+                return sha1.ComputeHash(bytes, 0, length);
             }
             else
             {
@@ -457,15 +440,18 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
         }
 
-        public override void Encode(IPacketWriter outStr)
+        public override void Encode(IPacketWriter packetWriter)
         {
-            outStr.WritePacket(secret);
+            if (packetWriter == null)
+                throw new ArgumentNullException(nameof(packetWriter));
+
+            packetWriter.WritePacket(secret);
             if (pub.trustPk != null)
-                outStr.WritePacket(pub.trustPk);
+                packetWriter.WritePacket(pub.trustPk);
             foreach (var keySig in pub.keyCertifications)
-                keySig.Signature.Encode(outStr);
+                keySig.Signature.Encode(packetWriter);
             foreach (var user in pub.ids)
-                user.Encode(outStr);
+                user.Encode(packetWriter);
         }
 
         /// <summary>
@@ -507,6 +493,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             byte[] rawNewPassPhrase,
             PgpSymmetricKeyAlgorithm newEncAlgorithm)
         {
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
             if (key.IsPrivateKeyEmpty)
                 throw new PgpException("no private key in this SecretKey - public key present only.");
 
@@ -586,6 +574,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpSecretKey secretKey,
             PgpPublicKey publicKey)
         {
+            if (secretKey == null)
+                throw new ArgumentNullException(nameof(secretKey));
+            if (publicKey == null)
+                throw new ArgumentNullException(nameof(publicKey));
             if (publicKey.KeyId != secretKey.KeyId)
                 throw new ArgumentException("KeyId's do not match");
 
@@ -669,12 +661,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int dataLen,
             ref byte[]? iv)
         {
-            var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
+            using var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
             if (iv == null)
             {
                 iv = PgpUtilities.GenerateIV((c.BlockSize + 7) / 8);
             }
-            var encryptor = new ZeroPaddedCryptoTransform(c.CreateEncryptor(key, iv));
+            using var encryptor = new ZeroPaddedCryptoTransform(c.CreateEncryptor(key, iv.ToArray()));
             return encryptor.TransformFinalBlock(data, dataOff, dataLen);
         }
 
@@ -720,7 +712,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             reader.SkipOpenParenthesis();
 
             string type = reader.ReadString();
-            if (type.Equals("protected-private-key"))
+            if (type.Equals("protected-private-key", StringComparison.Ordinal))
             {
                 reader.SkipOpenParenthesis();
 
@@ -728,7 +720,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 Oid curveOid;
 
                 string keyType = reader.ReadString();
-                if (keyType.Equals("ecc"))
+                if (keyType.Equals("ecc", StringComparison.Ordinal))
                 {
                     reader.SkipOpenParenthesis();
 
@@ -770,7 +762,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     reader.SkipOpenParenthesis();
                     type = reader.ReadString();
                 }
-                if (type.Equals("q"))
+                if (type.Equals("q", StringComparison.Ordinal))
                 {
                     qVal = reader.ReadBytes();
                 }
@@ -865,7 +857,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             byte[] secKeyData;
 
             type = reader.ReadString();
-            if (type.Equals("protected"))
+            if (type.Equals("protected", StringComparison.Ordinal))
             {
                 protection = reader.ReadString();
 
@@ -883,7 +875,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
                 reader.SkipOpenParenthesis();
 
-                if (reader.ReadString().Equals("protected-at"))
+                if (reader.ReadString().Equals("protected-at", StringComparison.Ordinal))
                 {
                     protectedAt = reader.ReadString();
                 }
@@ -901,7 +893,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 case "openpgp-s2k3-sha1-aes256-cbc":
                 case "openpgp-s2k3-sha1-aes-cbc":
                     PgpSymmetricKeyAlgorithm symmAlg =
-                        protection.Equals("openpgp-s2k3-sha1-aes256-cbc") ? PgpSymmetricKeyAlgorithm.Aes256 : PgpSymmetricKeyAlgorithm.Aes128;
+                        protection.Equals("openpgp-s2k3-sha1-aes256-cbc", StringComparison.Ordinal) ?
+                        PgpSymmetricKeyAlgorithm.Aes256 :
+                        PgpSymmetricKeyAlgorithm.Aes128;
                     key = PgpUtilities.DoMakeKeyFromPassPhrase(symmAlg, s2k, rawPassPhrase);
                     data = RecoverKeyData(symmAlg, CipherMode.CBC, key, iv, secKeyData, 0, secKeyData.Length);
                     // TODO: check SHA-1 hash.
@@ -916,7 +910,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     data = c.DoFinal(secKeyData, 0, secKeyData.Length);*/
                     // TODO: AES/OCB support
                     throw new NotImplementedException();
-                    //break;
+                //break;
 
                 case "openpgp-native":
                 default:

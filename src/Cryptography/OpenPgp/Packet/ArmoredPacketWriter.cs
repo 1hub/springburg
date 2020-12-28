@@ -44,6 +44,9 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public Stream GetPacketStream(StreamablePacket packet)
         {
+            if (packet == null)
+                throw new ArgumentNullException(nameof(packet));
+
             if (inClearText)
             {
                 if (packet is LiteralDataPacket)
@@ -66,6 +69,9 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public void WritePacket(ContainedPacket packet)
         {
+            if (packet == null)
+                throw new ArgumentNullException(nameof(packet));
+
             if (packet is OnePassSignaturePacket onePassSignaturePacket && useClearText && this.writer == null)
             {
                 string hashName = PgpUtilities.GetDigestName(onePassSignaturePacket.HashAlgorithm);

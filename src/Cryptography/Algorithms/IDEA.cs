@@ -16,11 +16,11 @@ namespace InflatablePalace.Cryptography.Algorithms
             this.Mode = CipherMode.ECB;
         }
 
-        public override ICryptoTransform CreateEncryptor(byte[] key, byte[]? iv) =>
-            ModeHelper.CreateEncryptor(ModeValue, PaddingValue, key, iv, (key, encryption) => new IDEATransform(key, encryption));
+        public override ICryptoTransform CreateEncryptor(byte[] rgbKey, byte[]? rgbIV) =>
+            ModeHelper.CreateEncryptor(ModeValue, PaddingValue, rgbKey, rgbIV, (key, encryption) => new IDEATransform(key, encryption));
 
-        public override ICryptoTransform CreateDecryptor(byte[] key, byte[]? iv) =>
-            ModeHelper.CreateDecryptor(ModeValue, PaddingValue, key, iv, (key, encryption) => new IDEATransform(key, encryption));
+        public override ICryptoTransform CreateDecryptor(byte[] rgbKey, byte[]? rgbIV) =>
+            ModeHelper.CreateDecryptor(ModeValue, PaddingValue, rgbKey, rgbIV, (key, encryption) => new IDEATransform(key, encryption));
 
         public override void GenerateIV()
         {
@@ -189,7 +189,7 @@ namespace InflatablePalace.Cryptography.Algorithms
             }
 
             /// <summary>The function to invert the encryption subkey to the decryption subkey</summary>
-            private int[] InvertKey(int[] inKey)
+            private static int[] InvertKey(int[] inKey)
             {
                 int t1, t2, t3, t4;
                 int p = 52; // We work backwards

@@ -34,7 +34,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 //case CompressionAlgorithmTag.BZip2:
                     break;
                 default:
-                    throw new ArgumentException("unknown compression algorithm", "algorithm");
+                    throw new ArgumentException("unknown compression algorithm", nameof(algorithm));
             }
 
             this.algorithm = algorithm;

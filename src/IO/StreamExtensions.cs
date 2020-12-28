@@ -7,7 +7,7 @@ namespace InflatablePalace.IO
     {
         public static byte[] ReadAll(this Stream inputStream)
         {
-            MemoryStream buf = new MemoryStream();
+            using var buf = new MemoryStream();
             inputStream.CopyTo(buf);
             return buf.ToArray();
         }

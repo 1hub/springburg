@@ -39,7 +39,8 @@ namespace InflatablePalace.Test.Algorithms
         [TestCaseSource("TestVectors")]
         public void Encrypt(string hexKey, string hexPlainText, string hexCipherText)
         {
-            using var encryptor = new T().CreateEncryptor(HexToByteArray(hexKey), null);
+            using var symmetricAlgorithm = new T();
+            using var encryptor = symmetricAlgorithm.CreateEncryptor(HexToByteArray(hexKey), null);
             var plainText = HexToByteArray(hexPlainText);
             var encryptedText = encryptor.TransformFinalBlock(plainText, 0, plainText.Length);
             var hexEncryptedText = ByteArrayToHex(encryptedText);
@@ -50,7 +51,8 @@ namespace InflatablePalace.Test.Algorithms
         [TestCaseSource("TestVectors")]
         public void Decrypt(string hexKey, string hexPlainText, string hexCipherText)
         {
-            using var decryptor = new T().CreateDecryptor(HexToByteArray(hexKey), null);
+            using var symmetricAlgorithm = new T();
+            using var decryptor = symmetricAlgorithm.CreateDecryptor(HexToByteArray(hexKey), null);
             var cipherText = HexToByteArray(hexCipherText);
             var decryptedText = decryptor.TransformFinalBlock(cipherText, 0, cipherText.Length);
             var hexDecryptedText = ByteArrayToHex(decryptedText);

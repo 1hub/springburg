@@ -19,11 +19,11 @@ namespace InflatablePalace.Cryptography.Algorithms
             this.Mode = CipherMode.ECB;
         }
 
-        public override ICryptoTransform CreateEncryptor(byte[] key, byte[]? iv) =>
-            ModeHelper.CreateEncryptor(ModeValue, PaddingValue, key, iv, (key, encryption) => new TwofishTransform(key, encryption));
+        public override ICryptoTransform CreateEncryptor(byte[] rgbKey, byte[]? rgbIV) =>
+            ModeHelper.CreateEncryptor(ModeValue, PaddingValue, rgbKey, rgbIV, (key, encryption) => new TwofishTransform(key, encryption));
 
-        public override ICryptoTransform CreateDecryptor(byte[] key, byte[]? iv) =>
-            ModeHelper.CreateDecryptor(ModeValue, PaddingValue, key, iv, (key, encryption) => new TwofishTransform(key, encryption));
+        public override ICryptoTransform CreateDecryptor(byte[] rgbKey, byte[]? rgbIV) =>
+            ModeHelper.CreateDecryptor(ModeValue, PaddingValue, rgbKey, rgbIV, (key, encryption) => new TwofishTransform(key, encryption));
 
         public override void GenerateIV()
         {
@@ -292,31 +292,31 @@ namespace InflatablePalace.Cryptography.Algorithms
             private uint[] sboxKeys = new uint[MAX_KEY_BITS / 64];    // key bits used for S-boxes
             private uint[] subKeys = new uint[TOTAL_SUBKEYS];     // round subkeys, input/output whitening bits
             private uint[] Key = { 0, 0, 0, 0, 0, 0, 0, 0 };              //new int[MAX_KEY_BITS/32];
-            private uint[] IV = { 0, 0, 0, 0 };                       // this should be one block size
             private int keyLength;
             private int rounds;
 
-            private static readonly int BLOCK_SIZE = 128;   // number of bits per block
-            private static readonly int MAX_ROUNDS = 16;    // max # rounds (for allocating subkey array)
-            private static readonly int ROUNDS_128 = 16;    // default number of rounds for 128-bit keys
-            private static readonly int ROUNDS_192 = 16;    // default number of rounds for 192-bit keys
-            private static readonly int ROUNDS_256 = 16;    // default number of rounds for 256-bit keys
-            private static readonly int MAX_KEY_BITS = 256; // max number of bits of key
+            private const int BLOCK_SIZE = 128;   // number of bits per block
+            private const int MAX_ROUNDS = 16;    // max # rounds (for allocating subkey array)
+            private const int ROUNDS_128 = 16;    // default number of rounds for 128-bit keys
+            private const int ROUNDS_192 = 16;    // default number of rounds for 192-bit keys
+            private const int ROUNDS_256 = 16;    // default number of rounds for 256-bit keys
+            private const int MAX_KEY_BITS = 256; // max number of bits of key
 
-            private static readonly int INPUT_WHITEN = 0;   // subkey array indices
-            private static readonly int OUTPUT_WHITEN = (INPUT_WHITEN + BLOCK_SIZE / 32);
-            private static readonly int ROUND_SUBKEYS = (OUTPUT_WHITEN + BLOCK_SIZE / 32);  // use 2 * (# rounds)
-            private static readonly int TOTAL_SUBKEYS = (ROUND_SUBKEYS + 2 * MAX_ROUNDS);
+            private const int INPUT_WHITEN = 0;   // subkey array indices
+            private const int OUTPUT_WHITEN = (INPUT_WHITEN + BLOCK_SIZE / 32);
+            private const int ROUND_SUBKEYS = (OUTPUT_WHITEN + BLOCK_SIZE / 32);  // use 2 * (# rounds)
+            private const int TOTAL_SUBKEYS = (ROUND_SUBKEYS + 2 * MAX_ROUNDS);
 
             // for computing subkeys
-            private static readonly uint SK_STEP = 0x02020202u;
-            private static readonly uint SK_BUMP = 0x01010101u;
-            private static readonly int SK_ROTL = 9;
+            private const uint SK_STEP = 0x02020202u;
+            private const uint SK_BUMP = 0x01010101u;
+            private const int SK_ROTL = 9;
 
             // Reed-Solomon code parameters: (12,8) reversible code
             // g(x) = x**4 + (a + 1/a) x**3 + a x**2 + (a + 1/a) x + 1
             // where a = primitive root of field generator 0x14D
-            private static readonly uint RS_GF_FDBK = 0x14D;        // field generator
+            private const uint RS_GF_FDBK = 0x14D;        // field generator
+
             private static void RS_rem(ref uint x)
             {
                 byte b = (byte)(x >> 24);
@@ -349,7 +349,7 @@ namespace InflatablePalace.Cryptography.Algorithms
             //           43492 51612 53851 52098 42015 31117 20854 11538  6223  2492  1033
             // MDS OK, ROR:   6+  7+  8+  9+ 10+ 11+ 12+ 13+ 14+ 15+ 16+
             //               17+ 18+ 19+ 20+ 21+ 22+ 23+ 24+ 25+ 26+
-            private static readonly int MDS_GF_FDBK = 0x169;    /* primitive polynomial for GF(256)*/
+            private const int MDS_GF_FDBK = 0x169;    /* primitive polynomial for GF(256)*/
 
             private static int LFSR1(int x)
             {
@@ -399,29 +399,29 @@ namespace InflatablePalace.Cryptography.Algorithms
             // automatically get changed in all the Twofish source code. Note that P_i0 is
             // the "outermost" 8x8 permutation applied.  See the f32() function to see
             // how these constants are to be  used.
-            private static readonly int P_00 = 1;                   // "outermost" permutation
-            private static readonly int P_01 = 0;
-            private static readonly int P_02 = 0;
-            private static readonly int P_03 = (P_01 ^ 1);          // "extend" to larger key sizes
-            private static readonly int P_04 = 1;
+            private const int P_00 = 1;                   // "outermost" permutation
+            private const int P_01 = 0;
+            private const int P_02 = 0;
+            private const int P_03 = (P_01 ^ 1);          // "extend" to larger key sizes
+            private const int P_04 = 1;
 
-            private static readonly int P_10 = 0;
-            private static readonly int P_11 = 0;
-            private static readonly int P_12 = 1;
-            private static readonly int P_13 = (P_11 ^ 1);
-            private static readonly int P_14 = 0;
+            private const int P_10 = 0;
+            private const int P_11 = 0;
+            private const int P_12 = 1;
+            private const int P_13 = (P_11 ^ 1);
+            private const int P_14 = 0;
 
-            private static readonly int P_20 = 1;
-            private static readonly int P_21 = 1;
-            private static readonly int P_22 = 0;
-            private static readonly int P_23 = (P_21 ^ 1);
-            private static readonly int P_24 = 0;
+            private const int P_20 = 1;
+            private const int P_21 = 1;
+            private const int P_22 = 0;
+            private const int P_23 = (P_21 ^ 1);
+            private const int P_24 = 0;
 
-            private static readonly int P_30 = 0;
-            private static readonly int P_31 = 1;
-            private static readonly int P_32 = 1;
-            private static readonly int P_33 = (P_31 ^ 1);
-            private static readonly int P_34 = 1;
+            private const int P_30 = 0;
+            private const int P_31 = 1;
+            private const int P_32 = 1;
+            private const int P_33 = (P_31 ^ 1);
+            private const int P_34 = 1;
 
             // fixed 8x8 permutation S-boxes
 

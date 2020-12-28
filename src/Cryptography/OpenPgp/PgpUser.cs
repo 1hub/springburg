@@ -1,4 +1,5 @@
 ﻿using InflatablePalace.Cryptography.OpenPgp.Packet;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -122,17 +123,20 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         public IList<PgpCertification> RevocationSignatures => revocationSignatures.AsReadOnly();
 
-        public override void Encode(IPacketWriter writer)
+        public override void Encode(IPacketWriter packetWriter)
         {
-            writer.WritePacket(userPacket);
+            if (packetWriter == null)
+                throw new ArgumentNullException(nameof(packetWriter));
+
+            packetWriter.WritePacket(userPacket);
             if (trustPacket != null)
-                writer.WritePacket(trustPacket);
+                packetWriter.WritePacket(trustPacket);
             foreach (PgpCertification sig in SelfCertifications)
-                sig.Signature.Encode(writer);
+                sig.Signature.Encode(packetWriter);
             foreach (PgpCertification sig in OtherCertifications)
-                sig.Signature.Encode(writer);
+                sig.Signature.Encode(packetWriter);
             foreach (PgpCertification sig in RevocationSignatures)
-                sig.Signature.Encode(writer);
+                sig.Signature.Encode(packetWriter);
         }
     }
 }

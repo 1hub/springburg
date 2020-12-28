@@ -26,6 +26,15 @@ namespace InflatablePalace.Cryptography.Algorithms
             this.publicKey = NSec.Cryptography.PublicKey.Import(KeyAgreementAlgorithm.X25519, parameters.Q.X, KeyBlobFormat.RawPublicKey);
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                privateKey?.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
         public override byte[] DeriveKeyFromHash(ECDiffieHellmanPublicKey otherPartyPublicKey, HashAlgorithmName hashAlgorithm, byte[]? secretPrepend, byte[]? secretAppend)
         {
             if (this.privateKey == null)

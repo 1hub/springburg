@@ -41,7 +41,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         *
         * @return the offset the data starts in out.
         */
-        private int Decode(
+        private static int Decode(
             int in0,
             int in1,
             int in2,

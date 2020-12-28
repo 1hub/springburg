@@ -7,16 +7,16 @@ namespace InflatablePalace.Cryptography.Algorithms.Modes
     static class ModeHelper
     {
 
-        public static ICryptoTransform CreateEncryptor(CipherMode mode, PaddingMode padding, byte[] key, byte[]? iv, Func<byte[], bool, IBlockTransform> createTransform)
+        public static ICryptoTransform CreateEncryptor(CipherMode mode, PaddingMode padding, byte[] rgbKey, byte[]? rgbIV, Func<byte[], bool, IBlockTransform> createTransform)
         {
             switch (mode)
             {
                 case CipherMode.ECB:
-                    return new UniversalCryptoEncryptor(padding, new ECBMode(createTransform(key, true), 0));
+                    return new UniversalCryptoEncryptor(padding, new ECBMode(createTransform(rgbKey, true), 0));
                 case CipherMode.CFB:
-                    if (iv == null)
-                        throw new ArgumentNullException(nameof(iv));
-                    return new UniversalCryptoEncryptor(padding, new CFBMode(iv, createTransform(key, true), true, 0));
+                    if (rgbIV == null)
+                        throw new ArgumentNullException(nameof(rgbIV));
+                    return new UniversalCryptoEncryptor(padding, new CFBMode(rgbIV, createTransform(rgbKey, true), true, 0));
                 default:
                     throw new CryptographicException(string.Format(SR.Cryptography_CipherModeNotSupported, mode));
             }
