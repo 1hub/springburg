@@ -1,6 +1,6 @@
-using InflatablePalace.Cryptography.OpenPgp.Packet;
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace InflatablePalace.Cryptography.OpenPgp
@@ -15,182 +15,116 @@ namespace InflatablePalace.Cryptography.OpenPgp
         private string id;
         private PgpSymmetricKeyAlgorithm encAlgorithm;
         private PgpHashAlgorithm hashAlgorithm;
-        private int certificationLevel;
+        //private int certificationLevel;
         private byte[] rawPassPhrase;
         private bool useSha1;
         private PgpKeyPair masterKey;
-        private PgpSignatureAttributes hashedPacketVector;
-        private PgpSignatureAttributes unhashedPacketVector;
 
         /// <summary>
-        /// Create a new key ring generator using old style checksumming. It is recommended to use
-        /// SHA1 checksumming where possible.
+        /// Create a new key ring generator.
         /// </summary>
-        /// <remarks>
-        /// Conversion of the passphrase characters to bytes is performed using Convert.ToByte(), which is
-        /// the historical behaviour of the library (1.7 and earlier).
-        /// </remarks>
-        /// <param name="certificationLevel">The certification level for keys on this ring.</param>
         /// <param name="masterKey">The master key pair.</param>
-        /// <param name="id">The id to be associated with the ring.</param>
-        /// <param name="encAlgorithm">The algorithm to be used to protect secret keys.</param>
+        /// <param name="id">User id associated with the keys in the ring.</param>
+        /// <param name="creationTime">The creation time for the master key pair.</param>
         /// <param name="passPhrase">The passPhrase to be used to protect secret keys.</param>
+        /// <param name="useSha1">Checksum the secret keys with SHA1 rather than the older 16 bit checksum.</param>
+        /// <param name="certificationLevel">The certification level for keys on this ring.</param>
+        /// <param name="encAlgorithm">The algorithm to be used to protect secret keys.</param>
+        /// <param name="hashAlgorithm">The hash algorithm for key signatures and certifications.</param>
         /// <param name="hashedAttributes">Packets to be included in the certification hash.</param>
         /// <param name="unhashedAttributes">Packets to be attached unhashed to the certification.</param>
-        /// <param name="rand">input secured random.</param>
-        [Obsolete("Use version taking an explicit 'useSha1' parameter instead")]
         public PgpKeyRingGenerator(
-            int certificationLevel,
-            PgpKeyPair masterKey,
+            AsymmetricAlgorithm masterKey,
             string id,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
             string passPhrase,
-            PgpSignatureAttributes hashedAttributes,
-            PgpSignatureAttributes unhashedAttributes)
-            : this(certificationLevel, masterKey, id, encAlgorithm, passPhrase, false, hashedAttributes, unhashedAttributes)
+            DateTime creationTime = default(DateTime),
+            bool useSha1 = true,
+            int certificationLevel = PgpSignature.DefaultCertification,
+            PgpSymmetricKeyAlgorithm encAlgorithm = PgpSymmetricKeyAlgorithm.Aes128,
+            PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1,
+            PgpSignatureAttributes hashedAttributes = null,
+            PgpSignatureAttributes unhashedAttributes = null)
+            : this(masterKey, id, Encoding.UTF8.GetBytes(passPhrase), creationTime, useSha1, certificationLevel, encAlgorithm, hashAlgorithm, hashedAttributes, unhashedAttributes)
         {
         }
 
         /// <summary>
         /// Create a new key ring generator.
         /// </summary>
-        /// <param name="certificationLevel">The certification level for keys on this ring.</param>
         /// <param name="masterKey">The master key pair.</param>
-        /// <param name="id">The id to be associated with the ring.</param>
-        /// <param name="encAlgorithm">The algorithm to be used to protect secret keys.</param>
-        /// <param name="utf8PassPhrase">
-        /// If true, conversion of the passphrase to bytes uses Encoding.UTF8.GetBytes(), otherwise the conversion
-        /// is performed using Convert.ToByte(), which is the historical behaviour of the library (1.7 and earlier).
-        /// </param>
+        /// <param name="id">User id associated with the keys in the ring.</param>
+        /// <param name="creationTime">The creation time for the master key pair.</param>
         /// <param name="passPhrase">The passPhrase to be used to protect secret keys.</param>
         /// <param name="useSha1">Checksum the secret keys with SHA1 rather than the older 16 bit checksum.</param>
-        /// <param name="hashedPackets">Packets to be included in the certification hash.</param>
-        /// <param name="unhashedPackets">Packets to be attached unhashed to the certification.</param>
-        /// <param name="rand">input secured random.</param>
-        public PgpKeyRingGenerator(
-            int certificationLevel,
-            PgpKeyPair masterKey,
-            string id,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            string passPhrase,
-            bool useSha1,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
-            : this(certificationLevel, masterKey, id, encAlgorithm, Encoding.UTF8.GetBytes(passPhrase), useSha1, hashedPackets, unhashedPackets)
-        {
-        }
-
-        /// <summary>
-		/// Create a new key ring generator.
-		/// </summary>
-		/// <param name="certificationLevel">The certification level for keys on this ring.</param>
-		/// <param name="masterKey">The master key pair.</param>
-		/// <param name="id">The id to be associated with the ring.</param>
-		/// <param name="encAlgorithm">The algorithm to be used to protect secret keys.</param>
-		/// <param name="rawPassPhrase">The passPhrase to be used to protect secret keys.</param>
-		/// <param name="useSha1">Checksum the secret keys with SHA1 rather than the older 16 bit checksum.</param>
-		/// <param name="hashedPackets">Packets to be included in the certification hash.</param>
-		/// <param name="unhashedPackets">Packets to be attached unhashed to the certification.</param>
-        public PgpKeyRingGenerator(
-            int certificationLevel,
-            PgpKeyPair masterKey,
-            string id,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            byte[] rawPassPhrase,
-            bool useSha1,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
-        {
-            this.certificationLevel = certificationLevel;
-            this.masterKey = masterKey;
-            this.id = id;
-            this.encAlgorithm = encAlgorithm;
-            this.rawPassPhrase = rawPassPhrase;
-            this.useSha1 = useSha1;
-            this.hashedPacketVector = hashedPackets;
-            this.unhashedPacketVector = unhashedPackets;
-            keys.Add(new PgpSecretKey(certificationLevel, masterKey, id, encAlgorithm, rawPassPhrase, useSha1, hashedPackets, unhashedPackets));
-        }
-
-        /// <summary>
-        /// Create a new key ring generator.
-        /// </summary>
-        /// <remarks>
-        /// Allows the caller to handle the encoding of the passphrase to bytes.
-        /// </remarks>
         /// <param name="certificationLevel">The certification level for keys on this ring.</param>
-        /// <param name="masterKey">The master key pair.</param>
-        /// <param name="id">The id to be associated with the ring.</param>
         /// <param name="encAlgorithm">The algorithm to be used to protect secret keys.</param>
-        /// <param name="hashAlgorithm">The hash algorithm.</param>
-        /// <param name="rawPassPhrase">The passPhrase to be used to protect secret keys.</param>
-        /// <param name="useSha1">Checksum the secret keys with SHA1 rather than the older 16 bit checksum.</param>
-        /// <param name="hashedPackets">Packets to be included in the certification hash.</param>
-        /// <param name="unhashedPackets">Packets to be attached unhashed to the certification.</param>
-        /// <param name="rand">input secured random.</param>
+        /// <param name="hashAlgorithm">The hash algorithm for key signatures and certifications.</param>
+        /// <param name="hashedAttributes">Packets to be included in the certification hash.</param>
+        /// <param name="unhashedAttributes">Packets to be attached unhashed to the certification.</param>
         public PgpKeyRingGenerator(
-            int certificationLevel,
-            PgpKeyPair masterKey,
+            AsymmetricAlgorithm masterKey,
             string id,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            PgpHashAlgorithm hashAlgorithm,
-            byte[] rawPassPhrase,
-            bool useSha1,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
+            byte[] rawPassPhrase = null,
+            DateTime creationTime = default(DateTime),
+            bool useSha1 = true,
+            int certificationLevel = PgpSignature.DefaultCertification,
+            PgpSymmetricKeyAlgorithm encAlgorithm = PgpSymmetricKeyAlgorithm.Aes128,
+            PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1,
+            PgpSignatureAttributes hashedAttributes = null,
+            PgpSignatureAttributes unhashedAttributes = null)
         {
-            this.certificationLevel = certificationLevel;
-            this.masterKey = masterKey;
+            this.masterKey = new PgpKeyPair(masterKey, creationTime == default(DateTime) ? DateTime.UtcNow : creationTime);
+
+            //this.certificationLevel = certificationLevel;
             this.id = id;
             this.encAlgorithm = encAlgorithm;
             this.rawPassPhrase = rawPassPhrase;
             this.useSha1 = useSha1;
-            this.hashedPacketVector = hashedPackets;
-            this.unhashedPacketVector = unhashedPackets;
+            //this.hashedAttributes = hashedAttributes;
+            //this.unhashedAttributes = unhashedAttributes;
             this.hashAlgorithm = hashAlgorithm;
 
-            keys.Add(new PgpSecretKey(certificationLevel, masterKey, id, encAlgorithm, hashAlgorithm, rawPassPhrase, useSha1, hashedPackets, unhashedPackets));
-        }
+            // Certify the ID/public key
+            var selfCertification = PgpCertification.GenerateUserCertification(
+                certificationLevel,
+                this.masterKey,
+                id,
+                this.masterKey.PublicKey,
+                hashedAttributes,
+                unhashedAttributes,
+                hashAlgorithm);
+            var certifiedPublicKey = PgpPublicKey.AddCertification(this.masterKey.PublicKey, id, selfCertification);
 
-        /// <summary>
-        /// Add a subkey to the key ring to be generated with default certification.
-        /// </summary>
-        /// <param name="keyPair">The key pair.</param>
-        /// <param name="hashAlgorithm">The hash algorithm.</param>
-        public void AddSubKey(PgpKeyPair keyPair, PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
-        {
-            this.AddSubKey(keyPair, this.hashedPacketVector, this.unhashedPacketVector, hashAlgorithm);
+            keys.Add(new PgpSecretKey(this.masterKey.PrivateKey, certifiedPublicKey, encAlgorithm, rawPassPhrase, useSha1, true));
         }
 
         /// <summary>
         /// Add a subkey with specific hashed and unhashed packets associated with it and
         /// default certification.
         /// </summary>
-        /// <param name="keyPair">Public/private key pair.</param>
-        /// <param name="hashedPackets">Hashed packet values to be included in certification.</param>
-        /// <param name="unhashedPackets">Unhashed packets values to be included in certification.</param>
-        /// <param name="hashAlgorithm">The hash algorithm.</param>
+        /// <param name="hashedAttributes">Hashed packet values to be included in certification.</param>
+        /// <param name="unhashedAttributes">Unhashed packets values to be included in certification.</param>
         public void AddSubKey(
-            PgpKeyPair keyPair,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets,
-            PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
+            AsymmetricAlgorithm subKey,
+            DateTime creationTime = default(DateTime),
+            PgpSignatureAttributes hashedAttributes = null,
+            PgpSignatureAttributes unhashedAttributes = null)
         {
-            try
-            {
-                PgpCertification certification = PgpCertification.GenerateSubkeyBinding(masterKey, keyPair.PublicKey, hashedPackets, unhashedPackets, hashAlgorithm);
-                IList<PgpSignature> subSigs = new List<PgpSignature>(1);
-                subSigs.Add(certification.Signature);
-                keys.Add(new PgpSecretKey(keyPair.PrivateKey, new PgpPublicKey(keyPair.PublicKey, null, subSigs), encAlgorithm, rawPassPhrase, useSha1, false));
-            }
-            catch (PgpException)
-            {
-                throw;
-            }
-            catch (Exception e)
-            {
-                throw new PgpException("exception adding subkey: ", e);
-            }
+            var publicSubKey = new PgpPublicKey(
+                subKey,
+                creationTime == default(DateTime) ? DateTime.UtcNow : creationTime,
+                isMasterKey: false);
+
+            var subkeyBinding = PgpCertification.GenerateSubkeyBinding(
+                masterKey,
+                publicSubKey,
+                hashedAttributes,
+                unhashedAttributes,
+                hashAlgorithm);
+
+            var certifiedSubKey = PgpPublicKey.AddCertification(publicSubKey, subkeyBinding);
+
+            keys.Add(new PgpSecretKey(new PgpPrivateKey(certifiedSubKey.KeyId, certifiedSubKey.PublicKeyPacket, subKey), certifiedSubKey, encAlgorithm, rawPassPhrase, useSha1, false));
         }
 
 
@@ -203,25 +137,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <summary>Return the public key ring that corresponds to the secret key ring.</summary>
         public PgpPublicKeyRing GeneratePublicKeyRing()
         {
-            IList<PgpPublicKey> pubKeys = new List<PgpPublicKey>();
-
-            IEnumerator<PgpSecretKey> enumerator = keys.GetEnumerator();
-            enumerator.MoveNext();
-
-            PgpSecretKey pgpSecretKey = enumerator.Current;
-            pubKeys.Add(pgpSecretKey.PublicKey);
-
-            while (enumerator.MoveNext())
-            {
-                pgpSecretKey = enumerator.Current;
-
-                PgpPublicKey k = new PgpPublicKey(pgpSecretKey.PublicKey);
-                k.subKey = true;
-                k.publicPk = new PublicSubkeyPacket(k.Algorithm, k.CreationTime, k.PublicKeyPacket.Key);
-
-                pubKeys.Add(k);
-            }
-
+            var pubKeys = new List<PgpPublicKey>();
+            foreach (var secretKey in keys)
+                pubKeys.Add(secretKey.PublicKey);
             return new PgpPublicKeyRing(pubKeys);
         }
     }

@@ -82,18 +82,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [Test]
         public void Generate()
         {
-            ECDsa ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-            PgpKeyPair ecdsaKeyPair = new PgpKeyPair(ecdsa, DateTime.UtcNow);
-
-            // Generate an encryption key
-            ECDiffieHellman ecdh = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
-            PgpKeyPair ecdhKeyPair = new PgpKeyPair(ecdh, DateTime.UtcNow);
+            // Master/Signing key
+            var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            // Encryption key
+            var ecdh = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
 
             // Generate a key ring
             var passPhrase = "test";
-            PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, ecdsaKeyPair,
-                "test@bouncycastle.org", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, true, null, null);
-            keyRingGen.AddSubKey(ecdhKeyPair);
+            PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(ecdsa, "test@bouncycastle.org", passPhrase);
+            keyRingGen.AddSubKey(ecdh);
 
             PgpPublicKeyRing pubRing = keyRingGen.GeneratePublicKeyRing();
 
@@ -115,16 +112,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         public void Generate25519()
         {
             // Generate a master key
-            PgpKeyPair ecdsaKeyPair = new PgpKeyPair(new Ed25519(), DateTime.UtcNow);
-
+            var ecdsa = new Ed25519();
             // Generate an encryption key
-            PgpKeyPair ecdhKeyPair = new PgpKeyPair(new X25519(), DateTime.UtcNow);
+            var ecdh = new X25519();
 
             // Generate a key ring
             var passPhrase = "test";
-            PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, ecdsaKeyPair,
-                "test@bouncycastle.org", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, true, null, null);
-            keyRingGen.AddSubKey(ecdhKeyPair);
+            PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(ecdsa, "test@bouncycastle.org", passPhrase);
+            keyRingGen.AddSubKey(ecdh);
 
             PgpPublicKeyRing pubRing = keyRingGen.GeneratePublicKeyRing();
 
@@ -140,7 +135,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             Assert.That(secRing.GetEncoded(), Is.EqualTo(secRingEnc.GetEncoded()), "secret key ring encoding failed");
 
             // Extract back the ECDH key and verify the encoded values to ensure correct endianness
-            PgpSecretKey pgpSecretKey = secRing.GetSecretKey(ecdhKeyPair.KeyId);
+            PgpSecretKey pgpSecretKey = secRing.GetSecretKey(pubRing.GetPublicKey().KeyId);
             PgpPrivateKey pgpPrivKey = pgpSecretKey.ExtractPrivateKey(passPhrase);
 
             /*if (!Arrays.AreEqual(((X25519PrivateKeyParameters)kpEnc.Private).GetEncoded(), ((X25519PrivateKeyParameters)pgpPrivKey.Key).GetEncoded()))

@@ -19,7 +19,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             AsymmetricAlgorithm keyPair,
             DateTime time)
         {
-            this.PublicKey = new PgpPublicKey(keyPair, time);
+            this.PublicKey = new PgpPublicKey(keyPair, time, isMasterKey: true);
             this.PrivateKey = new PgpPrivateKey(this.PublicKey.KeyId, this.PublicKey.PublicKeyPacket, keyPair);
         }
 

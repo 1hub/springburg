@@ -3,6 +3,7 @@ using InflatablePalace.Cryptography.OpenPgp.Packet;
 using Internal.Cryptography;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -17,11 +18,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
         private byte[] fingerprint;
 
         private AsymmetricAlgorithm? key;
-        internal bool subKey;
         internal PublicKeyPacket publicPk;
         internal TrustPacket? trustPk;
-        internal List<PgpCertification> keySigs = new List<PgpCertification>();
-        internal List<PgpUser> ids = new List<PgpUser>();
+        internal List<PgpCertification> keyCertifications;
+        internal List<PgpUser> ids;
 
         private void Init()
         {
@@ -68,9 +68,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <param name="time">Date of creation.</param>
         /// <exception cref="ArgumentException">If <c>pubKey</c> is not public.</exception>
         /// <exception cref="PgpException">On key creation problem.</exception>
-        public PgpPublicKey(
+        internal PgpPublicKey(
             AsymmetricAlgorithm pubKey,
-            DateTime time)
+            DateTime time,
+            bool isMasterKey = true)
         {
             BcpgKey bcpgKey;
             PgpPublicKeyAlgorithm algorithm;
@@ -147,22 +148,20 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 throw new PgpException("unknown key class");
             }
 
-            this.publicPk = new PublicKeyPacket(algorithm, time, bcpgKey);
+            this.publicPk = isMasterKey ?
+                new PublicKeyPacket(algorithm, time, bcpgKey) :
+                new PublicSubkeyPacket(algorithm, time, bcpgKey);
+            this.keyCertifications = new List<PgpCertification>();
             this.ids = new List<PgpUser>();
 
-            try
-            {
-                Init();
-            }
-            catch (IOException e)
-            {
-                throw new PgpException("exception calculating keyId", e);
-            }
+            Init();
         }
 
         internal PgpPublicKey(PublicKeyPacket publicPk)
         {
             this.publicPk = publicPk;
+            this.keyCertifications = new List<PgpCertification>();
+            this.ids = new List<PgpUser>();
 
             Init();
         }
@@ -176,25 +175,23 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
 
             this.publicPk = publicKeyPacket;
-            this.subKey = subKey;
             this.trustPk = packetReader.NextPacketTag() == PacketTag.Trust ? (TrustPacket)packetReader.ReadContainedPacket() : null;
 
-            this.keySigs = new List<PgpCertification>();
+            this.keyCertifications = new List<PgpCertification>();
+            this.ids = new List<PgpUser>();
 
             while (packetReader.NextPacketTag() == PacketTag.Signature)
             {
                 SignaturePacket signaturePacket = (SignaturePacket)packetReader.ReadContainedPacket();
                 TrustPacket? signatureTrustPacket = packetReader.NextPacketTag() == PacketTag.Trust ? (TrustPacket)packetReader.ReadContainedPacket() : null;
                 var signature = new PgpSignature(signaturePacket, signatureTrustPacket);
-                this.keySigs.Add(new PgpCertification(signature, null, this));
+                this.keyCertifications.Add(new PgpCertification(signature, null, this));
             }
 
             Init();
 
             if (!subKey)
             {
-                ids = new List<PgpUser>();
-
                 while (packetReader.NextPacketTag() == PacketTag.UserId
                     || packetReader.NextPacketTag() == PacketTag.UserAttribute)
                 {
@@ -203,21 +200,21 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
         }
 
+        /// <summary>
+        /// Create subkey out of an existing public key.
+        /// </summary>
         internal PgpPublicKey(
-            PgpPublicKey key,
+            PublicSubkeyPacket subkeyPacket,
             TrustPacket trust,
             IList<PgpSignature> keySigs)
         {
-            this.subKey = true;
-
-            this.publicPk = key.publicPk;
+            this.publicPk = subkeyPacket; 
             this.trustPk = trust;
-            this.keySigs = new List<PgpCertification>();
+            this.keyCertifications = new List<PgpCertification>();
             foreach (var keySig in keySigs)
-                this.keySigs.Add(new PgpCertification(keySig, null, this));
+                this.keyCertifications.Add(new PgpCertification(keySig, null, this));
 
-            this.fingerprint = key.fingerprint;
-            this.keyId = key.keyId;
+            Init();
         }
 
         /// <summary>Copy constructor.</summary>
@@ -227,10 +224,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
             this.publicPk = pubKey.publicPk;
 
-            this.keySigs = new List<PgpCertification>(pubKey.keySigs.Count);
-            foreach (var keySig in pubKey.keySigs)
+            this.keyCertifications = new List<PgpCertification>(pubKey.keyCertifications.Count);
+            foreach (var keySig in pubKey.keyCertifications)
             {
-                this.keySigs.Add(new PgpCertification(keySig.Signature, null, this));
+                this.keyCertifications.Add(new PgpCertification(keySig.Signature, null, this));
             }
 
             this.ids = new List<PgpUser>(pubKey.ids.Count);
@@ -252,6 +249,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <summary>Return the trust data associated with the public key, if present.</summary>
         /// <returns>A byte array with trust data, null otherwise.</returns>
         public ReadOnlySpan<byte> GetTrustData() => trustPk == null ? Array.Empty<byte>() : trustPk.GetLevelAndTrustAmount();
+
+        internal PublicKeyPacket PublicKeyPacket => publicPk;
 
         /// <summary>
         /// Get validity of the public key from the time of creation.
@@ -275,14 +274,14 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     }
                 }
 
-                if (GetExpirationTimeFromSig(this.keySigs.Where(s => s.Signature.SignatureType == PgpSignature.DirectKey), out var expiryTime2))
+                if (GetExpirationTimeFromSig(this.keyCertifications.Where(s => s.Signature.SignatureType == PgpSignature.DirectKey), out var expiryTime2))
                 {
                     return expiryTime2;
                 }
             }
             else
             {
-                if (GetExpirationTimeFromSig(this.keySigs.Where(s => s.Signature.SignatureType == PgpSignature.SubkeyBinding || s.Signature.SignatureType == PgpSignature.DirectKey), out var expiryTime))
+                if (GetExpirationTimeFromSig(this.keyCertifications.Where(s => s.Signature.SignatureType == PgpSignature.SubkeyBinding || s.Signature.SignatureType == PgpSignature.DirectKey), out var expiryTime))
                 {
                     return expiryTime;
                 }
@@ -356,7 +355,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <summary>True, if this could be a master key.</summary>
         public bool IsMasterKey
         {
-            get { return !subKey;/* (subSigs == null) && !(this.IsEncryptionKey && publicPk.Algorithm != PgpPublicKeyAlgorithm.RsaGeneral);*/ }
+            get { return !(publicPk is PublicSubkeyPacket); }
         }
 
         /// <summary>The algorithm code associated with the public key.</summary>
@@ -436,7 +435,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             if (asymmetricAlgorithm is ECDiffieHellman otherPartyKey)
             {
-                ECDHPublicBcpgKey ecKey = (ECDHPublicBcpgKey)PublicKeyPacket.Key;
+                ECDHPublicBcpgKey ecKey = (ECDHPublicBcpgKey)publicPk.Key;
 
                 // Generate the ephemeral key pair
                 var ecCurve = ECCurve.CreateFromOid(ecKey.CurveOid);
@@ -445,7 +444,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     otherPartyKey.PublicKey,
                     PgpUtilities.GetHashAlgorithmName(ecKey.HashAlgorithm),
                     new byte[] { 0, 0, 0, 1 },
-                    Rfc6637Utilities.CreateUserKeyingMaterial(PublicKeyPacket));
+                    Rfc6637Utilities.CreateUserKeyingMaterial(publicPk));
 
                 derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm) / 8).ToArray();
 
@@ -500,12 +499,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <summary>
         /// Return all signatures/certifications directly associated with this key (ie, not to a user id).
         /// </summary>
-        public IList<PgpCertification> KeyCertifications => this.keySigs.AsReadOnly();
-
-        internal PublicKeyPacket PublicKeyPacket
-        {
-            get { return publicPk; }
-        }
+        public IList<PgpCertification> KeyCertifications => this.keyCertifications.AsReadOnly();
 
         public override void Encode(IPacketWriter outStr)
         {
@@ -516,7 +510,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 outStr.WritePacket(trustPk);
             }
 
-            foreach (PgpCertification keySig in keySigs)
+            foreach (PgpCertification keySig in keyCertifications)
                 keySig.Signature.Encode(outStr);
             foreach (PgpUser user in ids)
                 user.Encode(outStr);
@@ -547,20 +541,22 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public static PgpPublicKey AddCertification(
             PgpPublicKey key,
             string id,
-            PgpSignature certification)
+            PgpCertification certification)
         {
             PgpPublicKey returnKey = new PgpPublicKey(key);
+
+            Debug.Assert(certification.PublicKey.KeyId == key.KeyId);
 
             for (int i = 0; i < returnKey.ids.Count; i++)
             {
                 if (returnKey.ids[i].UserId?.Equals(id) == true)
                 {
-                    returnKey.ids[i] = PgpUser.AddCertification(returnKey.ids[i], returnKey, certification);
+                    returnKey.ids[i] = PgpUser.AddCertification(returnKey.ids[i], returnKey, certification.Signature);
                     return returnKey;
                 }
             }
 
-            returnKey.ids.Add(new PgpUser(new UserIdPacket(id), returnKey, certification));
+            returnKey.ids.Add(new PgpUser(new UserIdPacket(id), returnKey, certification.Signature));
             return returnKey;
         }
 
@@ -572,20 +568,22 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public static PgpPublicKey AddCertification(
             PgpPublicKey key,
             PgpUserAttributes userAttributes,
-            PgpSignature certification)
+            PgpCertification certification)
         {
             PgpPublicKey returnKey = new PgpPublicKey(key);
+
+            Debug.Assert(certification.PublicKey.KeyId == key.KeyId);
 
             for (int i = 0; i < returnKey.ids.Count; i++)
             {
                 if (returnKey.ids[i].UserAttributes?.Equals(userAttributes) == true)
                 {
-                    returnKey.ids[i] = PgpUser.AddCertification(returnKey.ids[i], returnKey, certification);
+                    returnKey.ids[i] = PgpUser.AddCertification(returnKey.ids[i], returnKey, certification.Signature);
                     return returnKey;
                 }
             }
 
-            returnKey.ids.Add(new PgpUser(new UserAttributePacket(userAttributes.ToSubpacketArray()), returnKey, certification));
+            returnKey.ids.Add(new PgpUser(new UserAttributePacket(userAttributes.ToSubpacketArray()), returnKey, certification.Signature));
             return returnKey;
         }
 
@@ -597,9 +595,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <returns>
         /// The re-certified key, or null if the user attribute subpacket was not found on the key.
         /// </returns>
-        public static PgpPublicKey? RemoveCertification(
-            PgpPublicKey key,
-            PgpUserAttributes userAttributes)
+        public static PgpPublicKey? RemoveCertification(PgpPublicKey key, PgpUserAttributes userAttributes)
         {
             for (int i = 0; i < key.ids.Count; i++)
             {
@@ -618,9 +614,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <param name="key">The key the certifications are to be removed from.</param>
         /// <param name="id">The ID that is to be removed.</param>
         /// <returns>The re-certified key, or null if the ID was not found on the key.</returns>
-        public static PgpPublicKey? RemoveCertification(
-            PgpPublicKey key,
-            string id)
+        public static PgpPublicKey? RemoveCertification(PgpPublicKey key, string id)
         {
             for (int i = 0; i < key.ids.Count; i++)
             {
@@ -645,6 +639,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpUser user,
             PgpCertification certification)
         {
+            Debug.Assert(certification.PublicKey.KeyId == key.KeyId);
+
             for (int i = 0; i < key.ids.Count; i++)
             {
                 if (key.ids[i].UserIdOrAttributes.Equals(user.UserIdOrAttributes))
@@ -668,6 +664,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpUserAttributes userAttributes,
             PgpCertification certification)
         {
+            Debug.Assert(certification.PublicKey.KeyId == key.KeyId);
+
             for (int i = 0; i < key.ids.Count; i++)
             {
                 if (key.ids[i].UserAttributes?.Equals(userAttributes) == true)
@@ -687,8 +685,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <returns>The new changed public key object.</returns>
         public static PgpPublicKey AddCertification(
             PgpPublicKey key,
-            PgpSignature certification)
+            PgpCertification certification)
         {
+            Debug.Assert(certification.PublicKey.KeyId == key.KeyId);
+
             if (key.IsMasterKey)
             {
                 if (certification.SignatureType == PgpSignature.SubkeyRevocation)
@@ -705,8 +705,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
 
             PgpPublicKey returnKey = new PgpPublicKey(key);
-            returnKey.keySigs.Add(new PgpCertification(certification, null, returnKey));
-
+            returnKey.keyCertifications.Add(new PgpCertification(certification.Signature, null, returnKey));
             return returnKey;
         }
 
@@ -718,11 +717,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpPublicKey key,
             PgpCertification certification)
         {
-            int index = key.keySigs.IndexOf(certification);
+            int index = key.keyCertifications.IndexOf(certification);
             if (index >= 0)
             {
                 var returnKey = new PgpPublicKey(key);
-                returnKey.keySigs.RemoveAt(index);
+                returnKey.keyCertifications.RemoveAt(index);
                 return returnKey;
             }
 

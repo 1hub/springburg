@@ -28,6 +28,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
             this.publicKey = publicKey;
         }
 
+        internal PgpPublicKey PublicKey => publicKey;
+
         public long KeyId => signature.KeyId;
 
         public int SignatureType => signature.SignatureType;

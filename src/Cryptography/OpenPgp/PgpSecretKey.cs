@@ -2,7 +2,6 @@ using InflatablePalace.Cryptography.Algorithms;
 using InflatablePalace.Cryptography.Helpers;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -78,180 +77,52 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     throw new PgpException("unknown key class");
             }
 
-            try
+            MemoryStream bOut = new MemoryStream();
+
+            secKey.Encode(bOut);
+
+            byte[] keyData = bOut.ToArray();
+            byte[] checksumData = Checksum(useSha1, keyData, keyData.Length);
+
+            keyData = keyData.Concat(checksumData).ToArray();
+
+            if (encAlgorithm == PgpSymmetricKeyAlgorithm.Null)
             {
-                MemoryStream bOut = new MemoryStream();
-
-                secKey.Encode(bOut);
-
-                byte[] keyData = bOut.ToArray();
-                byte[] checksumData = Checksum(useSha1, keyData, keyData.Length);
-
-                keyData = keyData.Concat(checksumData).ToArray();
-
-                if (encAlgorithm == PgpSymmetricKeyAlgorithm.Null)
+                if (isMasterKey)
                 {
-                    if (isMasterKey)
-                    {
-                        this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, null, null, keyData);
-                    }
-                    else
-                    {
-                        this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, null, null, keyData);
-                    }
+                    this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, null, null, keyData);
                 }
                 else
                 {
-                    S2k s2k;
-                    byte[] iv;
-
-                    byte[] encData;
-                    if (pub.Version >= 4)
-                    {
-                        encData = EncryptKeyDataV4(keyData, encAlgorithm, PgpHashAlgorithm.Sha1, rawPassPhrase, out s2k, out iv);
-                    }
-                    else
-                    {
-                        encData = EncryptKeyDataV3(keyData, encAlgorithm, rawPassPhrase, out s2k, out iv);
-                    }
-
-                    S2kUsageTag s2kUsage = useSha1 ? S2kUsageTag.Sha1 : S2kUsageTag.Checksum;
-
-                    if (isMasterKey)
-                    {
-                        this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
-                    }
-                    else
-                    {
-                        this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
-                    }
+                    this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, null, null, keyData);
                 }
             }
-            catch (PgpException e)
+            else
             {
-                throw e;
+                S2k s2k;
+                byte[] iv;
+
+                byte[] encData;
+                if (pub.Version >= 4)
+                {
+                    encData = EncryptKeyDataV4(keyData, encAlgorithm, PgpHashAlgorithm.Sha1, rawPassPhrase, out s2k, out iv);
+                }
+                else
+                {
+                    encData = EncryptKeyDataV3(keyData, encAlgorithm, rawPassPhrase, out s2k, out iv);
+                }
+
+                S2kUsageTag s2kUsage = useSha1 ? S2kUsageTag.Sha1 : S2kUsageTag.Checksum;
+
+                if (isMasterKey)
+                {
+                    this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
+                }
+                else
+                {
+                    this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
+                }
             }
-            catch (Exception e)
-            {
-                throw new PgpException("Exception encrypting key", e);
-            }
-        }
-
-        /// <remarks>
-        /// Conversion of the passphrase characters to bytes is performed using Convert.ToByte(), which is
-        /// the historical behaviour of the library (1.7 and earlier).
-        /// </remarks>
-        [Obsolete("Use the constructor taking an explicit 'useSha1' parameter instead")]
-        public PgpSecretKey(
-            int certificationLevel,
-            PgpKeyPair keyPair,
-            string id,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            string passPhrase,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
-            : this(certificationLevel, keyPair, id, encAlgorithm, passPhrase, false, hashedPackets, unhashedPackets)
-        {
-        }
-
-        public PgpSecretKey(
-            int certificationLevel,
-            PgpKeyPair keyPair,
-            string id,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            string passPhrase,
-            bool useSha1,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
-            : this(certificationLevel, keyPair, id, encAlgorithm, Encoding.UTF8.GetBytes(passPhrase), useSha1, hashedPackets, unhashedPackets)
-        {
-        }
-
-        public PgpSecretKey(
-            int certificationLevel,
-            PgpKeyPair keyPair,
-            string id,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            byte[] rawPassPhrase,
-            bool useSha1,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
-            : this(keyPair.PrivateKey, CertifiedPublicKey(certificationLevel, keyPair, id, hashedPackets, unhashedPackets, PgpHashAlgorithm.Sha1), encAlgorithm, rawPassPhrase, useSha1, true)
-        {
-        }
-
-        public PgpSecretKey(
-            int certificationLevel,
-            PgpKeyPair keyPair,
-            string id,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            PgpHashAlgorithm hashAlgorithm,
-            string passPhrase,
-            bool useSha1,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
-            : this(certificationLevel, keyPair, id, encAlgorithm, hashAlgorithm, Encoding.UTF8.GetBytes(passPhrase), useSha1, hashedPackets, unhashedPackets)
-        {
-        }
-
-        public PgpSecretKey(
-            int certificationLevel,
-            PgpKeyPair keyPair,
-            string id,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            PgpHashAlgorithm hashAlgorithm,
-            byte[] rawPassPhrase,
-            bool useSha1,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
-            : this(keyPair.PrivateKey, CertifiedPublicKey(certificationLevel, keyPair, id, hashedPackets, unhashedPackets, hashAlgorithm), encAlgorithm, rawPassPhrase, useSha1, true)
-        {
-        }
-
-        private static PgpPublicKey CertifiedPublicKey(
-            int certificationLevel,
-            PgpKeyPair keyPair,
-            string id,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets,
-            PgpHashAlgorithm hashAlgorithm)
-        {
-            var selfCertification = PgpCertification.GenerateUserCertification(
-                certificationLevel,
-                keyPair,
-                id,
-                keyPair.PublicKey,
-                hashedPackets,
-                unhashedPackets,
-                hashAlgorithm);
-            return PgpPublicKey.AddCertification(keyPair.PublicKey, id, selfCertification.Signature);
-        }
-
-        public PgpSecretKey(
-            int certificationLevel,
-            AsymmetricAlgorithm keyPair,
-            DateTime time,
-            string id,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            string passPhrase,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
-            : this(certificationLevel, new PgpKeyPair(keyPair, time), id, encAlgorithm, passPhrase, false, hashedPackets, unhashedPackets)
-        {
-        }
-
-        public PgpSecretKey(
-            int certificationLevel,
-            AsymmetricAlgorithm keyPair,
-            DateTime time,
-            string id,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            string passPhrase,
-            bool useSha1,
-            PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
-            : this(certificationLevel, new PgpKeyPair(keyPair, time), id, encAlgorithm, passPhrase, useSha1, hashedPackets, unhashedPackets)
-        {
         }
 
         /// <summary>
@@ -591,7 +462,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             outStr.WritePacket(secret);
             if (pub.trustPk != null)
                 outStr.WritePacket(pub.trustPk);
-            foreach (var keySig in pub.keySigs)
+            foreach (var keySig in pub.keyCertifications)
                 keySig.Signature.Encode(outStr);
             foreach (var user in pub.ids)
                 user.Encode(outStr);

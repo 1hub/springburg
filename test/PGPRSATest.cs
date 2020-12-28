@@ -412,7 +412,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 vGen,
                 pubKey);
 
-            PgpPublicKey nKey = PgpPublicKey.AddCertification(pubKey, vGen, certification.Signature);
+            PgpPublicKey nKey = PgpPublicKey.AddCertification(pubKey, vGen, certification);
 
             int count = 0;
             foreach (PgpUser user in nKey.GetUserAttributes())
@@ -607,15 +607,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var passPhrase = "hello";
             var rsa = RSA.Create(1024);
 
-            PgpSecretKey secretKey = new PgpSecretKey(
-                PgpSignature.DefaultCertification,
-                rsa,
-                DateTime.UtcNow,
-                "fred",
-                PgpSymmetricKeyAlgorithm.Cast5,
-                passPhrase,
-                null,
-                null);
+            var keyRingGenerator = new PgpKeyRingGenerator(rsa, "fred", passPhrase);
+
+            var secretKey = keyRingGenerator.GenerateSecretKeyRing().GetSecretKey();
 
             PgpPublicKey key = secretKey.PublicKey;
 
@@ -631,7 +625,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             byte[] keyEnc = key.GetEncoded();
 
-            key = PgpPublicKey.AddCertification(key, firstUserId.UserId, firstUserId.SelfCertifications[0].Signature);
+            key = PgpPublicKey.AddCertification(key, firstUserId.UserId, firstUserId.SelfCertifications[0]);
 
             keyEnc = key.GetEncoded();
 
@@ -639,7 +633,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 new PgpKeyPair(secretKey.PublicKey, secretKey.ExtractPrivateKey(passPhrase)),
                 key);
 
-            key = PgpPublicKey.AddCertification(key, revocation.Signature);
+            key = PgpPublicKey.AddCertification(key, revocation);
 
             keyEnc = key.GetEncoded();
 
@@ -669,7 +663,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //kp = kpg.GenerateKeyPair();
             rsa = RSA.Create(1024);
 
-            secretKey = new PgpSecretKey(PgpSignature.DefaultCertification, rsa, DateTime.UtcNow, "fred", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, null, null);
+            keyRingGenerator = new PgpKeyRingGenerator(rsa, "fred", passPhrase, encAlgorithm: PgpSymmetricKeyAlgorithm.Aes256);
+
+            secretKey = keyRingGenerator.GenerateSecretKeyRing().GetSecretKey();
 
             secretKey.ExtractPrivateKey(passPhrase);
 

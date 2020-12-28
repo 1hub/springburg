@@ -1998,39 +1998,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         public void GenerateTest()
         {
             var passPhrase = "hello";
-            /*DsaParametersGenerator pGen = new DsaParametersGenerator();
-            pGen.Init(512, 80, Random);
-            DsaParameters dsaParams = pGen.GenerateParameters();
-            DsaKeyGenerationParameters dsaKgp = new DsaKeyGenerationParameters(Random, dsaParams);
-            IAsymmetricCipherKeyPairGenerator dsaKpg = GeneratorUtilities.GetKeyPairGenerator("DSA");
-            dsaKpg.Init(dsaKgp);
+            var dsa = DSA.Create(512);
+            var elGamal = ElGamal.Create(1024);
 
-
-            //
-            // this takes a while as the key generator has to Generate some DSA parameters
-            // before it Generates the key.
-            //
-            AsymmetricCipherKeyPair dsaKp = dsaKpg.GenerateKeyPair();
-            IAsymmetricCipherKeyPairGenerator elgKpg = GeneratorUtilities.GetKeyPairGenerator("ELGAMAL");
-
-            BigInteger g = new BigInteger("153d5d6172adb43045b68ae8e1de1070b6137005686d29d3d73a7749199681ee5b212c9b96bfdcfa5b20cd5e3fd2044895d609cf9b410b7a0f12ca1cb9a428cc", 16);
-            BigInteger p = new BigInteger("9494fec095f3b85ee286542b3836fc81a5dd0a0349b4c239dd38744d488cf8e31db8bcb7d33b41abb9e5a33cca9144b1cef332c94bf0573bf047a3aca98cdf3b", 16);
-
-            ElGamalParameters elParams = new ElGamalParameters(p, g);
-            ElGamalKeyGenerationParameters elKgp = new ElGamalKeyGenerationParameters(Random, elParams);
-            elgKpg.Init(elKgp);
-
-            //
-            // this is quicker because we are using preGenerated parameters.
-            //
-            AsymmetricCipherKeyPair elgKp = elgKpg.GenerateKeyPair();*/
-            PgpKeyPair dsaKeyPair = new PgpKeyPair(DSA.Create(), DateTime.UtcNow);
-            PgpKeyPair elgKeyPair = new PgpKeyPair(ElGamal.Create(1024), DateTime.UtcNow);
-
-            PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, dsaKeyPair,
-                "test", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, false, null, null);
-
-            keyRingGen.AddSubKey(elgKeyPair);
+            var keyRingGen = new PgpKeyRingGenerator(dsa, "test", passPhrase, useSha1: false);
+            keyRingGen.AddSubKey(elGamal);
 
             PgpSecretKeyRing keyRing = keyRingGen.GenerateSecretKeyRing();
 
@@ -2064,20 +2036,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             var passPhrase = "hello";
 
-            //
-            // this is quicker because we are using pregenerated parameters.
-            //
-            PgpKeyPair rsaKeyPair1 = new PgpKeyPair(RSA.Create(), DateTime.UtcNow);
+            var rsa1 = RSA.Create(1024);
+            var rsa2 = RSA.Create(1024);
 
-            PgpKeyPair rsaKeyPair2 = new PgpKeyPair(RSA.Create(), DateTime.UtcNow);
-
-            PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification,
-                rsaKeyPair1, "test", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, false, null, null);
+            PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(rsa1, "test", passPhrase);
             PgpSecretKeyRing secRing1 = keyRingGen.GenerateSecretKeyRing();
             PgpPublicKeyRing pubRing1 = keyRingGen.GeneratePublicKeyRing();
 
-            keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification,
-                rsaKeyPair2, "test", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, false, null, null);
+            keyRingGen = new PgpKeyRingGenerator(rsa2, "test", passPhrase);
             PgpSecretKeyRing secRing2 = keyRingGen.GenerateSecretKeyRing();
             PgpPublicKeyRing pubRing2 = keyRingGen.GeneratePublicKeyRing();
 
@@ -2113,15 +2079,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             var passPhrase = "hello";
 
+            var dsa = DSA.Create(512);
             var elGamal = ElGamal.Create(1024);
 
-            PgpKeyPair dsaKeyPair = new PgpKeyPair(DSA.Create(), DateTime.UtcNow);
-            PgpKeyPair elgKeyPair = new PgpKeyPair(elGamal, DateTime.UtcNow);
-
-            PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, dsaKeyPair,
-                "test", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, true, null, null);
-
-            keyRingGen.AddSubKey(elgKeyPair);
+            var keyRingGen = new PgpKeyRingGenerator(dsa, "test", passPhrase);
+            keyRingGen.AddSubKey(elGamal);
 
             PgpSecretKeyRing keyRing = keyRingGen.GenerateSecretKeyRing();
 
@@ -2377,7 +2339,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             };
             var dsa = DSA.Create(dsaParameters);
 
-            var secretKey = new PgpSecretKey(PgpSignature.PositiveCertification, dsa, DateTime.UtcNow, "boo", PgpSymmetricKeyAlgorithm.Aes128, "", true, null, null);
+            var keyRingGenerator = new PgpKeyRingGenerator(dsa, "boo", "");
+            var secretKey = keyRingGenerator.GenerateSecretKeyRing().GetSecretKey();
             var privateKey = secretKey.ExtractPrivateKey("");
         }
 

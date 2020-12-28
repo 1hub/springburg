@@ -49,16 +49,16 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [Test]
         public void GenerateAndSign()
         {
-            PgpKeyPair ecdsaKeyPair = new PgpKeyPair(ECDsa.Create(ECCurve.NamedCurves.nistP256), DateTime.UtcNow);
-            KeyTestHelper.SignAndVerifyTestMessage(ecdsaKeyPair.PrivateKey, ecdsaKeyPair.PublicKey);
+            var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
 
             // generate a key ring
             string passPhrase = "test";
-            PgpKeyRingGenerator keyRingGen = new PgpKeyRingGenerator(PgpSignature.PositiveCertification, ecdsaKeyPair,
-                "test@bouncycastle.org", PgpSymmetricKeyAlgorithm.Aes256, passPhrase, true, null, null);
+            var keyRingGen = new PgpKeyRingGenerator(ecdsa, "test@bouncycastle.org", passPhrase);
 
             PgpPublicKeyRing pubRing = keyRingGen.GeneratePublicKeyRing();
             PgpSecretKeyRing secRing = keyRingGen.GenerateSecretKeyRing();
+
+            KeyTestHelper.SignAndVerifyTestMessage(secRing.GetSecretKey().ExtractPrivateKey(passPhrase), pubRing.GetPublicKey());
 
             PgpPublicKeyRing pubRingEnc = new PgpPublicKeyRing(pubRing.GetEncoded());
             Assert.AreEqual(pubRing.GetEncoded(), pubRingEnc.GetEncoded(), "public key ring encoding failed");
