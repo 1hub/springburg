@@ -7,7 +7,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
 {
     public class PgpSignedMessageGenerator : PgpMessageGenerator
     {
-        PgpSignatureGenerator signatureGenerator;
+        private PgpSignatureGenerator signatureGenerator;
+        private bool literalDataWritten;
 
         /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
         internal PgpSignedMessageGenerator(IPacketWriter writer, int signatureType, PgpPrivateKey privateKey, PgpHashAlgorithm hashAlgorithm, int version = 4)
@@ -41,7 +42,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             IPacketWriter innerWriter;
             ICryptoTransform hashTransform;
             PgpSignedMessageGenerator generator;
-            bool literalDataWritten;
+            bool nested;
 
             public SigningPacketWriter(IPacketWriter innerWriter, ICryptoTransform hashTransform, PgpSignedMessageGenerator generator)
             {
@@ -52,14 +53,21 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             public IPacketWriter CreateNestedWriter(Stream stream)
             {
-                return new SigningPacketWriter(innerWriter.CreateNestedWriter(stream), hashTransform, generator);
+                return new SigningPacketWriter(innerWriter.CreateNestedWriter(stream), hashTransform, generator) { nested = true };
             }
 
             public void Dispose()
             {
-                Debug.Assert(literalDataWritten);
-                innerWriter.WritePacket(generator.signatureGenerator.Generate());
-                // DO NOT DISPOSE THE INNER WRITER
+                if (nested)
+                {
+                    innerWriter.Dispose();
+                }
+                else
+                {
+                    Debug.Assert(generator.literalDataWritten);
+                    innerWriter.WritePacket(generator.signatureGenerator.Generate());
+                    // DO NOT DISPOSE THE INNER WRITER
+                }
             }
 
             public Stream GetPacketStream(StreamablePacket packet)
@@ -68,7 +76,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 {
                     // TODO: Version 5 signatures
                     var packetStream = innerWriter.GetPacketStream(packet);
-                    literalDataWritten = true;
+                    generator.literalDataWritten = true;
                     return new CryptoStream(packetStream, hashTransform, CryptoStreamMode.Write);
                 }
                 else
