@@ -12,6 +12,7 @@
         public static string Cryptography_Xml_BadWrappedKeySize = "Bad wrapped key size.";
         public static string Cryptography_CSP_NoPrivateKey = "Object contains only the public half of a key pair.A private key must also be provided.";
         public static string Cryptography_HashAlgorithmNameNullOrEmpty = "The hash algorithm name cannot be null or empty.";
+        public static string Cryptography_TlsRequires64ByteSeed = "The TLS key derivation function requires a seed value of exactly 64 bytes.";
         public static string Argument_DestinationTooShort = "Destination is too short.";
     }
 }

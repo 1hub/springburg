@@ -337,7 +337,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         internal static MPInteger EncodePoint(ECPoint point)
         {
-            var pointBytes = new byte[1 + point.X.Length + point.Y.Length];
+            var pointBytes = new byte[1 + point.X!.Length + point.Y!.Length];
             pointBytes[0] = 4;
             Array.Copy(point.X, 0, pointBytes, 1, point.X.Length);
             Array.Copy(point.Y, 0, pointBytes, 1 + point.X.Length, point.Y.Length);

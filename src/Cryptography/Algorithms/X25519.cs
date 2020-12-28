@@ -26,9 +26,6 @@ namespace InflatablePalace.Cryptography.Algorithms
             this.publicKey = NSec.Cryptography.PublicKey.Import(KeyAgreementAlgorithm.X25519, parameters.Q.X, KeyBlobFormat.RawPublicKey);
         }
 
-        // TODO: Implement other key derivation methods:
-        // https://github.com/dotnet/runtime/blob/1d9e50cb4735df46d3de0cee5791e97295eaf588/src/libraries/Common/src/System/Security/Cryptography/ECDiffieHellmanDerivation.cs
-
         public override byte[] DeriveKeyFromHash(ECDiffieHellmanPublicKey otherPartyPublicKey, HashAlgorithmName hashAlgorithm, byte[]? secretPrepend, byte[]? secretAppend)
         {
             if (this.privateKey == null)
@@ -36,29 +33,67 @@ namespace InflatablePalace.Cryptography.Algorithms
             if (string.IsNullOrEmpty(hashAlgorithm.Name))
                 throw new ArgumentException(SR.Cryptography_HashAlgorithmNameNullOrEmpty, nameof(hashAlgorithm));
 
-            using var sharedSecret = KeyAgreementAlgorithm.X25519.Agree(this.privateKey, ((X25519PublicKey)otherPartyPublicKey).publicKey);
+            return ECDiffieHellmanDerivation.DeriveKeyFromHash(otherPartyPublicKey, hashAlgorithm, secretPrepend, secretAppend, DeriveSecretAgreement);
+        }
+
+        public override byte[] DeriveKeyFromHmac(ECDiffieHellmanPublicKey otherPartyPublicKey, HashAlgorithmName hashAlgorithm, byte[]? hmacKey, byte[]? secretPrepend, byte[]? secretAppend)
+        {
+            if (this.privateKey == null)
+                throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
+            if (string.IsNullOrEmpty(hashAlgorithm.Name))
+                throw new ArgumentException(SR.Cryptography_HashAlgorithmNameNullOrEmpty, nameof(hashAlgorithm));
+
+            return ECDiffieHellmanDerivation.DeriveKeyFromHmac(otherPartyPublicKey, hashAlgorithm, hmacKey, secretPrepend, secretAppend, DeriveSecretAgreement);
+        }
+
+        public override byte[] DeriveKeyMaterial(ECDiffieHellmanPublicKey otherPartyPublicKey)
+        {
+            return DeriveKeyFromHash(otherPartyPublicKey, HashAlgorithmName.SHA256, null, null);
+        }
+
+        public override byte[] DeriveKeyTls(ECDiffieHellmanPublicKey otherPartyPublicKey, byte[] prfLabel, byte[] prfSeed)
+        {
+            if (this.privateKey == null)
+                throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
+
+            return ECDiffieHellmanDerivation.DeriveKeyTls(otherPartyPublicKey, prfLabel, prfSeed, DeriveSecretAgreement);
+        }
+
+        private byte[]? DeriveSecretAgreement(ECDiffieHellmanPublicKey otherPartyPublicKey, System.Security.Cryptography.IncrementalHash? hash)
+        {
+            PublicKey otherPartyNSecPublicKey;
+
+            if (otherPartyPublicKey is X25519PublicKey x25519PublicKey)
+            {
+                otherPartyNSecPublicKey = x25519PublicKey.publicKey;
+            }
+            else
+            {
+                var parameters = otherPartyPublicKey.ExportParameters();
+                otherPartyNSecPublicKey = NSec.Cryptography.PublicKey.Import(KeyAgreementAlgorithm.X25519, parameters.Q.X, KeyBlobFormat.RawPublicKey);
+            }
+            
+            Debug.Assert(this.privateKey != null);
+            Debug.Assert(hash != null);
+
+            using var sharedSecret = KeyAgreementAlgorithm.X25519.Agree(this.privateKey, otherPartyNSecPublicKey);
 
             // NSec doesn't offer a way to export the shared secret. Unfortunately it also doesn't provide
             // the correct key derivation function so we have to resort to using the private API.
             var memoryHandle = (SafeHandle?)typeof(SharedSecret).GetProperty("Handle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetMethod?.Invoke(sharedSecret, null);
             Debug.Assert(memoryHandle != null);
             byte[] secretBytes = new byte[32];
-            Marshal.Copy(memoryHandle.DangerousGetHandle(), secretBytes, 0, 32);
-
-            using (var hash = System.Security.Cryptography.IncrementalHash.CreateHash(hashAlgorithm))
+            try
             {
-                if (secretPrepend != null)
-                    hash.AppendData(secretPrepend);
+                Marshal.Copy(memoryHandle.DangerousGetHandle(), secretBytes, 0, 32);
                 hash.AppendData(secretBytes);
-                if (secretAppend != null)
-                    hash.AppendData(secretAppend);
-                
-                return hash.GetHashAndReset();
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(secretBytes);
             }
 
-            // Uses HMAC :/
-            //if (hashAlgorithm == HashAlgorithmName.SHA256)
-            //    return NSec.Cryptography.HkdfSha256.DeriveBytes(sharedSecret, secretAppend, secretAppend, 32);
+            return null;
         }
 
         public override ECParameters ExportParameters(bool includePrivateParameters)

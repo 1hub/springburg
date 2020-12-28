@@ -60,7 +60,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 case PgpPublicKeyAlgorithm.ECDH:
                     ECDiffieHellman ecdhK = (ECDiffieHellman)privKey.Key;
                     var ecdhKParams = ecdhK.ExportParameters(true);
-                    secKey = new ECSecretBcpgKey(new MPInteger(ecdhKParams.Curve.Oid.Value != "1.3.6.1.4.1.3029.1.5.1" ? ecdhKParams.D : ecdhKParams.D.Reverse().ToArray()));
+                    secKey = new ECSecretBcpgKey(new MPInteger(ecdhKParams.Curve.Oid.Value != "1.3.6.1.4.1.3029.1.5.1" ? ecdhKParams.D : ecdhKParams.D!.Reverse().ToArray()));
                     break;
                 case PgpPublicKeyAlgorithm.ECDsa:
                 case PgpPublicKeyAlgorithm.EdDsa:
@@ -201,7 +201,6 @@ namespace InflatablePalace.Cryptography.OpenPgp
             // TODO Factor this block out as 'decryptData'
             try
             {
-                Debug.Assert(secret.S2k != null);
                 byte[] key = PgpUtilities.DoMakeKeyFromPassPhrase(secret.EncAlgorithm, secret.S2k, rawPassPhrase);
                 byte[] iv = secret.GetIV().ToArray();
                 byte[] data;
@@ -372,7 +371,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     var ecParams = new ECParameters
                     {
                         Curve = ecCurve,
-                        D = ExportKeyParameter(ecCurve.Oid.Value != "1.3.6.1.4.1.3029.1.5.1" ? ecdsaPriv.X.Value : ecdsaPriv.X.Value.Reverse().ToArray(), qPoint.X.Length),
+                        D = ExportKeyParameter(ecCurve.Oid.Value != "1.3.6.1.4.1.3029.1.5.1" ? ecdsaPriv.X.Value : ecdsaPriv.X.Value.Reverse().ToArray(), qPoint.X!.Length),
                         Q = qPoint,
                     };
                     privateKey = pubPk.Algorithm == PgpPublicKeyAlgorithm.ECDH ? PgpUtilities.GetECDiffieHellman(ecParams) : ECDsa.Create(ecParams);

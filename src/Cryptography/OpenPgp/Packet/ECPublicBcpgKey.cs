@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Formats.Asn1;
 using System;
 using InflatablePalace.IO;
+using System.Diagnostics;
 
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
@@ -22,6 +23,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             Oid oid,
             MPInteger encodedPoint)
         {
+            Debug.Assert(oid.Value != null);
             this.point = encodedPoint;
             this.oid = oid;
         }
@@ -29,7 +31,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         public override void Encode(Stream bcpgOut)
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
-            writer.WriteObjectIdentifier(this.oid.Value);
+            writer.WriteObjectIdentifier(this.oid.Value!);
             byte[] oid = writer.Encode();
             bcpgOut.Write(oid, 1, oid.Length - 1);
             this.point.Encode(bcpgOut);

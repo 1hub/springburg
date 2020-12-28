@@ -99,7 +99,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 algorithm = PgpPublicKeyAlgorithm.ECDH;
                 bcpgKey = new ECDHPublicBcpgKey(
                     new Oid("1.3.6.1.4.1.3029.1.5.1"),
-                    new MPInteger(new byte[] { 0x40 }.Concat(ecdhKParams.Q.X).ToArray()),
+                    new MPInteger(new byte[] { 0x40 }.Concat(ecdhKParams.Q.X!).ToArray()),
                     PgpHashAlgorithm.Sha256,
                     PgpSymmetricKeyAlgorithm.Aes128);
             }
@@ -116,7 +116,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             else if (pubKey is Ed25519Dsa ed25519K)
             {
                 var ed25519KParams = ed25519K.ExportParameters(false);
-                var pointBytes = new byte[1 + ed25519KParams.Q.X.Length];
+                var pointBytes = new byte[1 + ed25519KParams.Q.X!.Length];
                 pointBytes[0] = 0x40;
                 Array.Copy(ed25519KParams.Q.X, 0, pointBytes, 1, ed25519KParams.Q.X.Length);
                 algorithm = PgpPublicKeyAlgorithm.EdDsa;

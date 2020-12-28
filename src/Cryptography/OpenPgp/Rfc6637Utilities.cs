@@ -22,7 +22,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             ECDHPublicBcpgKey ecKey = (ECDHPublicBcpgKey)pubKeyData.Key;
 
             var writer = new AsnWriter(AsnEncodingRules.DER);
-            writer.WriteObjectIdentifier(ecKey.CurveOid.Value);
+            writer.WriteObjectIdentifier(ecKey.CurveOid.Value!);
             byte[] encOid = writer.Encode();
 
             pOut.Write(encOid, 1, encOid.Length - 1);
