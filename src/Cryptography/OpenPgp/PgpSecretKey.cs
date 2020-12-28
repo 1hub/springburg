@@ -176,7 +176,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             bool useSha1,
             PgpSignatureAttributes hashedPackets,
             PgpSignatureAttributes unhashedPackets)
-            : this(keyPair.PrivateKey, CertifiedPublicKey(certificationLevel, keyPair, id, hashedPackets, unhashedPackets), encAlgorithm, rawPassPhrase, useSha1, true)
+            : this(keyPair.PrivateKey, CertifiedPublicKey(certificationLevel, keyPair, id, hashedPackets, unhashedPackets, PgpHashAlgorithm.Sha1), encAlgorithm, rawPassPhrase, useSha1, true)
         {
         }
 
@@ -213,36 +213,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpKeyPair keyPair,
             string id,
             PgpSignatureAttributes hashedPackets,
-            PgpSignatureAttributes unhashedPackets)
-        {
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(certificationLevel, keyPair.PrivateKey, PgpHashAlgorithm.Sha1);
-
-            // Generate the certification
-
-            sGen.HashedAttributes = hashedPackets;
-            sGen.UnhashedAttributes = unhashedPackets;
-
-            try
-            {
-                PgpSignature certification = sGen.GenerateCertification(id, keyPair.PublicKey);
-                return PgpPublicKey.AddCertification(keyPair.PublicKey, id, certification);
-            }
-            catch (Exception e)
-            {
-                throw new PgpException("Exception doing certification: " + e.Message, e);
-            }
-        }
-
-
-        private static PgpPublicKey CertifiedPublicKey(
-            int certificationLevel,
-            PgpKeyPair keyPair,
-            string id,
-            PgpSignatureAttributes hashedPackets,
             PgpSignatureAttributes unhashedPackets,
             PgpHashAlgorithm hashAlgorithm)
         {
-            PgpSignatureGenerator sGen = new PgpSignatureGenerator(certificationLevel, keyPair.PrivateKey, hashAlgorithm);
+            var userId = new UserIdPacket(id);
+            var sGen = new PgpSignatureGenerator(certificationLevel, keyPair.PrivateKey, hashAlgorithm);
 
             // Generate the certification
             sGen.HashedAttributes = hashedPackets;
@@ -345,10 +320,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public PgpPublicKey PublicKey => pub;
 
         /// <summary>Allows enumeration of any user IDs associated with the key.</summary>
-        public IEnumerable<string> UserIds => pub.GetUserIds();
+        public IEnumerable<PgpUser> UserIds => pub.GetUserIds();
 
         /// <summary>Allows enumeration of any user attribute vectors associated with the key.</summary>
-        public IEnumerable<PgpUserAttributes> UserAttributes => pub.GetUserAttributes();
+        public IEnumerable<PgpUser> UserAttributes => pub.GetUserAttributes();
 
         private byte[] ExtractKeyData(byte[] rawPassPhrase)
         {
@@ -621,51 +596,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public override void Encode(IPacketWriter outStr)
         {
             outStr.WritePacket(secret);
-
             if (pub.trustPk != null)
-            {
                 outStr.WritePacket(pub.trustPk);
-            }
-
-            if (pub.subSigs == null) // is not a sub key
-            {
-                foreach (PgpSignature keySig in pub.keySigs)
-                {
-                    keySig.Encode(outStr);
-                }
-
-                for (int i = 0; i != pub.ids.Count; i++)
-                {
-                    object pubID = pub.ids[i];
-                    if (pubID is string)
-                    {
-                        string id = (string)pubID;
-                        outStr.WritePacket(new UserIdPacket(id));
-                    }
-                    else
-                    {
-                        PgpUserAttributes v = (PgpUserAttributes)pubID;
-                        outStr.WritePacket(new UserAttributePacket(v.ToSubpacketArray()));
-                    }
-
-                    if (pub.idTrusts[i] != null)
-                    {
-                        outStr.WritePacket(pub.idTrusts[i]);
-                    }
-
-                    foreach (PgpSignature sig in (IList)pub.idSigs[i])
-                    {
-                        sig.Encode(outStr);
-                    }
-                }
-            }
-            else
-            {
-                foreach (PgpSignature subSig in pub.subSigs)
-                {
-                    subSig.Encode(outStr);
-                }
-            }
+            foreach (var keySig in pub.keySigs)
+                keySig.Signature.Encode(outStr);
+            foreach (var user in pub.ids)
+                user.Encode(outStr);
         }
 
         /// <summary>

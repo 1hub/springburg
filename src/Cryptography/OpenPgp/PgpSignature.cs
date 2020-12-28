@@ -28,17 +28,17 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public const int Timestamp = 0x40;
 
         private readonly SignaturePacket sigPck;
-        private readonly TrustPacket trustPck;
+        private readonly TrustPacket? trustPck;
 
-        private PgpSignatureAttributes hashedAttributes;
-        private PgpSignatureAttributes unhashedAttributes;
+        private PgpSignatureAttributes? hashedAttributes;
+        private PgpSignatureAttributes? unhashedAttributes;
 
         internal PgpSignature(SignaturePacket sigPacket)
             : this(sigPacket, null)
         {
         }
 
-        internal PgpSignature(SignaturePacket sigPacket, TrustPacket trustPacket)
+        internal PgpSignature(SignaturePacket sigPacket, TrustPacket? trustPacket)
         {
             if (sigPacket == null)
                 throw new ArgumentNullException(nameof(sigPacket));
@@ -71,69 +71,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <summary>The hash algorithm associated with this signature.</summary>
         public PgpHashAlgorithm HashAlgorithm => sigPck.HashAlgorithm;
 
-        /// <summary>Return true if this signature represents a certification.</summary>
-        public bool IsCertification
-        {
-            get
-            {
-                switch (SignatureType)
-                {
-                    case DefaultCertification:
-                    case NoCertification:
-                    case CasualCertification:
-                    case PositiveCertification:
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-        }
-
         public bool Verify(PgpPublicKey publicKey, Stream stream, bool ignoreTrailingWhitespace = false)
         {
             var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace);
             new CryptoStream(stream, helper, CryptoStreamMode.Read).CopyTo(Stream.Null);
             helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
             return publicKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
-        }
-
-        /// <summary>
-        /// Verify the signature as certifying the passed in public key as associated
-        /// with the passed in user attributes.
-        /// </summary>
-        /// <param name="userAttributes">User attributes the key was stored under.</param>
-        /// <param name="key">The key to be verified.</param>
-        /// <returns>True, if the signature matches, false otherwise.</returns>
-        public bool VerifyCertification(
-            PgpPublicKey masterKey,
-            PgpUserAttributes userAttributes,
-            PgpPublicKey key)
-        {
-            var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace: false);
-
-            Debug.Assert(masterKey.KeyId == KeyId);
-
-            helper.UpdateWithPublicKey(key);
-
-            //
-            // hash in the userAttributes
-            //
-            try
-            {
-                MemoryStream bOut = new MemoryStream();
-                foreach (UserAttributeSubpacket packet in userAttributes.ToSubpacketArray())
-                {
-                    packet.Encode(bOut);
-                }
-                helper.UpdateWithIdData(0xd1, bOut.ToArray());
-            }
-            catch (IOException e)
-            {
-                throw new PgpException("cannot encode subpacket array", e);
-            }
-
-            helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
-            return masterKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
         }
 
         /// <summary>
@@ -155,7 +98,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             helper.UpdateWithPublicKey(pubKey);
             helper.UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
 
-            helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
+            helper.Finish(sigPck);
             return masterKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
         }
 
@@ -194,7 +137,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             helper.UpdateWithPublicKey(pubKey);
 
-            helper.Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
+            helper.Finish(sigPck);
             return pubKey.Verify(helper.Hash, sigPck.GetSignature(), helper.HashAlgorithm);
         }
 

@@ -82,7 +82,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             foreach (PgpSecretKeyRing pubRing in GetKeyRings())
             {
-                foreach (string nextUserID in pubRing.GetSecretKey().UserIds)
+                foreach (string nextUserID in pubRing.GetSecretKey().UserIds.Select(u => u.UserId))
                 {
                     if ((matchPartial && nextUserID.IndexOf(userId, comparison) >= 0) ||
                         (!matchPartial && nextUserID.Equals(userId, comparison)))

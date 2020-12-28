@@ -280,11 +280,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 {
                     Assert.IsTrue(pubKey.IsEncryptionKey, "sub key not encryption key!");
 
-                    foreach (PgpSignature certification in pubKeyRing.GetPublicKey().GetSignatures())
+                    var firstUserId = pubKeyRing.GetPublicKey().GetUserIds().FirstOrDefault();
+                    Assert.NotNull(firstUserId);
+                    foreach (var certification in firstUserId.SelfCertifications)
                     {
-                        var firstUserId = pubKeyRing.GetPublicKey().GetUserIds().FirstOrDefault() as string;
-                        Assert.NotNull(firstUserId);
-                        Assert.IsTrue(certification.VerifyCertification(pubKeyRing.GetPublicKey(), firstUserId, pubKeyRing.GetPublicKey()));
+                        Assert.IsTrue(certification.Verify());
                     }
                 }
             }

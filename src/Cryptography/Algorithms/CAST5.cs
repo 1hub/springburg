@@ -17,10 +17,10 @@ namespace InflatablePalace.OpenPGP
             this.Mode = CipherMode.ECB;
         }
 
-        public override ICryptoTransform CreateEncryptor(byte[] key, byte[] iv) =>
+        public override ICryptoTransform CreateEncryptor(byte[] key, byte[]? iv) =>
             ModeHelper.CreateEncryptor(ModeValue, PaddingValue, key, iv, (key, encryption) => new CAST5Transform(key, encryption));
 
-        public override ICryptoTransform CreateDecryptor(byte[] key, byte[] iv) =>
+        public override ICryptoTransform CreateDecryptor(byte[] key, byte[]? iv) =>
             ModeHelper.CreateDecryptor(ModeValue, PaddingValue, key, iv, (key, encryption) => new CAST5Transform(key, encryption));
 
         public override void GenerateIV()

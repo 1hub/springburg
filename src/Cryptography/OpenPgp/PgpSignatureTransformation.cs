@@ -26,6 +26,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             this.ignoreTrailingWhitespace = ignoreTrailingWhitespace;
         }
 
+        public PgpSignatureTransformation(SignaturePacket signaturePacket)
+            : this(signaturePacket.SignatureType, signaturePacket.HashAlgorithm, false)
+        {
+        }
+
         public int SignatureType => signatureType;
 
         public PgpHashAlgorithm HashAlgorithm => hashAlgorithm;
@@ -191,7 +196,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
             sig.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
         }
 
-        public byte[] Hash => sig.Hash;
+        public void Finish(SignaturePacket sigPck)
+        {
+            Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
+        }
+
+        public byte[]? Hash => sig.Hash;
 
         int ICryptoTransform.TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
         {

@@ -12,7 +12,7 @@ namespace InflatablePalace.Cryptography.Algorithms
 {
     public class X25519 : ECDiffieHellman
     {
-        Key privateKey;
+        Key? privateKey;
         PublicKey publicKey;
 
         public X25519()
@@ -29,7 +29,7 @@ namespace InflatablePalace.Cryptography.Algorithms
             this.publicKey = NSec.Cryptography.PublicKey.Import(KeyAgreementAlgorithm.X25519, parameters.Q.X, KeyBlobFormat.RawPublicKey);
         }
 
-        public override byte[] DeriveKeyFromHash(ECDiffieHellmanPublicKey otherPartyPublicKey, HashAlgorithmName hashAlgorithm, byte[] secretPrepend, byte[] secretAppend)
+        public override byte[] DeriveKeyFromHash(ECDiffieHellmanPublicKey otherPartyPublicKey, HashAlgorithmName hashAlgorithm, byte[]? secretPrepend, byte[]? secretAppend)
         {
             using var sharedSecret = KeyAgreementAlgorithm.X25519.Agree(this.privateKey, ((X25519PublicKey)otherPartyPublicKey).publicKey);
 

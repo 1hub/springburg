@@ -7,26 +7,30 @@ namespace InflatablePalace.Cryptography.Algorithms.Modes
     static class ModeHelper
     {
 
-        public static ICryptoTransform CreateEncryptor(CipherMode mode, PaddingMode padding, byte[] key, byte[] iv, Func<byte[], bool, IBlockTransform> createTransform)
+        public static ICryptoTransform CreateEncryptor(CipherMode mode, PaddingMode padding, byte[] key, byte[]? iv, Func<byte[], bool, IBlockTransform> createTransform)
         {
             switch (mode)
             {
                 case CipherMode.ECB:
                     return new UniversalCryptoEncryptor(padding, new ECBMode(createTransform(key, true), 0));
                 case CipherMode.CFB:
+                    if (iv == null)
+                        throw new ArgumentNullException(nameof(iv));
                     return new UniversalCryptoEncryptor(padding, new CFBMode(iv, createTransform(key, true), true, 0));
                 default:
                     throw new CryptographicException(string.Format(SR.Cryptography_CipherModeNotSupported, mode));
             }
         }
 
-        public static ICryptoTransform CreateDecryptor(CipherMode mode, PaddingMode padding, byte[] key, byte[] iv, Func<byte[], bool, IBlockTransform> createTransform)
+        public static ICryptoTransform CreateDecryptor(CipherMode mode, PaddingMode padding, byte[] key, byte[]? iv, Func<byte[], bool, IBlockTransform> createTransform)
         {
             switch (mode)
             {
                 case CipherMode.ECB:
                     return new UniversalCryptoDecryptor(padding, new ECBMode(createTransform(key, false), 0));
                 case CipherMode.CFB:
+                    if (iv == null)
+                        throw new ArgumentNullException(nameof(iv));
                     return new UniversalCryptoDecryptor(padding, new CFBMode(iv, createTransform(key, true), false, 0));
                 default:
                     throw new CryptographicException(string.Format(SR.Cryptography_CipherModeNotSupported, mode));

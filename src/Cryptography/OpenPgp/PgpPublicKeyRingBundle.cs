@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace InflatablePalace.Cryptography.OpenPgp
 {
@@ -81,7 +82,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             foreach (PgpPublicKeyRing pubRing in GetKeyRings())
             {
-                foreach (string nextUserID in pubRing.GetPublicKey().GetUserIds())
+                foreach (string nextUserID in pubRing.GetPublicKey().GetUserIds().Select(u => u.UserId))
                 {
                     if ((matchPartial && nextUserID.IndexOf(userId, comparison) >= 0) ||
                         (!matchPartial && nextUserID.Equals(userId, comparison)))

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using InflatablePalace.Cryptography.OpenPgp;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
@@ -321,7 +322,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
               + "6YD9JpfYZHEFmpYoS+qQ3tLfPCG3gaS/djBZWWkNt5z7e6sbRko49XEj3EUh"
               + "33HgjrOlL8uJNbhlZ5NeILcxHqGTHji+5wMEDBjfNT/C6m0=");
 
-        private void DoTestRemoveSignature()
+        [Test]
+        public void DoTestRemoveSignature()
         {
             byte[] testPubKeyRing =
                 Convert.FromBase64String(
@@ -349,20 +351,28 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             PgpPublicKeyRing pgpPub = new PgpPublicKeyRing(testPubKeyRing);
 
-            foreach (PgpSignature sig in pgpPub.GetPublicKey().GetSignatures())
-            {
-                if (sig.SignatureType == PgpSignature.PositiveCertification)
-                {
-                    PgpPublicKey.RemoveCertification(pgpPub.GetPublicKey(), sig);
-                }
-            }
+            var pubKey = pgpPub.GetPublicKey();
+            Assert.AreEqual(0, pubKey.KeyCertifications.Count);
+
+            var firstUserId = pubKey.GetUserIds().FirstOrDefault();
+            Assert.NotNull(firstUserId);
+            Assert.AreEqual(1, firstUserId.SelfCertifications.Count);
+            Assert.AreEqual(0, firstUserId.OtherCertifications.Count);
+            Assert.AreEqual(0, firstUserId.RevocationSignatures.Count);
+
+            Assert.AreEqual(PgpSignature.PositiveCertification, firstUserId.SelfCertifications[0].Signature.SignatureType);
+
+            var newPubKey = PgpPublicKey.RemoveCertification(pubKey, firstUserId, firstUserId.SelfCertifications[0]);
+            firstUserId = newPubKey.GetUserIds().FirstOrDefault();
+            Assert.NotNull(firstUserId);
+            Assert.AreEqual(0, firstUserId.SelfCertifications.Count);
+            Assert.AreEqual(0, firstUserId.OtherCertifications.Count);
+            Assert.AreEqual(0, firstUserId.RevocationSignatures.Count);
         }
 
         [Test]
         public void PerformTest()
         {
-            DoTestRemoveSignature();
-
             //
             // RSA tests
             //

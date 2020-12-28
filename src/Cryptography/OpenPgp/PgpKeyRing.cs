@@ -7,75 +7,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
 {
     public abstract class PgpKeyRing : PgpEncodable
     {
-        private static TrustPacket ReadOptionalTrustPacket(PacketReader packetReader)
-        {
-            return packetReader.NextPacketTag() == PacketTag.Trust ? (TrustPacket)packetReader.ReadContainedPacket() : null;
-        }
-
-        private static IList<PgpSignature> ReadSignaturesAndTrust(PacketReader packetReader)
-        {
-            try
-            {
-                IList<PgpSignature> sigList = new List<PgpSignature>();
-
-                while (packetReader.NextPacketTag() == PacketTag.Signature)
-                {
-                    SignaturePacket signaturePacket = (SignaturePacket)packetReader.ReadContainedPacket();
-                    TrustPacket trustPacket = ReadOptionalTrustPacket(packetReader);
-                    sigList.Add(new PgpSignature(signaturePacket, trustPacket));
-                }
-
-                return sigList;
-            }
-            catch (PgpException e)
-            {
-                throw new IOException("can't create signature object: " + e.Message, e);
-            }
-        }
-
         private protected static PgpPublicKey ReadPublicKey(
             PacketReader packetReader,
             PublicKeyPacket publicKeyPacket,
             bool subKey = false)
         {
-            // Ignore GPG comment packets if found.
-            while (packetReader.NextPacketTag() == PacketTag.Experimental2)
-            {
-                packetReader.ReadContainedPacket();
-            }
-
-            TrustPacket trust = ReadOptionalTrustPacket(packetReader);
-            var keySigs = ReadSignaturesAndTrust(packetReader); // Revocation and direct signatures
-
-            if (subKey)
-            {
-                return new PgpPublicKey(publicKeyPacket, trust, keySigs);
-            }
-
-            var ids = new List<object>();
-            var idTrusts = new List<TrustPacket>();
-            var idSigs = new List<IList<PgpSignature>>();
-
-            while (packetReader.NextPacketTag() == PacketTag.UserId
-                || packetReader.NextPacketTag() == PacketTag.UserAttribute)
-            {
-                var obj = packetReader.ReadContainedPacket();
-                if (obj is UserIdPacket)
-                {
-                    UserIdPacket id = (UserIdPacket)obj;
-                    ids.Add(id.GetId());
-                }
-                else
-                {
-                    UserAttributePacket user = (UserAttributePacket)obj;
-                    ids.Add(new PgpUserAttributes(user.GetSubpackets()));
-                }
-
-                idTrusts.Add(ReadOptionalTrustPacket(packetReader));
-                idSigs.Add(ReadSignaturesAndTrust(packetReader));
-            }
-
-            return new PgpPublicKey(publicKeyPacket, trust, keySigs, ids, idTrusts, idSigs);
+            return new PgpPublicKey(packetReader, publicKeyPacket, subKey);
         }
 
         private protected static void InsertKey<T>(

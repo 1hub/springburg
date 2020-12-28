@@ -10,6 +10,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
     /// <summary>Container for a list of user attribute subpackets.</summary>
     public class PgpUserAttributes
     {
+        private readonly UserAttributeSubpacket[] orginalPackets;
         private readonly IDictionary<UserAttributeSubpacketTag, UserAttributeSubpacket> packets;
 
         public PgpUserAttributes()
@@ -19,6 +20,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         internal PgpUserAttributes(UserAttributeSubpacket[] packets)
         {
+            this.orginalPackets = packets;
             this.packets = new ReadOnlyDictionary<UserAttributeSubpacketTag, UserAttributeSubpacket>(packets.ToDictionary(s => s.SubpacketType));
         }
 
@@ -40,21 +42,21 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         internal UserAttributeSubpacket[] ToSubpacketArray()
         {
-            return packets.Values.ToArray();
+            return orginalPackets ?? packets.Values.ToArray();
         }
 
         public override bool Equals(object obj)
         {
-            if (Equals(obj, this))
+            if (ReferenceEquals(obj, this))
                 return true;
             if (obj is PgpUserAttributes other)
-                return packets.Values.SequenceEqual(other.packets.Values);
+                return ToSubpacketArray().SequenceEqual(other.ToSubpacketArray());
             return false;
         }
 
         public override int GetHashCode()
         {
-            return packets.Values.Aggregate(0, (h, p) => HashCode.Combine(h, p.GetHashCode()));
+            return ToSubpacketArray().Aggregate(0, (h, p) => HashCode.Combine(h, p.GetHashCode()));
         }
     }
 }

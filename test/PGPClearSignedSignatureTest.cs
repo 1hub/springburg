@@ -251,7 +251,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             using (var messageGenerator = new PgpMessageGenerator(new ArmoredPacketWriter(bOut)))
             using (var signedGenerator = messageGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, pgpPrivKey, PgpHashAlgorithm.Sha256))
             {
-                signedGenerator.HashedAttributes.SetSignerUserId(false, pgpSecKey.PublicKey.GetUserIds().First());
+                signedGenerator.HashedAttributes.SetSignerUserId(false, pgpSecKey.PublicKey.GetUserIds().First().UserId);
                 using (var literalStream = signedGenerator.CreateLiteral(PgpDataFormat.Text, "", DateTime.MinValue))
                 {
                     literalStream.Write(Encoding.UTF8.GetBytes(message));

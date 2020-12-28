@@ -1,9 +1,7 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
-using InflatablePalace.Cryptography.OpenPgp.Packet.Signature;
 
 namespace InflatablePalace.Cryptography.OpenPgp
 {
@@ -76,7 +74,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         }
 
         /// <summary>Return a signature object containing the current signature state.</summary>
-        internal PgpSignature Generate()
+        internal SignaturePacket Generate()
         {
             DateTime creationTime = DateTime.UtcNow;
 
@@ -107,12 +105,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 hashedPackets);
 
             var signature = privateKey.Sign(helper.Hash, helper.HashAlgorithm);
-            return new PgpSignature(new SignaturePacket(
+            return new SignaturePacket(
                 version, helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
                 hashAlgorithm, creationTime,
                 hashedPackets,
                 unhashedAttributes == null ? Array.Empty<SignatureSubpacket>() : unhashedAttributes.ToSubpacketArray(),
-                helper.Hash.AsSpan(0, 2).ToArray(), signature));
+                helper.Hash.AsSpan(0, 2).ToArray(), signature);
         }
 
         /// <summary>Generate a certification for the passed in ID and key.</summary>
@@ -123,7 +121,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
             this.helper.UpdateWithPublicKey(pubKey);
             this.helper.UpdateWithIdData(0xb4, Encoding.UTF8.GetBytes(id));
-            return Generate();
+            return new PgpSignature(Generate());
         }
 
         /// <summary>Generate a certification for the passed in userAttributes.</summary>
@@ -153,7 +151,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 throw new PgpException("cannot encode subpacket array", e);
             }
 
-            return Generate();
+            return new PgpSignature(Generate());
         }
 
         /// <summary>Generate a certification for the passed in key against the passed in master key.</summary>
@@ -166,7 +164,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
             this.helper.UpdateWithPublicKey(masterKey);
             this.helper.UpdateWithPublicKey(pubKey);
-            return Generate();
+            return new PgpSignature(Generate());
         }
 
         /// <summary>Generate a certification, such as a revocation, for the passed in key.</summary>
@@ -175,7 +173,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         public PgpSignature GenerateRevokation(PgpPublicKey pubKey)
         {
             this.helper.UpdateWithPublicKey(pubKey);
-            return Generate();
+            return new PgpSignature(Generate());
         }
     }
 }

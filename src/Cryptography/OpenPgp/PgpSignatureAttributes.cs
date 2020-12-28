@@ -9,6 +9,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 {
     public class PgpSignatureAttributes
     {
+        private SignatureSubpacket[] orginalSubpackets;
         private IDictionary<SignatureSubpacketTag, SignatureSubpacket> subpackets;
         private IList<NotationData> notations;
 
@@ -20,6 +21,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         internal PgpSignatureAttributes(SignatureSubpacket[] subpackets)
         {
+            this.orginalSubpackets = subpackets;
             // FIXME: How to handle duplicate attributes?
             this.subpackets = new ReadOnlyDictionary<SignatureSubpacketTag, SignatureSubpacket>(subpackets.Where(s => s.SubpacketType != SignatureSubpacketTag.NotationData).ToDictionary(s => s.SubpacketType));
             this.notations = subpackets.OfType<NotationData>().ToList().AsReadOnly() ;
@@ -322,6 +324,8 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         internal SignatureSubpacket[] ToSubpacketArray()
         {
+            if (orginalSubpackets != null)
+                return orginalSubpackets;
             return subpackets.Values.Concat(notations).ToArray();
         }
     }

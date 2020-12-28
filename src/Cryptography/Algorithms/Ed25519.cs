@@ -9,7 +9,7 @@ namespace InflatablePalace.Cryptography.Algorithms
 {
     public class Ed25519 : ECDsa
     {
-        Key privateKey;
+        Key? privateKey;
         PublicKey publicKey;
 
         public Ed25519()

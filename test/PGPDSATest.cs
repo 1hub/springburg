@@ -290,7 +290,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
             using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, pgpPrivKey, PgpHashAlgorithm.Sha1))
             {
-                signingGenerator.HashedAttributes.SetSignerUserId(true, secretKey.PublicKey.GetUserIds().First());
+                signingGenerator.HashedAttributes.SetSignerUserId(true, secretKey.PublicKey.GetUserIds().First().UserId);
                 using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
                 {
                     literalStream.Write(dataBytes);
@@ -378,19 +378,13 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var pubKey = pgpPub.GetPublicKey();
 
             int count = 0;
-            foreach (PgpUserAttributes attributes in pubKey.GetUserAttributes())
+            foreach (PgpUser attributes in pubKey.GetUserAttributes())
             {
-                int sigCount = 0;
-                foreach (object sigs in pubKey.GetSignaturesForUserAttribute(attributes))
-                {
-                    Assert.NotNull(sigs);
-                    sigCount++;
-                }
-
-                Assert.AreEqual(1, sigCount);
+                Assert.AreEqual(1, attributes.SelfCertifications.Count);
+                Assert.AreEqual(0, attributes.OtherCertifications.Count);
+                Assert.AreEqual(0, attributes.RevocationSignatures.Count);
                 count++;
             }
-
             Assert.AreEqual(1, count);
 
             byte[] pgpPubBytes = pgpPub.GetEncoded();

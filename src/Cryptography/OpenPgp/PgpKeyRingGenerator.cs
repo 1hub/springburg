@@ -1,8 +1,6 @@
 using InflatablePalace.Cryptography.OpenPgp.Packet;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace InflatablePalace.Cryptography.OpenPgp
@@ -273,6 +271,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
                 pgpSecretKey = enumerator.Current;
 
                 PgpPublicKey k = new PgpPublicKey(pgpSecretKey.PublicKey);
+                k.subKey = true;
                 k.publicPk = new PublicSubkeyPacket(k.Algorithm, k.CreationTime, k.PublicKeyPacket.Key);
 
                 pubKeys.Add(k);

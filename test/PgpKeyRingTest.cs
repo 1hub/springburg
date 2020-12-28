@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using InflatablePalace.Cryptography.Algorithms;
 using InflatablePalace.Cryptography.OpenPgp;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
+using NuGet.Frameworks;
 using NUnit.Framework;
 using Org.BouncyCastle.Utilities.Test;
 
@@ -1360,10 +1362,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 {
                     keyCount++;
 
-                    foreach (PgpSignature sig in pubKey.GetSignatures())
+                    /*foreach (PgpSignature sig in pubKey.GetSignatures())
                     {
                         Assert.NotNull(sig);
-                    }
+                    }*/
                 }
 
                 Assert.AreEqual(2, keyCount);
@@ -1437,7 +1439,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     keyCount++;
                     PgpPublicKey pk = k.PublicKey;
 
-                    pk.GetSignatures();
+                    //pk.GetSignatures();
 
                     byte[] pkBytes = pk.GetEncoded();
 
@@ -1590,25 +1592,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
                     if (pk.KeyId == -1413891222336124627L)
                     {
-                        int sCount = 0;
-
-                        foreach (PgpSignature pgpSignature in pk.GetSignaturesOfType(PgpSignature.SubkeyBinding))
-                        {
-                            int type = pgpSignature.SignatureType;
-                            if (type != PgpSignature.SubkeyBinding)
-                            {
-                                Fail("failed to return correct signature type");
-                            }
-                            sCount++;
-                        }
-
-                        if (sCount != 1)
-                        {
-                            Fail("failed to find binding signature");
-                        }
+                        Assert.AreEqual(1, pk.KeyCertifications.Count);
+                        Assert.AreEqual(PgpSignature.SubkeyBinding, pk.KeyCertifications[0].Signature.SignatureType);
                     }
 
-                    pk.GetSignatures();
+                    //pk.GetSignatures();
 
                     if (k.KeyId == -4049084404703773049L
                         || k.KeyId == -1413891222336124627L)
@@ -1622,10 +1610,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     }
                 }
 
-                if (keyCount != 2)
-                {
-                    Fail("wrong number of secret keys");
-                }
+                Assert.AreEqual(2, keyCount);
             }
 
             if (count != 2)
@@ -1658,7 +1643,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 foreach (PgpPublicKey pubK in pgpPub2.GetPublicKeys())
                 {
                     keyCount++;
-                    pubK.GetSignatures();
+                    //pubK.GetSignatures();
                 }
 
                 if (keyCount != 2)
@@ -1824,100 +1809,28 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         }
 
         [Test]
-        public void PerformTest6()
-        {
-            PgpPublicKeyRingBundle pubRings = new PgpPublicKeyRingBundle(pub6);
-
-            foreach (PgpPublicKeyRing pgpPub in pubRings.GetKeyRings())
-            {
-                foreach (PgpPublicKey k in pgpPub.GetPublicKeys())
-                {
-                    if (k.KeyId == 0x5ce086b5b5a18ff4L)
-                    {
-                        int count = 0;
-
-                        foreach (PgpSignature sig in k.GetSignaturesOfType(PgpSignature.SubkeyRevocation))
-                        {
-                            if (sig == null)
-                                Fail("null signature found");
-
-                            count++;
-                        }
-
-                        if (count != 1)
-                        {
-                            Fail("wrong number of revocations in test6.");
-                        }
-                    }
-                }
-            }
-
-            byte[] encRing = pubRings.GetEncoded();
-        }
-
-        [Test]
         public void TestRevocation()
         {
             PgpPublicKeyRing pgpPub = new PgpPublicKeyRing(pub7);
-            PgpPublicKey masterKey = null;
 
-            foreach (PgpPublicKey k in pgpPub.GetPublicKeys())
-            {
-                if (k.IsMasterKey)
-                {
-                    masterKey = k;
-                }
-            }
+            PgpPublicKey masterKey = pgpPub.GetPublicKeys().Where(k => k.IsMasterKey).FirstOrDefault();
+            Assert.NotNull(masterKey);
 
-            int count = 0;
-            PgpSignature sig = null;
-            foreach (PgpSignature pgpSig in masterKey.GetSignaturesOfType(PgpSignature.KeyRevocation))
-            {
-                sig = pgpSig;
-                ++count;
-            }
-
-            if (count != 1)
-            {
-                Fail("wrong number of revocations in test7.");
-            }
-
-            Assert.IsTrue(sig.VerifyRevocation(masterKey));
+            var keyRevocation = masterKey.KeyCertifications.Where(c => c.Signature.SignatureType == PgpSignature.KeyRevocation).FirstOrDefault();
+            Assert.NotNull(keyRevocation);
+            Assert.AreEqual(1, masterKey.KeyCertifications.Where(c => c.Signature.SignatureType == PgpSignature.KeyRevocation).Count());
+            Assert.IsTrue(keyRevocation.Verify(masterKey));
 
             pgpPub = new PgpPublicKeyRing(pub7sub);
-            masterKey = null;
+            masterKey = pgpPub.GetPublicKeys().Where(k => k.IsMasterKey).FirstOrDefault();
+            Assert.NotNull(masterKey);
 
-            foreach (PgpPublicKey k in pgpPub.GetPublicKeys())
+            foreach (PgpPublicKey k in pgpPub.GetPublicKeys().Where(k => !k.IsMasterKey))
             {
-                if (k.IsMasterKey)
-                {
-                    masterKey = k;
-                    continue;
-                }
-
-                count = 0;
-                sig = null;
-
-                foreach (PgpSignature pgpSig in k.GetSignaturesOfType(PgpSignature.SubkeyRevocation))
-                {
-                    sig = pgpSig;
-                    ++count;
-                }
-
-                if (count != 1)
-                {
-                    Fail("wrong number of revocations in test7 subkey.");
-                }
-
-                if (sig.SignatureType != PgpSignature.SubkeyRevocation)
-                {
-                    Fail("wrong signature found");
-                }
-
-                if (!sig.VerifyCertification(masterKey, k))
-                {
-                    Fail("failed to verify revocation certification of subkey");
-                }
+                var revocation = k.KeyCertifications.Where(c => c.Signature.SignatureType == PgpSignature.SubkeyRevocation).FirstOrDefault();
+                Assert.NotNull(revocation);
+                Assert.AreEqual(1, k.KeyCertifications.Where(c => c.Signature.SignatureType == PgpSignature.SubkeyRevocation).Count());
+                Assert.IsTrue(revocation.Verify(masterKey));
             }
         }
 
@@ -2140,14 +2053,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 }
             }
 
-            foreach (PgpSignature sig in sKey.GetSignatures())
-            {
-                if (sig.KeyId == vKey.KeyId
-                    && sig.SignatureType == PgpSignature.SubkeyBinding)
-                {
-                    Assert.IsTrue(sig.VerifyCertification(vKey, sKey));
-                }
-            }
+            Assert.AreEqual(1, sKey.KeyCertifications.Count);
+            Assert.AreEqual(vKey.KeyId, sKey.KeyCertifications[0].KeyId);
+            Assert.AreEqual(PgpSignature.SubkeyBinding, sKey.KeyCertifications[0].Signature.SignatureType);
+            Assert.IsTrue(sKey.KeyCertifications[0].Verify(vKey));
         }
 
         [Test]
@@ -2235,14 +2144,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 }
             }
 
-            foreach (PgpSignature sig in sKey.GetSignatures())
-            {
-                if (sig.KeyId == vKey.KeyId
-                    && sig.SignatureType == PgpSignature.SubkeyBinding)
-                {
-                    Assert.IsTrue(sig.VerifyCertification(vKey, sKey));
-                }
-            }
+            Assert.AreEqual(1, sKey.KeyCertifications.Count);
+            Assert.AreEqual(vKey.KeyId, sKey.KeyCertifications[0].KeyId);
+            Assert.AreEqual(PgpSignature.SubkeyBinding, sKey.KeyCertifications[0].Signature.SignatureType);
+            Assert.IsTrue(sKey.KeyCertifications[0].Verify(vKey));
         }
 
         [Test]
@@ -2403,36 +2308,17 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             }
         }
 
-        private void checkPublicKeyRingWithX509(
-            byte[] keyRing)
+        private void checkPublicKeyRingWithX509(byte[] keyRing)
         {
             PgpPublicKeyRing pubRing = new PgpPublicKeyRing(keyRing);
-            IEnumerator en = pubRing.GetPublicKeys().GetEnumerator();
-
-            if (en.MoveNext())
-            {
-                PgpPublicKey key = (PgpPublicKey)en.Current;
-
-                IEnumerator sEn = key.GetSignatures().GetEnumerator();
-
-                if (sEn.MoveNext())
-                {
-                    PgpSignature sig = (PgpSignature)sEn.Current;
-                    if (sig.KeyAlgorithm != (PgpPublicKeyAlgorithm)100)
-                    {
-                        Fail("experimental signature not found");
-                    }
-                    Assert.AreEqual(new byte[] { 0, 1, 1 }, sig.GetSignature(), "experimental encoding check failed");
-                }
-                else
-                {
-                    Fail("no signature found");
-                }
-            }
-            else
-            {
-                Fail("no key found");
-            }
+            var firstPublicKey = pubRing.GetPublicKeys().FirstOrDefault();
+            Assert.NotNull(firstPublicKey);
+            var firstUserId = firstPublicKey.GetUserIds().FirstOrDefault();
+            Assert.NotNull(firstUserId);
+            Assert.AreEqual(1, firstUserId.OtherCertifications.Count);
+            // Experimental signature
+            Assert.AreEqual((PgpPublicKeyAlgorithm)100, firstUserId.OtherCertifications[0].Signature.KeyAlgorithm);
+            Assert.AreEqual(new byte[] { 0, 1, 1 }, firstUserId.OtherCertifications[0].Signature.GetSignature());
         }
 
         [Test]
@@ -2469,9 +2355,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpPublicKey masterpk = pkr.GetPublicKey();
 
             // Check userids
-            foreach (string uid in masterpk.GetUserIds())
+            foreach (var userId in masterpk.GetUserIds())
             {
-                CheckUidSig(masterpk, uid);
+                foreach (var selfCertification in userId.SelfCertifications)
+                    Assert.IsTrue(selfCertification.Verify());
+                foreach (var otherCertification in userId.OtherCertifications)
+                    Assert.IsTrue(otherCertification.Verify(masterpk));
             }
         }
 
@@ -2490,22 +2379,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             var secretKey = new PgpSecretKey(PgpSignature.PositiveCertification, dsa, DateTime.UtcNow, "boo", PgpSymmetricKeyAlgorithm.Aes128, "", true, null, null);
             var privateKey = secretKey.ExtractPrivateKey("");
-        }
-
-        private void CheckUidSig(PgpPublicKey pk, string uid)
-        {
-            foreach (PgpSignature sig in pk.GetSignaturesForId(uid))
-            {
-                if (!IsGoodUidSignature(sig, pk, uid))
-                {
-                    Fail("Bad self-signature found for '" + uid + "'");
-                }
-            }
-        }
-
-        private static bool IsGoodUidSignature(PgpSignature sig, PgpPublicKey masterpk, string uid)
-        {
-            return sig.VerifyCertification(masterpk, uid, masterpk);
         }
 
         private static void Fail(string f) => Assert.Fail(f);

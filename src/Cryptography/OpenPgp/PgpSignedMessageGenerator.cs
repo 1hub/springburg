@@ -58,7 +58,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             public void Dispose()
             {
                 Debug.Assert(literalDataWritten);
-                generator.signatureGenerator.Generate().Encode(innerWriter);
+                innerWriter.WritePacket(generator.signatureGenerator.Generate());
                 // DO NOT DISPOSE THE INNER WRITER
             }
 
