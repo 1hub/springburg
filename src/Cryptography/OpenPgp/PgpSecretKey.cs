@@ -544,24 +544,13 @@ namespace Springburg.Cryptography.OpenPgp
                     s2kUsage = S2kUsageTag.Checksum;
                 }
 
-                try
+                if (pubKeyPacket.Version >= 4)
                 {
-                    if (pubKeyPacket.Version >= 4)
-                    {
-                        keyData = EncryptKeyDataV4(rawKeyData, newEncAlgorithm, PgpHashAlgorithm.Sha1, rawNewPassPhrase, out s2k, out iv);
-                    }
-                    else
-                    {
-                        keyData = EncryptKeyDataV3(rawKeyData, newEncAlgorithm, rawNewPassPhrase, out s2k, out iv);
-                    }
+                    keyData = EncryptKeyDataV4(rawKeyData, newEncAlgorithm, PgpHashAlgorithm.Sha1, rawNewPassPhrase, out s2k, out iv);
                 }
-                catch (PgpException e)
+                else
                 {
-                    throw e;
-                }
-                catch (Exception e)
-                {
-                    throw new PgpException("Exception encrypting key", e);
+                    keyData = EncryptKeyDataV3(rawKeyData, newEncAlgorithm, rawNewPassPhrase, out s2k, out iv);
                 }
             }
 
