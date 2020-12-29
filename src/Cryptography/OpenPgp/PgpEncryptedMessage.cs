@@ -46,7 +46,9 @@ namespace Springburg.Cryptography.OpenPgp
             var packet = packetReader.ReadStreamablePacket();
             if (!(packet.Packet is SymmetricEncDataPacket) &&
                 !(packet.Packet is SymmetricEncIntegrityPacket))
-                throw new IOException("unexpected packet in stream: " + packet);
+            {
+                throw new PgpUnexpectedPacketException();
+            }
 
             this.encryptedPacket = packet.Packet;
             this.inputStream = packet.Stream;

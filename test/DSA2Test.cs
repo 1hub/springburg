@@ -58,8 +58,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             PgpPublicKeyRing publicKey = loadPublicKey(publicKeyFile);
 
-            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(loadSig(sigFile));
-            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(loadSig(sigFile));
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             literalMessage.GetStream().CopyTo(Stream.Null);
             Assert.IsTrue(signedMessage.Verify(publicKey.GetPublicKey()));

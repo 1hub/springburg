@@ -6,17 +6,17 @@ namespace Springburg.Cryptography.OpenPgp
 {
     public abstract class PgpMessage
     {
-        public static PgpMessage ReadMessage(byte[] data)
+        public static PgpMessage ReadMessage(byte[] data, bool automaticallyDecompress = true)
         {
-            return ReadMessage(new PacketReader(new MemoryStream(data, false)));
+            return ReadMessage(new PacketReader(new MemoryStream(data, false)), automaticallyDecompress);
         }
 
-        public static PgpMessage ReadMessage(Stream stream)
+        public static PgpMessage ReadMessage(Stream stream, bool automaticallyDecompress = true)
         {
-            return ReadMessage(new PacketReader(stream));
+            return ReadMessage(new PacketReader(stream), automaticallyDecompress);
         }
 
-        public static PgpMessage ReadMessage(IPacketReader packetReader)
+        public static PgpMessage ReadMessage(IPacketReader packetReader, bool automaticallyDecompress = true)
         {
             // Skip over marker packets
             while (IsSkippablePacket(packetReader.NextPacketTag()))
@@ -31,7 +31,10 @@ namespace Springburg.Cryptography.OpenPgp
                     return new PgpSignedMessage(packetReader);
 
                 case PacketTag.CompressedData:
-                    return new PgpCompressedMessage(packetReader);
+                    var compressedMessage = new PgpCompressedMessage(packetReader);
+                    if (automaticallyDecompress)
+                        return compressedMessage.ReadMessage();
+                    return compressedMessage;
 
                 case PacketTag.LiteralData:
                     return new PgpLiteralMessage(packetReader);

@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography;
 
 namespace Springburg.Cryptography.OpenPgp

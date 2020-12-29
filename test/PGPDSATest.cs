@@ -298,8 +298,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             }
 
             bOut.Position = 0;
-            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(bOut);
-            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(bOut);
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             literalMessage.GetStream().CopyTo(Stream.Null);
             Assert.IsTrue(signedMessage.Verify(pubKey));
@@ -323,8 +322,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Verify generated signature
             bOut.Position = 0;
-            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(bOut);
-            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(bOut);
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             Assert.AreEqual(testDateTime, literalMessage.ModificationTime);
             literalMessage.GetStream().CopyTo(Stream.Null);
@@ -334,8 +332,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [Test]
         public void VerifyMessage()
         {
-            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(sig1);
-            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(sig1);
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             literalMessage.GetStream().CopyTo(Stream.Null);
             Assert.IsTrue(signedMessage.Verify(pubKey));

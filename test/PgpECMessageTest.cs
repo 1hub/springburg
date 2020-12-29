@@ -78,8 +78,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false), "test", publicKey);
             var privateKey = secretKey.ExtractPrivateKey("");
 
-            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(privateKey);
-            var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(privateKey);
             Assert.AreEqual("test.txt", literalMessage.FileName);
         }
 
@@ -93,8 +92,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var secretKey = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKeySub, false), "test", publicKey);
             var privateKey = secretKey.ExtractPrivateKey("");
 
-            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(privateKey);
-            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var signedMessage = (PgpSignedMessage)encryptedMessage.DecryptMessage(privateKey);
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             Assert.AreEqual("test.txt", literalMessage.FileName);
             literalMessage.GetStream().CopyTo(Stream.Null);

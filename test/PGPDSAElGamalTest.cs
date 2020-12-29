@@ -106,8 +106,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Verify generated signature
             bOut.Position = 0;
-            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(bOut);
-            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(bOut);
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             Assert.AreEqual(testDateTime, literalMessage.ModificationTime);
             literalMessage.GetStream().CopyTo(Stream.Null);
@@ -120,8 +119,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var secretKey = FindSuitableKeyForEncryption();
             var privateKey = secretKey.ExtractPrivateKey(pass);
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(encMessage);
-            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(privateKey);
-            var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(privateKey);
             Assert.AreEqual("test.txt", literalMessage.FileName);
             byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
             Assert.AreEqual(text, bytes);
@@ -135,8 +133,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var secretKey = FindSuitableKeyForEncryption();
             var privateKey = secretKey.ExtractPrivateKey(pass);
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(signedAndEncMessage);
-            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(privateKey);
-            var signedMessage = (PgpSignedMessage)compressedMessage.ReadMessage();
+            var signedMessage = (PgpSignedMessage)encryptedMessage.DecryptMessage(privateKey);
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             Assert.AreEqual("test.txt", literalMessage.FileName);
             var bytes = Streams.ReadAll(literalMessage.GetStream());

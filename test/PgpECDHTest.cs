@@ -215,8 +215,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var secretKey = secretKeyRing.GetSecretKey(0x6c37367cd2f455c5);
             var pgpPrivKey = secretKey.ExtractPrivateKey("test");
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(testX25519Message);
-            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(pgpPrivKey);
-            var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(pgpPrivKey);
             byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
             Assert.AreEqual(Encoding.ASCII.GetBytes("hello world!"), bytes);
         }

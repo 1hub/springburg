@@ -28,8 +28,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             // Read it back
             bOut.Position = 0;
-            var compressedMessage = (PgpCompressedMessage)PgpMessage.ReadMessage(bOut);
-            var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)PgpMessage.ReadMessage(bOut);
             byte[] bytes = Streams.ReadAll(literalMessage.GetStream());
             Assert.That(bytes, Is.EqualTo(Data));
         }

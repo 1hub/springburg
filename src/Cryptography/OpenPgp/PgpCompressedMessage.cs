@@ -57,7 +57,7 @@ namespace Springburg.Cryptography.OpenPgp
 
         public PgpMessage ReadMessage()
         {
-            return ReadMessage(packetReader.CreateNestedReader(GetDataStream()));
+            return ReadMessage(packetReader.CreateNestedReader(GetDataStream()), automaticallyDecompress: false);
         }
     }
 }

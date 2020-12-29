@@ -37,8 +37,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         private byte[] DecryptMessage(byte[] message)
         {
             var encryptedMessage = (PgpEncryptedMessage)PgpMessage.ReadMessage(message);
-            var compressedMessage = (PgpCompressedMessage)encryptedMessage.DecryptMessage(pass);
-            var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)encryptedMessage.DecryptMessage(pass);
             Assert.IsTrue(literalMessage.FileName.Equals("test.txt") || literalMessage.FileName.Equals("_CONSOLE"));
             Assert.AreEqual(TestDateTime, literalMessage.ModificationTime);
             byte[] bytes = Streams.ReadAll(literalMessage.GetStream());

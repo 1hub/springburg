@@ -31,8 +31,7 @@ namespace Springburg.Test
 
             encodedStream.Position = 0;
             var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(encodedStream);
-            var compressedMessage = (PgpCompressedMessage)signedMessage.ReadMessage();
-            var literalMessage = (PgpLiteralMessage)compressedMessage.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             // Skip over literal data
             literalMessage.GetStream().CopyTo(Stream.Null);
             Assert.IsTrue(signedMessage.Verify(keyPair.PublicKey));
