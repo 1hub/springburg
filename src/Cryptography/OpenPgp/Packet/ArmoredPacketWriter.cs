@@ -17,7 +17,7 @@ namespace Springburg.Cryptography.OpenPgp.Packet
         private Stream? base64OutputStream;
         private bool useClearText;
         private bool inClearText;
-        private List<string> hashHeaders;
+        private List<string>? hashHeaders;
         private string? type;
 
         public ArmoredPacketWriter(Stream stream, bool useClearText = true)
@@ -51,7 +51,7 @@ namespace Springburg.Cryptography.OpenPgp.Packet
 
             if (inClearText)
             {
-                if (packet is LiteralDataPacket)
+                if (packet is LiteralDataPacket && hashHeaders != null)
                 {
                     this.stream.Write(Encoding.ASCII.GetBytes("-----BEGIN PGP SIGNED MESSAGE-----\r\n"));
                     this.stream.Write(Encoding.ASCII.GetBytes("Hash: " + String.Join(", ", hashHeaders) + "\r\n\r\n"));
@@ -110,7 +110,7 @@ namespace Springburg.Cryptography.OpenPgp.Packet
             }
 
             stream.Write(Encoding.ASCII.GetBytes("-----BEGIN PGP " + type + "-----\r\n"));
-            stream.Write(Encoding.ASCII.GetBytes("Version: InflatablePalace 0.0\r\n\r\n")); // FIXME
+            stream.Write(Encoding.ASCII.GetBytes("Version: " + ThisAssembly.AssemblyName + " " + ThisAssembly.AssemblyInformationalVersion + "\r\n\r\n"));
 
             this.crc24 = new Crc24();
             this.base64OutputStream = new CryptoStream(
