@@ -100,7 +100,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             var messageGenerator = new PgpMessageGenerator(bOut);
             using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
-            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, privKey, PgpHashAlgorithm.Sha1))
+            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignatureType.BinaryDocument, privKey, PgpHashAlgorithm.Sha1))
             using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
                 literalStream.Write(text);
 

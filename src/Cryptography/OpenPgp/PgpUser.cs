@@ -85,21 +85,21 @@ namespace InflatablePalace.Cryptography.OpenPgp
             var certification = new PgpCertification(signature, userPacket, publicKey);
             switch (signature.SignatureType)
             {
-                case PgpSignature.CertificationRevocation:
+                case PgpSignatureType.CertificationRevocation:
                     revocationSignatures.Add(certification);
                     break;
 
-                case PgpSignature.DefaultCertification:
-                case PgpSignature.NoCertification:
-                case PgpSignature.CasualCertification:
-                case PgpSignature.PositiveCertification:
+                case PgpSignatureType.DefaultCertification:
+                case PgpSignatureType.NoCertification:
+                case PgpSignatureType.CasualCertification:
+                case PgpSignatureType.PositiveCertification:
                     if (signature.KeyId == publicKey.KeyId)
                         selfCertifications.Add(certification);
                     else
                         otherCertifications.Add(certification);
                     break;
 
-                case PgpSignature.BinaryDocument:
+                case PgpSignatureType.BinaryDocument: // Seen in test data
                 default:
                     return false;
             }

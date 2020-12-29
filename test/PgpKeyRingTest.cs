@@ -1593,7 +1593,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                     if (pk.KeyId == -1413891222336124627L)
                     {
                         Assert.AreEqual(1, pk.KeyCertifications.Count);
-                        Assert.AreEqual(PgpSignature.SubkeyBinding, pk.KeyCertifications[0].Signature.SignatureType);
+                        Assert.AreEqual(PgpSignatureType.SubkeyBinding, pk.KeyCertifications[0].Signature.SignatureType);
                     }
 
                     //pk.GetSignatures();
@@ -1816,9 +1816,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpPublicKey masterKey = pgpPub.GetPublicKeys().Where(k => k.IsMasterKey).FirstOrDefault();
             Assert.NotNull(masterKey);
 
-            var keyRevocation = masterKey.KeyCertifications.Where(c => c.Signature.SignatureType == PgpSignature.KeyRevocation).FirstOrDefault();
+            var keyRevocation = masterKey.KeyCertifications.Where(c => c.SignatureType == PgpSignatureType.KeyRevocation).FirstOrDefault();
             Assert.NotNull(keyRevocation);
-            Assert.AreEqual(1, masterKey.KeyCertifications.Where(c => c.Signature.SignatureType == PgpSignature.KeyRevocation).Count());
+            Assert.AreEqual(1, masterKey.KeyCertifications.Where(c => c.SignatureType == PgpSignatureType.KeyRevocation).Count());
             Assert.IsTrue(keyRevocation.Verify(masterKey));
 
             pgpPub = new PgpPublicKeyRing(pub7sub);
@@ -1827,9 +1827,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             foreach (PgpPublicKey k in pgpPub.GetPublicKeys().Where(k => !k.IsMasterKey))
             {
-                var revocation = k.KeyCertifications.Where(c => c.Signature.SignatureType == PgpSignature.SubkeyRevocation).FirstOrDefault();
+                var revocation = k.KeyCertifications.Where(c => c.SignatureType == PgpSignatureType.SubkeyRevocation).FirstOrDefault();
                 Assert.NotNull(revocation);
-                Assert.AreEqual(1, k.KeyCertifications.Where(c => c.Signature.SignatureType == PgpSignature.SubkeyRevocation).Count());
+                Assert.AreEqual(1, k.KeyCertifications.Where(c => c.SignatureType == PgpSignatureType.SubkeyRevocation).Count());
                 Assert.IsTrue(revocation.Verify(masterKey));
             }
         }
@@ -2027,7 +2027,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             Assert.AreEqual(1, sKey.KeyCertifications.Count);
             Assert.AreEqual(vKey.KeyId, sKey.KeyCertifications[0].KeyId);
-            Assert.AreEqual(PgpSignature.SubkeyBinding, sKey.KeyCertifications[0].Signature.SignatureType);
+            Assert.AreEqual(PgpSignatureType.SubkeyBinding, sKey.KeyCertifications[0].Signature.SignatureType);
             Assert.IsTrue(sKey.KeyCertifications[0].Verify(vKey));
         }
 
@@ -2108,7 +2108,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             Assert.AreEqual(1, sKey.KeyCertifications.Count);
             Assert.AreEqual(vKey.KeyId, sKey.KeyCertifications[0].KeyId);
-            Assert.AreEqual(PgpSignature.SubkeyBinding, sKey.KeyCertifications[0].Signature.SignatureType);
+            Assert.AreEqual(PgpSignatureType.SubkeyBinding, sKey.KeyCertifications[0].Signature.SignatureType);
             Assert.IsTrue(sKey.KeyCertifications[0].Verify(vKey));
         }
 

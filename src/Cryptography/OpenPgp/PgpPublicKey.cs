@@ -258,14 +258,14 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     }
                 }
 
-                if (GetExpirationTimeFromSig(this.keyCertifications.Where(s => s.Signature.SignatureType == PgpSignature.DirectKey), out var expiryTime2))
+                if (GetExpirationTimeFromSig(this.keyCertifications.Where(s => s.SignatureType == PgpSignatureType.DirectKey), out var expiryTime2))
                 {
                     return expiryTime2;
                 }
             }
             else
             {
-                if (GetExpirationTimeFromSig(this.keyCertifications.Where(s => s.Signature.SignatureType == PgpSignature.SubkeyBinding || s.Signature.SignatureType == PgpSignature.DirectKey), out var expiryTime))
+                if (GetExpirationTimeFromSig(this.keyCertifications.Where(s => s.SignatureType == PgpSignatureType.SubkeyBinding || s.SignatureType == PgpSignatureType.DirectKey), out var expiryTime))
                 {
                     return expiryTime;
                 }
@@ -504,7 +504,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <returns>True, if this (sub)key has been revoked.</returns>
         public bool IsRevoked()
         {
-            int signatureType = IsMasterKey ? PgpSignature.KeyRevocation : PgpSignature.SubkeyRevocation;
+            PgpSignatureType signatureType = IsMasterKey ? PgpSignatureType.KeyRevocation : PgpSignatureType.SubkeyRevocation;
 
             foreach (var keyCertification in KeyCertifications)
             {
@@ -675,14 +675,14 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             if (key.IsMasterKey)
             {
-                if (certification.SignatureType == PgpSignature.SubkeyRevocation)
+                if (certification.SignatureType == PgpSignatureType.SubkeyRevocation)
                 {
                     throw new ArgumentException("signature type incorrect for master key revocation.");
                 }
             }
             else
             {
-                if (certification.SignatureType == PgpSignature.KeyRevocation)
+                if (certification.SignatureType == PgpSignatureType.KeyRevocation)
                 {
                     throw new ArgumentException("signature type incorrect for sub-key revocation.");
                 }

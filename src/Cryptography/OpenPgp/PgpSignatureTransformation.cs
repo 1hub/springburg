@@ -11,13 +11,13 @@ namespace InflatablePalace.Cryptography.OpenPgp
     {
         private HashAlgorithm sig;
         private byte lastb; // Initial value anything but '\r'
-        private int signatureType;
+        private PgpSignatureType signatureType;
         private PgpHashAlgorithm hashAlgorithm;
         private byte[]? pendingWhitespace;
         private int pendingWhitespacePosition = 0;
         private bool ignoreTrailingWhitespace;
 
-        public PgpSignatureTransformation(int signatureType, PgpHashAlgorithm hashAlgorithm, bool ignoreTrailingWhitespace)
+        public PgpSignatureTransformation(PgpSignatureType signatureType, PgpHashAlgorithm hashAlgorithm, bool ignoreTrailingWhitespace)
         {
             this.signatureType = signatureType;
             this.hashAlgorithm = hashAlgorithm;
@@ -31,7 +31,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
         }
 
-        public int SignatureType => signatureType;
+        public PgpSignatureType SignatureType => signatureType;
 
         public PgpHashAlgorithm HashAlgorithm => hashAlgorithm;
 
@@ -96,7 +96,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             int off,
             int length)
         {
-            if (signatureType == PgpSignature.CanonicalTextDocument)
+            if (signatureType == PgpSignatureType.CanonicalTextDocument)
             {
                 int finish = off + length;
 
@@ -160,6 +160,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         public void Finish(SignaturePacket sigPck)
         {
+            Debug.Assert(sigPck.SignatureType == SignatureType);
             Finish(sigPck.Version, sigPck.KeyAlgorithm, sigPck.CreationTime, sigPck.GetHashedSubPackets());
         }
 

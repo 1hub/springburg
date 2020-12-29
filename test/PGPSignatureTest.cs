@@ -360,7 +360,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             Assert.AreEqual(0, firstUserId.OtherCertifications.Count);
             Assert.AreEqual(0, firstUserId.RevocationSignatures.Count);
 
-            Assert.AreEqual(PgpSignature.PositiveCertification, firstUserId.SelfCertifications[0].Signature.SignatureType);
+            Assert.AreEqual(PgpSignatureType.PositiveCertification, firstUserId.SelfCertifications[0].Signature.SignatureType);
 
             var newPubKey = PgpPublicKey.RemoveCertification(pubKey, firstUserId, firstUserId.SelfCertifications[0]);
             firstUserId = newPubKey.GetUserIds().FirstOrDefault();
@@ -656,7 +656,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             MemoryStream bOut = new MemoryStream();
 
             var messageGenerator = new PgpMessageGenerator(bOut);
-            using (var signingGenerator = messageGenerator.CreateSigned(PgpSignature.BinaryDocument, privKey, hashAlgorithm, version))
+            using (var signingGenerator = messageGenerator.CreateSigned(PgpSignatureType.BinaryDocument, privKey, hashAlgorithm, version))
             using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", DateTime.UtcNow))
             {
                 literalStream.Write(TEST_DATA);
@@ -676,7 +676,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             MemoryStream bOut = new MemoryStream();
             var messageGenerator = new PgpMessageGenerator(bOut);
-            using (var signingGenerator = messageGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, privKey, PgpHashAlgorithm.Sha1, version))
+            using (var signingGenerator = messageGenerator.CreateSigned(PgpSignatureType.CanonicalTextDocument, privKey, PgpHashAlgorithm.Sha1, version))
             using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Text, "_CONSOLE", DateTime.UtcNow))
             {
                 literalStream.Write(data);

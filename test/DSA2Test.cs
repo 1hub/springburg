@@ -28,7 +28,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             DateTime testDate = new DateTime((DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond) * TimeSpan.TicksPerSecond);
 
             var messageGenerator = new PgpMessageGenerator(bOut);
-            using (var signingGenerator = messageGenerator.CreateSigned(PgpSignature.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test"), digest))
+            using (var signingGenerator = messageGenerator.CreateSigned(PgpSignatureType.BinaryDocument, secRing.GetSecretKey().ExtractPrivateKey("test"), digest))
             using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDate))
             {
                 literalStream.Write(dataBytes);

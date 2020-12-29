@@ -30,7 +30,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         public long KeyId => signature.KeyId;
 
-        public int SignatureType => signature.SignatureType;
+        public PgpSignatureType SignatureType => signature.SignatureType;
 
         public PgpSignatureAttributes HashedAttributes => signature.HashedAttributes;
 
@@ -133,7 +133,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             if (subKey == null)
                 throw new ArgumentNullException(nameof(subKey));
 
-            var signatureGenerator = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, masterKey.PrivateKey, hashAlgorithm);
+            var signatureGenerator = new PgpSignatureGenerator(PgpSignatureType.SubkeyBinding, masterKey.PrivateKey, hashAlgorithm);
             if (hashedAttributes != null)
                 signatureGenerator.HashedAttributes = hashedAttributes;
             if (unhashedAttributes != null)
@@ -144,7 +144,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         // FIXME: This method is too advanced
         public static PgpCertification GenerateUserCertification(
-            int signatureType,
+            PgpSignatureType signatureType,
             PgpKeyPair signingKey,
             string userId,
             PgpPublicKey userPublicKey,
@@ -171,7 +171,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         // FIXME: This method is too advanced
         public static PgpCertification GenerateUserCertification(
-            int signatureType,
+            PgpSignatureType signatureType,
             PgpKeyPair signingKey,
             PgpUserAttributes userAttributes,
             PgpPublicKey userPublicKey,
@@ -208,7 +208,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             if (revokedKey == null)
                 throw new ArgumentNullException(nameof(revokedKey));
 
-            var signatureGenerator = new PgpSignatureGenerator(revokedKey.IsMasterKey ? PgpSignature.KeyRevocation : PgpSignature.SubkeyRevocation, signingKey.PrivateKey, hashAlgorithm);
+            var signatureGenerator = new PgpSignatureGenerator(revokedKey.IsMasterKey ? PgpSignatureType.KeyRevocation : PgpSignatureType.SubkeyRevocation, signingKey.PrivateKey, hashAlgorithm);
             if (hashedAttributes != null)
                 signatureGenerator.HashedAttributes = hashedAttributes;
             if (unhashedAttributes != null)

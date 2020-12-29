@@ -407,7 +407,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             vGen.JpegImageAttribute = jpegImage;
 
             var certification = PgpCertification.GenerateUserCertification(
-                PgpSignature.PositiveCertification,
+                PgpSignatureType.PositiveCertification,
                 new PgpKeyPair(pubKey, pgpSec.GetSecretKey().ExtractPrivateKey(pass)),
                 vGen,
                 pubKey);
@@ -641,7 +641,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             key = tmpRing.GetPublicKey();
 
-            revocation = key.KeyCertifications.Where(c => c.Signature.SignatureType == PgpSignature.KeyRevocation).FirstOrDefault();
+            revocation = key.KeyCertifications.Where(c => c.SignatureType == PgpSignatureType.KeyRevocation).FirstOrDefault();
             Assert.NotNull(revocation);
             Assert.IsTrue(revocation.Verify(key));
 
@@ -703,7 +703,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             bOut = new MemoryStream();
             messageGenerator = new PgpMessageGenerator(bOut);
             using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
-            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, pgpPrivKey, PgpHashAlgorithm.Sha1))
+            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignatureType.BinaryDocument, pgpPrivKey, PgpHashAlgorithm.Sha1))
             using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
             {
                 literalStream.Write(dataBytes);
@@ -726,7 +726,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             bOut = new MemoryStream();
             messageGenerator = new PgpMessageGenerator(bOut);
             using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
-            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, pgpPrivKey, PgpHashAlgorithm.Sha1, version: 3))
+            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignatureType.BinaryDocument, pgpPrivKey, PgpHashAlgorithm.Sha1, version: 3))
             using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
             {
                 literalStream.Write(dataBytes);
@@ -772,7 +772,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             MemoryStream bOut = new MemoryStream();
             var messageGenerator = new PgpMessageGenerator(bOut);
             using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
-            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, privKey, hashAlgorithm))
+            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignatureType.BinaryDocument, privKey, hashAlgorithm))
             using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
             {
                 literalStream.Write(dataBytes);

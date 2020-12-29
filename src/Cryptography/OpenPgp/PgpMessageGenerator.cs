@@ -51,7 +51,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return new PgpCompressedMessageGenerator(Open(), algorithm, compressionLevel);
         }
 
-        public PgpSignedMessageGenerator CreateSigned(int signatureType, PgpPrivateKey privateKey, PgpHashAlgorithm hashAlgorithm, int version = 4)
+        public PgpSignedMessageGenerator CreateSigned(PgpSignatureType signatureType, PgpPrivateKey privateKey, PgpHashAlgorithm hashAlgorithm, int version = 4)
         {
             return new PgpSignedMessageGenerator(Open(), signatureType, privateKey, hashAlgorithm, version);
         }

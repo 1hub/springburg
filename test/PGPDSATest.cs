@@ -288,7 +288,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             MemoryStream bOut = new MemoryStream();
             var messageGenerator = new PgpMessageGenerator(bOut);
             using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
-            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.BinaryDocument, pgpPrivKey, PgpHashAlgorithm.Sha1))
+            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignatureType.BinaryDocument, pgpPrivKey, PgpHashAlgorithm.Sha1))
             {
                 signingGenerator.HashedAttributes.SetSignerUserId(true, secretKey.PublicKey.GetUserIds().First().UserId);
                 using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
@@ -315,7 +315,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             var messageGenerator = new PgpMessageGenerator(bOut);
             using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
-            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, pgpPrivKey, PgpHashAlgorithm.Sha1))
+            using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignatureType.CanonicalTextDocument, pgpPrivKey, PgpHashAlgorithm.Sha1))
             using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
             {
                 literalStream.Write(dataBytes);

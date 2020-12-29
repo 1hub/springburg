@@ -13,7 +13,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         private bool literalDataWritten;
 
         /// <summary>Create a generator for the passed in keyAlgorithm and hashAlgorithm codes.</summary>
-        internal PgpSignedMessageGenerator(IPacketWriter writer, int signatureType, PgpPrivateKey privateKey, PgpHashAlgorithm hashAlgorithm, int version = 4)
+        internal PgpSignedMessageGenerator(IPacketWriter writer, PgpSignatureType signatureType, PgpPrivateKey privateKey, PgpHashAlgorithm hashAlgorithm, int version = 4)
             : base(writer)
         {
             signatureGenerator = new PgpSignatureGenerator(

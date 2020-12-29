@@ -147,7 +147,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 if (pendingOnePassHashes?.Count > 0)
                 {
                     var hashAlgorithm = pendingOnePassHashes.Dequeue();
-                    return new OnePassSignaturePacket(PgpSignature.CanonicalTextDocument, hashAlgorithm, 0, 0, false);
+                    return new OnePassSignaturePacket(PgpSignatureType.CanonicalTextDocument, hashAlgorithm, 0, 0, false);
                 }
 
                 throw new InvalidDataException();

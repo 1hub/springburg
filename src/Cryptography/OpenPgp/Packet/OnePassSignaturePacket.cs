@@ -6,7 +6,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
     class OnePassSignaturePacket : ContainedPacket
     {
         private int version;
-        private int sigType;
+        private PgpSignatureType sigType;
         private PgpHashAlgorithm hashAlgorithm;
         private PgpPublicKeyAlgorithm keyAlgorithm;
         private long keyId;
@@ -15,7 +15,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         internal OnePassSignaturePacket(Stream bcpgIn)
         {
             version = bcpgIn.ReadByte();
-            sigType = bcpgIn.ReadByte();
+            sigType = (PgpSignatureType)bcpgIn.ReadByte();
             hashAlgorithm = (PgpHashAlgorithm)bcpgIn.ReadByte();
             keyAlgorithm = (PgpPublicKeyAlgorithm)bcpgIn.ReadByte();
 
@@ -32,7 +32,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         }
 
         public OnePassSignaturePacket(
-            int sigType,
+            PgpSignatureType sigType,
             PgpHashAlgorithm hashAlgorithm,
             PgpPublicKeyAlgorithm keyAlgorithm,
             long keyId,
@@ -46,7 +46,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             this.nested = (isNested) ? 0 : 1;
         }
 
-        public int SignatureType => sigType;
+        public PgpSignatureType SignatureType => sigType;
 
         public PgpPublicKeyAlgorithm KeyAlgorithm => keyAlgorithm;
 

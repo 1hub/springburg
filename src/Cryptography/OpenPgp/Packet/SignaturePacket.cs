@@ -10,7 +10,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
     class SignaturePacket : ContainedPacket
     {
         private int version;
-        private int signatureType;
+        private PgpSignatureType signatureType;
         private DateTime creationTime;
         private long keyId;
         private PgpPublicKeyAlgorithm keyAlgorithm;
@@ -29,7 +29,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 //                int l =
                 bcpgIn.ReadByte();
 
-                signatureType = bcpgIn.ReadByte();
+                signatureType = (PgpSignatureType)bcpgIn.ReadByte();
                 creationTime = DateTimeOffset.FromUnixTimeSeconds(
                     ((long)bcpgIn.ReadByte() << 24) | ((long)bcpgIn.ReadByte() << 16) | ((long)bcpgIn.ReadByte() << 8) | (uint)bcpgIn.ReadByte()).UtcDateTime;
 
@@ -50,7 +50,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             }
             else if (version == 4)
             {
-                signatureType = bcpgIn.ReadByte();
+                signatureType = (PgpSignatureType)bcpgIn.ReadByte();
                 keyAlgorithm = (PgpPublicKeyAlgorithm)bcpgIn.ReadByte();
                 hashAlgorithm = (PgpHashAlgorithm)bcpgIn.ReadByte();
 
@@ -130,7 +130,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public SignaturePacket(
             int version,
-            int signatureType,
+            PgpSignatureType signatureType,
             long keyId,
             PgpPublicKeyAlgorithm keyAlgorithm,
             PgpHashAlgorithm hashAlgorithm,
@@ -154,7 +154,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         public int Version => version;
 
-        public int SignatureType => signatureType;
+        public PgpSignatureType SignatureType => signatureType;
 
         public long KeyId => keyId;
 

@@ -34,7 +34,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             }
         }
 
-        public int SignatureType =>
+        public PgpSignatureType SignatureType =>
             onePassSignaturePacket != null ? onePassSignaturePacket.SignatureType :
             signaturePacket != null ? signaturePacket.SignatureType :
             0;

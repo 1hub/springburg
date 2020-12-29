@@ -139,7 +139,7 @@ namespace InflatablePalace.Test
             var encodedStream = new MemoryStream();
 
             using (var messageGenerator = new PgpMessageGenerator(new ArmoredPacketWriter(encodedStream, useClearText: true)))
-            using (var signedGenerator = messageGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, keyPair.PrivateKey, PgpHashAlgorithm.Sha256))
+            using (var signedGenerator = messageGenerator.CreateSigned(PgpSignatureType.CanonicalTextDocument, keyPair.PrivateKey, PgpHashAlgorithm.Sha256))
             using (var literalStream = signedGenerator.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))
             {
                 literalStream.Write(msg);
@@ -165,8 +165,8 @@ namespace InflatablePalace.Test
             var encodedStream = new MemoryStream();
 
             using (var messageGenerator = new PgpMessageGenerator(new ArmoredPacketWriter(encodedStream, useClearText: true)))
-            using (var signedGeneratorOuter = messageGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, keyPairOuter.PrivateKey, PgpHashAlgorithm.Sha256))
-            using (var signedGeneratorInner = signedGeneratorOuter.CreateSigned(PgpSignature.CanonicalTextDocument, keyPairInner.PrivateKey, PgpHashAlgorithm.Sha1))
+            using (var signedGeneratorOuter = messageGenerator.CreateSigned(PgpSignatureType.CanonicalTextDocument, keyPairOuter.PrivateKey, PgpHashAlgorithm.Sha256))
+            using (var signedGeneratorInner = signedGeneratorOuter.CreateSigned(PgpSignatureType.CanonicalTextDocument, keyPairInner.PrivateKey, PgpHashAlgorithm.Sha1))
             using (var literalStream = signedGeneratorInner.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))
             {
                 literalStream.Write(msg);

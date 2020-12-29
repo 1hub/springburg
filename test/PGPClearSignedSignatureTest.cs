@@ -252,7 +252,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             PgpPrivateKey pgpPrivKey = pgpSecKey.ExtractPrivateKey("");
             MemoryStream bOut = new MemoryStream();
             using (var messageGenerator = new PgpMessageGenerator(new ArmoredPacketWriter(bOut)))
-            using (var signedGenerator = messageGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, pgpPrivKey, PgpHashAlgorithm.Sha256))
+            using (var signedGenerator = messageGenerator.CreateSigned(PgpSignatureType.CanonicalTextDocument, pgpPrivKey, PgpHashAlgorithm.Sha256))
             {
                 signedGenerator.HashedAttributes.SetSignerUserId(false, pgpSecKey.PublicKey.GetUserIds().First().UserId);
                 using (var literalStream = signedGenerator.CreateLiteral(PgpDataFormat.Text, "", DateTime.MinValue))
