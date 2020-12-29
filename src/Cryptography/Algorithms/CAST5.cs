@@ -25,14 +25,14 @@ namespace InflatablePalace.Cryptography.Algorithms
 
         public override void GenerateIV()
         {
-            throw new NotImplementedException();
+            this.IVValue = new byte[BlockSizeValue / 8];
+            RandomNumberGenerator.Fill(this.IVValue);
         }
 
         public override void GenerateKey()
         {
-            var key = new byte[KeySize / 8];
-            RandomNumberGenerator.Fill(key);
-            this.Key = key;
+            this.KeyValue = new byte[KeySizeValue / 8];
+            RandomNumberGenerator.Fill(this.KeyValue);
         }
 
         sealed class CAST5Transform : IBlockTransform

@@ -78,50 +78,59 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     throw new PgpException("unknown key class");
             }
 
-            MemoryStream bOut = new MemoryStream();
+            // FIXME: All this should be cleared out from memory
+            byte[] keyData = Array.Empty<byte>();
 
-            secKey.Encode(bOut);
-
-            byte[] keyData = bOut.ToArray();
-            byte[] checksumData = Checksum(useSha1, keyData, keyData.Length);
-
-            keyData = keyData.Concat(checksumData).ToArray();
-
-            if (encAlgorithm == PgpSymmetricKeyAlgorithm.Null)
+            try
             {
-                if (isMasterKey)
+                MemoryStream bOut = new MemoryStream();
+                secKey.Encode(bOut);
+                bOut.Write(Checksum(useSha1, bOut.GetBuffer(), (int)bOut.Length));
+                keyData = bOut.ToArray();
+
+                if (encAlgorithm == PgpSymmetricKeyAlgorithm.Null)
                 {
-                    this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, null, null, keyData);
+                    if (isMasterKey)
+                    {
+                        this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, null, null, keyData);
+                    }
+                    else
+                    {
+                        this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, null, null, keyData);
+                    }
                 }
                 else
                 {
-                    this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, null, null, keyData);
+                    S2k? s2k;
+                    byte[]? iv;
+                    byte[] encData;
+
+                    if (pub.Version >= 4)
+                    {
+                        encData = EncryptKeyDataV4(keyData, encAlgorithm, PgpHashAlgorithm.Sha1, rawPassPhrase, out s2k, out iv);
+                    }
+                    else
+                    {
+                        encData = EncryptKeyDataV3(keyData, encAlgorithm, rawPassPhrase, out s2k, out iv);
+                    }
+
+                    S2kUsageTag s2kUsage = useSha1 ? S2kUsageTag.Sha1 : S2kUsageTag.Checksum;
+
+                    if (isMasterKey)
+                    {
+                        this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
+                    }
+                    else
+                    {
+                        this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
+                    }
                 }
             }
-            else
+            finally
             {
-                S2k? s2k;
-                byte[]? iv;
-                byte[] encData;
-
-                if (pub.Version >= 4)
+                if (encAlgorithm != PgpSymmetricKeyAlgorithm.Null)
                 {
-                    encData = EncryptKeyDataV4(keyData, encAlgorithm, PgpHashAlgorithm.Sha1, rawPassPhrase, out s2k, out iv);
-                }
-                else
-                {
-                    encData = EncryptKeyDataV3(keyData, encAlgorithm, rawPassPhrase, out s2k, out iv);
-                }
-
-                S2kUsageTag s2kUsage = useSha1 ? S2kUsageTag.Sha1 : S2kUsageTag.Checksum;
-
-                if (isMasterKey)
-                {
-                    this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
-                }
-                else
-                {
-                    this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
+                    CryptographicOperations.ZeroMemory(keyData);
                 }
             }
         }
@@ -594,9 +603,6 @@ namespace InflatablePalace.Cryptography.OpenPgp
             // Version 2 or 3 - RSA Keys only
 
             s2k = null;
-            iv = null;
-
-            byte[] encKey = PgpUtilities.DoMakeKeyFromPassPhrase(encAlgorithm, s2k, rawPassPhrase);
 
             byte[] keyData = new byte[rawKeyData.Length];
 
@@ -604,6 +610,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
             // process 4 numbers
             //
             int pos = 0;
+            using var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
+            c.Key = PgpUtilities.DoMakeKeyFromPassPhrase(encAlgorithm, s2k, rawPassPhrase);
+            c.GenerateIV();
+            iv = c.IV;
             for (int i = 0; i != 4; i++)
             {
                 int encLen = ((((rawKeyData[pos] & 0xff) << 8) | (rawKeyData[pos + 1] & 0xff)) + 7) / 8;
@@ -615,16 +625,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
                     throw new PgpException("out of range encLen found in rawKeyData");
 
                 byte[] tmp;
-                if (i == 0)
+                if (i != 0)
                 {
-                    tmp = EncryptData(encAlgorithm, encKey, rawKeyData, pos + 2, encLen, ref iv);
+                    c.IV = keyData.AsSpan(pos - iv.Length, iv.Length).ToArray();
                 }
-                else
-                {
-                    Debug.Assert(iv != null); // iv is generated on the first round
-                    byte[]? tmpIv = keyData.AsSpan(pos - iv.Length, iv.Length).ToArray();
-                    tmp = EncryptData(encAlgorithm, encKey, rawKeyData, pos + 2, encLen, ref tmpIv);
-                }
+                using var encryptor = new ZeroPaddedCryptoTransform(c.CreateEncryptor());
+                tmp = encryptor.TransformFinalBlock(rawKeyData, pos + 2, encLen);
 
                 Array.Copy(tmp, 0, keyData, pos + 2, tmp.Length);
                 pos += 2 + encLen;
@@ -647,27 +653,13 @@ namespace InflatablePalace.Cryptography.OpenPgp
             out S2k? s2k,
             out byte[]? iv)
         {
-            s2k = PgpUtilities.GenerateS2k(hashAlgorithm, 0x60);
-            byte[] key = PgpUtilities.DoMakeKeyFromPassPhrase(encAlgorithm, s2k, rawPassPhrase);
-            iv = null;
-            return EncryptData(encAlgorithm, key, rawKeyData, 0, rawKeyData.Length, ref iv);
-        }
-
-        private static byte[] EncryptData(
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            byte[] key,
-            byte[] data,
-            int dataOff,
-            int dataLen,
-            ref byte[]? iv)
-        {
             using var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
-            if (iv == null)
-            {
-                iv = PgpUtilities.GenerateIV((c.BlockSize + 7) / 8);
-            }
-            using var encryptor = new ZeroPaddedCryptoTransform(c.CreateEncryptor(key, iv.ToArray()));
-            return encryptor.TransformFinalBlock(data, dataOff, dataLen);
+            c.GenerateIV();
+            iv = c.IV;
+            s2k = PgpUtilities.GenerateS2k(hashAlgorithm, 0x60);
+            c.Key = PgpUtilities.DoMakeKeyFromPassPhrase(encAlgorithm, s2k, rawPassPhrase);
+            using var encryptor = new ZeroPaddedCryptoTransform(c.CreateEncryptor());
+            return encryptor.TransformFinalBlock(rawKeyData, 0, rawKeyData.Length);
         }
 
         /// <summary>

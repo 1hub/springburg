@@ -12,30 +12,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         private static readonly byte[] Data = Encoding.ASCII.GetBytes("hello world! !dlrow olleh");
 
         [Test]
-        public void TestUncompressed()
-        {
-            doTestCompression(PgpCompressionAlgorithm.Uncompressed);
-        }
-
-        [Test]
-        public void TestZip()
-        {
-            doTestCompression(PgpCompressionAlgorithm.Zip);
-        }
-
-        [Test]
-        public void TestZLib()
-        {
-            doTestCompression(PgpCompressionAlgorithm.ZLib);
-        }
-
-        [Test]
-        public void TestBZip2()
-        {
-            doTestCompression(PgpCompressionAlgorithm.BZip2);
-        }
-
-        private void doTestCompression(PgpCompressionAlgorithm type)
+        [TestCase(PgpCompressionAlgorithm.Uncompressed)]
+        [TestCase(PgpCompressionAlgorithm.Zip)]
+        [TestCase(PgpCompressionAlgorithm.ZLib)]
+        //[TestCase(PgpCompressionAlgorithm.BZip2)]
+        public void TestCompression(PgpCompressionAlgorithm type)
         {
             using MemoryStream bOut = new MemoryStream();
 

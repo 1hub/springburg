@@ -58,5 +58,16 @@ namespace InflatablePalace.Test.Algorithms
             var hexDecryptedText = ByteArrayToHex(decryptedText);
             Assert.AreEqual(hexPlainText.ToUpperInvariant(), hexDecryptedText);
         }
+
+        [Test]
+        public void GenerateIV()
+        {
+            using var symmetricAlgorithm = new T();
+            symmetricAlgorithm.GenerateIV();
+            var iv1 = symmetricAlgorithm.IV;
+            symmetricAlgorithm.GenerateIV();
+            var iv2 = symmetricAlgorithm.IV;
+            Assert.AreNotEqual(iv1, iv2);
+        }
     }
 }

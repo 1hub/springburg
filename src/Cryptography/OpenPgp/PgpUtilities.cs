@@ -194,16 +194,10 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return keyBytes;// MakeKey(algorithm, keyBytes);
         }
 
-        internal static byte[] GenerateIV(int length)
-        {
-            byte[] iv = new byte[length];
-            RandomNumberGenerator.Fill(iv);
-            return iv;
-        }
-
         internal static S2k GenerateS2k(PgpHashAlgorithm hashAlgorithm, int s2kCount)
         {
-            byte[] iv = GenerateIV(8);
+            byte[] iv = new byte[8];
+            RandomNumberGenerator.Fill(iv);
             return new S2k(hashAlgorithm, iv, s2kCount);
         }
 
