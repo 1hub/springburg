@@ -1,6 +1,6 @@
 # Springburg
 
-This is an experimental OpenPGP library for .NET. At the moment the API is unstable, bugs are all around the place and it is not ready for production use.
+This is an experimental OpenPGP library for .NET. At the moment the [API is unstable](https://github.com/filipnavara/springburg/milestone/1), bugs are all around the place and it is not ready for production use.
 
 The library uses parts of the OpenPGP implementation from [Bouncy Castle](https://github.com/bcgit/bc-csharp/) but it's heavily rewritten. It updates the API to use generics, latest C# features and offer more fool proof type-safe API for building OpenPGP applications. Where deemed reasonable it also tries to avoid mistakes that were present in the original BouncyCastle design like passing in parameters that are already implied by other means and where mismatch would only result in error.
 
