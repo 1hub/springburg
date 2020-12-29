@@ -70,7 +70,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             creationTime = signaturePacket.CreationTime;
 
-            signatureHelper.Finish(signaturePacket.Version, signaturePacket.KeyAlgorithm, signaturePacket.CreationTime, signaturePacket.GetHashedSubPackets());
+            signatureHelper.Finish(signaturePacket);
             return publicKey.Verify(signatureHelper.Hash!, signaturePacket.GetSignature(), signatureHelper.HashAlgorithm);
         }
 

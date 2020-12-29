@@ -19,7 +19,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         private Stream? armoredDataStream;
         private Crc24? crc24;
         private PacketReader? packetReader;
-        private OnePassSignaturePacket? pendingOnePassPacket;
+        private Queue<PgpHashAlgorithm>? pendingOnePassHashes;
 
         public ArmoredPacketReader(Stream stream)
         {
@@ -93,17 +93,25 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 var headerLines = armoredDataReader.ReadHeaderLines();
                 if (armoredDataReader.State == ReaderState.ClearText)
                 {
-                    // Generate the pending one-pass packet
-                    PgpHashAlgorithm hashAlgorithmTag = PgpHashAlgorithm.MD5;
+                    // Generate the pending one-pass packet(s)
+                    // NOTE: The specification doesn't quite guarantee the order of the hash
+                    // algorithms so we go with outside first as a best guess..
+                    pendingOnePassHashes = pendingOnePassHashes ?? new Queue<PgpHashAlgorithm>();
                     foreach (var header in headerLines)
                     {
                         if (header.StartsWith("Hash: ", StringComparison.OrdinalIgnoreCase))
                         {
-                            // FIXME: Multiple hashes
-                            hashAlgorithmTag = PgpUtilities.GetHashAlgorithm(header.Substring(6).TrimEnd());
+                            var hashNames = header.Substring(6).Split(',', StringSplitOptions.TrimEntries);
+                            foreach (var hashName in hashNames)
+                            {
+                                pendingOnePassHashes.Enqueue(PgpUtilities.GetHashAlgorithm(hashName));
+                            }
                         }
                     }
-                    pendingOnePassPacket = new OnePassSignaturePacket(PgpSignature.CanonicalTextDocument, hashAlgorithmTag, 0, 0, false);
+                    if (pendingOnePassHashes.Count == 0)
+                    {
+                        pendingOnePassHashes.Enqueue(PgpHashAlgorithm.MD5);
+                    }
                 }
                 else if (armoredDataReader.State == ReaderState.Base64)
                 {
@@ -121,7 +129,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
             if (armoredDataReader.State == ReaderState.ClearText)
             {
-                if (pendingOnePassPacket != null)
+                if (pendingOnePassHashes?.Count > 0)
                     return PacketTag.OnePassSignature;
                 return PacketTag.LiteralData;
             }
@@ -136,11 +144,10 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
             if (armoredDataReader.State == ReaderState.ClearText)
             {
-                if (pendingOnePassPacket != null)
+                if (pendingOnePassHashes?.Count > 0)
                 {
-                    var temp = pendingOnePassPacket;
-                    pendingOnePassPacket = null;
-                    return temp;
+                    var hashAlgorithm = pendingOnePassHashes.Dequeue();
+                    return new OnePassSignaturePacket(PgpSignature.CanonicalTextDocument, hashAlgorithm, 0, 0, false);
                 }
 
                 throw new InvalidDataException();
@@ -160,12 +167,11 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
             if (armoredDataReader.State == ReaderState.ClearText)
             {
-                if (pendingOnePassPacket != null)
+                if (pendingOnePassHashes?.Count > 0)
                 {
                     throw new InvalidDataException();
                 }
 
-                //var stream = new LiteralDataStream(armoredInputStream);
                 return (new LiteralDataPacket(PgpDataFormat.Utf8, "", DateTime.MinValue), new LiteralDataStream(armoredDataReader));
             }
             else if (armoredDataReader.State == ReaderState.Base64)

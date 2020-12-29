@@ -1,6 +1,7 @@
 ﻿using InflatablePalace.IO.Checksum;
 using System;
 using System.Buffers.Text;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
@@ -16,6 +17,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         private Stream? base64OutputStream;
         private bool useClearText;
         private bool inClearText;
+        private List<string> hashHeaders;
         private string? type;
 
         public ArmoredPacketWriter(Stream stream, bool useClearText = true)
@@ -51,6 +53,8 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             {
                 if (packet is LiteralDataPacket)
                 {
+                    this.stream.Write(Encoding.ASCII.GetBytes("-----BEGIN PGP SIGNED MESSAGE-----\r\n"));
+                    this.stream.Write(Encoding.ASCII.GetBytes("Hash: " + String.Join(", ", hashHeaders) + "\r\n\r\n"));
                     return new DashEscapeStream(this, this.stream);
                 }
                 else
@@ -75,9 +79,8 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             if (packet is OnePassSignaturePacket onePassSignaturePacket && useClearText && this.writer == null)
             {
                 string hashName = PgpUtilities.GetDigestName(onePassSignaturePacket.HashAlgorithm);
-                this.stream.Write(Encoding.ASCII.GetBytes("-----BEGIN PGP SIGNED MESSAGE-----\r\n"));
-                this.stream.Write(Encoding.ASCII.GetBytes("Hash: " + hashName + "\r\n\r\n"));
-                //this.armoredOutputStream.BeginClearText(onePassSignaturePacket.HashAlgorithm);
+                hashHeaders = hashHeaders ?? new List<string>();
+                hashHeaders.Add(hashName);
                 inClearText = true;
             }
             else if (inClearText)

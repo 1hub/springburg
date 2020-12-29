@@ -2,7 +2,9 @@
 using InflatablePalace.Cryptography.OpenPgp.Packet;
 using NUnit.Framework;
 using Org.BouncyCastle.Bcpg.OpenPgp.Tests;
+using System;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace InflatablePalace.Test
@@ -127,5 +129,65 @@ namespace InflatablePalace.Test
             Assert.AreEqual(incorrectDashMessage, Encoding.ASCII.GetString(bytes));
             // NOTE: The signature is bogus but that's not what we test here
         }
+
+        [Test]
+        public void SimpleSignature()
+        {
+            var keyPair = new PgpKeyPair(DSA.Create(512), DateTime.UtcNow);
+
+            byte[] msg = Encoding.ASCII.GetBytes("hello world!");
+            var encodedStream = new MemoryStream();
+
+            using (var messageGenerator = new PgpMessageGenerator(new ArmoredPacketWriter(encodedStream, useClearText: true)))
+            using (var signedGenerator = messageGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, keyPair.PrivateKey, PgpHashAlgorithm.Sha256))
+            using (var literalStream = signedGenerator.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))
+            {
+                literalStream.Write(msg);
+            }
+
+            encodedStream = new MemoryStream(encodedStream.ToArray(), false);
+            var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(new ArmoredPacketReader(encodedStream));
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            // Skip over literal data
+            var bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(msg, bytes);
+            // NOTE: The order is significant
+            Assert.IsTrue(signedMessage.Verify(keyPair.PublicKey));
+        }
+
+        [Test]
+        public void NestedSignatures()
+        {
+            var keyPairOuter = new PgpKeyPair(DSA.Create(512), DateTime.UtcNow);
+            var keyPairInner = new PgpKeyPair(DSA.Create(512), DateTime.UtcNow);
+
+            byte[] msg = Encoding.ASCII.GetBytes("hello world!");
+            var encodedStream = new MemoryStream();
+
+            using (var messageGenerator = new PgpMessageGenerator(new ArmoredPacketWriter(encodedStream, useClearText: true)))
+            using (var signedGeneratorOuter = messageGenerator.CreateSigned(PgpSignature.CanonicalTextDocument, keyPairOuter.PrivateKey, PgpHashAlgorithm.Sha256))
+            using (var signedGeneratorInner = signedGeneratorOuter.CreateSigned(PgpSignature.CanonicalTextDocument, keyPairInner.PrivateKey, PgpHashAlgorithm.Sha1))
+            using (var literalStream = signedGeneratorInner.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))
+            {
+                literalStream.Write(msg);
+            }
+
+            encodedStream = new MemoryStream(encodedStream.ToArray(), false);
+            var signedMessageOuter = (PgpSignedMessage)PgpMessage.ReadMessage(new ArmoredPacketReader(encodedStream));
+            var signedMessageInner = (PgpSignedMessage)signedMessageOuter.ReadMessage();
+            var literalMessage = (PgpLiteralMessage)signedMessageInner.ReadMessage();
+            // Skip over literal data
+            var bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.AreEqual(msg, bytes);
+            // NOTE: The order is significant
+            Assert.IsTrue(signedMessageInner.Verify(keyPairInner.PublicKey));
+            Assert.IsTrue(signedMessageOuter.Verify(keyPairOuter.PublicKey));
+        }
+
+        // TODO:
+        // - Incorrect headers
+        // - Multiple Hash headers / multiple values in Hash header, trailing spaces after hash name
+        // - Unknown Hash names
+        // - No Hash header implies MD5
     }
 }
