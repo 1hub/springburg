@@ -196,7 +196,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return new PgpCertification(signature, userPacket, userPublicKey);
         }
 
-        public static PgpCertification GenerateKeyRevokation(
+        public static PgpCertification GenerateKeyRevocation(
             PgpKeyPair signingKey,
             PgpPublicKey revokedKey,
             PgpSignatureAttributes? hashedAttributes = null,

@@ -383,7 +383,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // certifications
             //
-            var revocation = PgpCertification.GenerateKeyRevokation(new PgpKeyPair(secretKey.PublicKey, pgpPrivKey), secretKey.PublicKey);
+            var revocation = PgpCertification.GenerateKeyRevocation(new PgpKeyPair(secretKey.PublicKey, pgpPrivKey), secretKey.PublicKey);
 
             Assert.IsTrue(revocation.Verify(secretKey.PublicKey));
             Assert.IsTrue(revocation.Verify());

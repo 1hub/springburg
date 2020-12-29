@@ -629,7 +629,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             keyEnc = key.GetEncoded();
 
-            var revocation = PgpCertification.GenerateKeyRevokation(
+            var revocation = PgpCertification.GenerateKeyRevocation(
                 new PgpKeyPair(secretKey.PublicKey, secretKey.ExtractPrivateKey(passPhrase)),
                 key);
 
