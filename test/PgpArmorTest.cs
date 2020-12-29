@@ -1,5 +1,7 @@
-﻿using InflatablePalace.Cryptography.OpenPgp.Packet;
+﻿using InflatablePalace.Cryptography.OpenPgp;
+using InflatablePalace.Cryptography.OpenPgp.Packet;
 using NUnit.Framework;
+using Org.BouncyCastle.Bcpg.OpenPgp.Tests;
 using System.IO;
 using System.Text;
 
@@ -25,6 +27,32 @@ namespace InflatablePalace.Test
             "qANQR1A=\n" +
             "=aaaa\n" +
             "-----END PGP MESSAGE-----\n";
+
+        private static readonly string incorrectDashEncoding =
+            "-----BEGIN PGP SIGNED MESSAGE-----\n" +
+            "Hash: SHA256\n" +
+            "\n" +
+            "\n" +
+            " hello world!\n" +
+            "\n" +
+            "-a- dash\n" +
+            "-----BEGIN PGP SIGNATURE-----\n" +
+            "Version: GnuPG v1.4.2.1 (GNU/Linux)\n" +
+            "\n" +
+            "iQEVAwUBRCNS8+DPyHq93/cWAQi6SwgAj3ItmSLr/sd/ixAQLW7/12jzEjfNmFDt\n" +
+            "WOZpJFmXj0fnMzTrOILVnbxHv2Ru+U8Y1K6nhzFSR7d28n31/XGgFtdohDEaFJpx\n" +
+            "Fl+KvASKIonnpEDjFJsPIvT1/G/eCPalwO9IuxaIthmKj0z44SO1VQtmNKxdLAfK\n" +
+            "+xTnXGawXS1WUE4CQGPM45mIGSqXcYrLtJkAg3jtRa8YRUn2d7b2BtmWH+jVaVuC\n" +
+            "hNrXYv7iHFOu25yRWhUQJisvdC13D/gKIPRvARXPgPhAC2kovIy6VS8tDoyG6Hm5\n" +
+            "dMgLEGhmqsgaetVq1ZIuBZj5S4j2apBJCDpF6GBfpBOfwIZs0Tpmlw==\n" +
+            "=84Nd\n" +
+            "-----END PGP SIGNATURE-----\n";
+
+        private static readonly string incorrectDashMessage =
+            "\r\n" +
+            " hello world!\r\n" +
+            "\r\n" +
+            "-a- dash";
 
         [Test]
         public void BlankLineTest()
@@ -58,6 +86,14 @@ namespace InflatablePalace.Test
         }
 
         [Test]
+        public void VerifyCrcWithoutReadingTest()
+        {
+            using var data = new MemoryStream(Encoding.ASCII.GetBytes(blankLineData), false);
+            using var packetReader = new ArmoredPacketReader(data);
+            Assert.IsTrue(packetReader.VerifyCrc());
+        }
+
+        [Test]
         public void IncorrectCrcTest()
         {
             using var data = new MemoryStream(Encoding.ASCII.GetBytes(incorrectCrc), false);
@@ -66,6 +102,30 @@ namespace InflatablePalace.Test
             Assert.NotNull(packet);
             Assert.AreEqual(PacketTag.Marker, packet.Tag);
             Assert.IsFalse(packetReader.VerifyCrc());
+        }
+
+
+        [Test]
+        public void CloseWithoutReadingTest()
+        {
+            using var data = new MemoryStream(Encoding.ASCII.GetBytes(blankLineData), false);
+            using (var packetReader = new ArmoredPacketReader(data))
+            {
+            }
+            // We should be past blankLineData.Length - 1 (ie. without the last \n)
+            Assert.LessOrEqual(blankLineData.Length - 1, data.Position);
+        }
+
+        [Test]
+        public void IncorrectDashEncoding()
+        {
+            var reader = new ArmoredPacketReader(new MemoryStream(Encoding.ASCII.GetBytes(incorrectDashEncoding)));
+            var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(reader);
+            var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
+            var bytes = Streams.ReadAll(literalMessage.GetStream());
+            // NOTE: We normalize to CRLF line ending. If we change that then this test needs to be adjusted.
+            Assert.AreEqual(incorrectDashMessage, Encoding.ASCII.GetString(bytes));
+            // NOTE: The signature is bogus but that's not what we test here
         }
     }
 }

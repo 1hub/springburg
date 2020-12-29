@@ -344,7 +344,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                                     clearText[0] = (byte)'\r';
                                     clearText[1] = (byte)'\n';
                                     clearText[2] = (byte)'-';
-                                    clearText[3] = (byte)b;
+                                    clearText[3] = (byte)nextB;
                                     outputBuffer.Advance(4);
                                 }
                             }
