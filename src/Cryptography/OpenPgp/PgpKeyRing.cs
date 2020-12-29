@@ -8,7 +8,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
     public abstract class PgpKeyRing : PgpEncodable
     {
         private protected static PgpPublicKey ReadPublicKey(
-            PacketReader packetReader,
+            IPacketReader packetReader,
             PublicKeyPacket publicKeyPacket,
             bool subKey = false)
         {

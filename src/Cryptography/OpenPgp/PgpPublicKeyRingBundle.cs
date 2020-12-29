@@ -34,11 +34,15 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <exception cref="IOException">If a problem parsing the stream occurs.</exception>
         /// <exception cref="PgpException">If an object is encountered which isn't a PgpPublicKeyRing.</exception>
         public PgpPublicKeyRingBundle(Stream inputStream)
+            : this(new PacketReader(inputStream))
+        {
+        }
+
+        public PgpPublicKeyRingBundle(IPacketReader packetReader)
         {
             this.pubRings = new Dictionary<long, PgpPublicKeyRing>();
             this.order = new List<long>(); 
 
-            var packetReader = new PacketReader(inputStream);
             while (packetReader.NextPacketTag() == PacketTag.PublicKey)
             {
                 var keyRing = new PgpPublicKeyRing(packetReader);

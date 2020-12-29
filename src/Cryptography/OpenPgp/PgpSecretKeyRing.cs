@@ -41,7 +41,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         {
         }
 
-        internal PgpSecretKeyRing(PacketReader packetReader)
+        public PgpSecretKeyRing(IPacketReader packetReader)
         {
             this.keys = new List<PgpSecretKey>();
             this.extraPubKeys = new List<PgpPublicKey>();

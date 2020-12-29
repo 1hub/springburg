@@ -174,7 +174,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         [TestCaseSource(nameof(MessageTestCases))]
         public void MessageTest(string type, string message)
         {
-            ArmoredInputStream aIn = new ArmoredInputStream(
+            /*ArmoredInputStream aIn = new ArmoredInputStream(
                 new MemoryStream(Encoding.ASCII.GetBytes(message)));
 
             string[] headers = aIn.GetArmorHeaders();
@@ -206,13 +206,16 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 clearTextLength--;
 
             bool verified = sig.Verify(pgpRings.GetPublicKey(sig.KeyId), new MemoryStream(clearText, 0, clearTextLength, false), ignoreTrailingWhitespace: true);
-            Assert.IsTrue(verified, "signature failed to verify m_in " + type);
+            Assert.IsTrue(verified, "signature failed to verify m_in " + type);*/
+
+            PgpPublicKeyRingBundle pgpRings = new PgpPublicKeyRingBundle(publicKey);
 
             var reader = new ArmoredPacketReader(new MemoryStream(Encoding.ASCII.GetBytes(message)));
             var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(reader);
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
-            //var bytes = literalMessage.GetStream().ReadAll();
-            //Assert.IsTrue(signedMessage.Verify(pgpRings.GetPublicKey(sig.KeyId)));
+            var bytes = Streams.ReadAll(literalMessage.GetStream());
+            Assert.IsTrue(signedMessage.Verify(pgpRings.GetPublicKey(signedMessage.KeyId)));
+            reader.VerifyCrc();
         }
 
         private PgpSecretKey ReadSecretKey(Stream inputStream)

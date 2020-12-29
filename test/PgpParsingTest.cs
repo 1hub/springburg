@@ -13,8 +13,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         public void BigPub()
         {
             using Stream fIn = SimpleTest.GetTestDataAsStream("openpgp.bigpub.asc");
-            using Stream keyIn = new ArmoredInputStream(fIn);
-            PgpPublicKeyRingBundle pubRings = new PgpPublicKeyRingBundle(keyIn);
+            //using Stream keyIn = new ArmoredInputStream(fIn);
+            PgpPublicKeyRingBundle pubRings = new PgpPublicKeyRingBundle(new ArmoredPacketReader(fIn));
         }
     }
 }

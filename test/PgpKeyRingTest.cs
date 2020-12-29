@@ -2311,7 +2311,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             Stream fIn = SimpleTest.GetTestDataAsStream("openpgp.longSigSubPack.asc");
             Stream bIn = new BufferedStream(fIn);
-            PgpPublicKeyRing pkr = new PgpPublicKeyRing(new ArmoredInputStream(bIn));
+            PgpPublicKeyRing pkr = new PgpPublicKeyRing(new ArmoredPacketReader(bIn));
             bIn.Close();
 
             PgpPublicKey masterpk = pkr.GetPublicKey();

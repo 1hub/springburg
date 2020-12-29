@@ -22,10 +22,17 @@ namespace InflatablePalace.Cryptography.OpenPgp
             this.packetReader = packetReader;
         }
 
-        public long KeyId =>
-            onePassSignaturePacket != null ? onePassSignaturePacket.KeyId :
-            signaturePacket != null ? signaturePacket.KeyId :
-            0;
+        public long KeyId
+        {
+            get
+            {
+                if (onePassSignaturePacket != null && (onePassSignaturePacket.KeyId != 0 || packetReader is not ArmoredPacketReader))
+                    return onePassSignaturePacket.KeyId;
+                if (signaturePacket == null && signatureHelper != null)
+                    signaturePacket = (SignaturePacket)packetReader.ReadContainedPacket();
+                return signaturePacket != null ? signaturePacket.KeyId : 0;
+            }
+        }
 
         public int SignatureType =>
             onePassSignaturePacket != null ? onePassSignaturePacket.SignatureType :

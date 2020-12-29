@@ -3,7 +3,7 @@ using System.IO;
 
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
-    public class SymmetricEncDataPacket : StreamablePacket
+    class SymmetricEncDataPacket : StreamablePacket
     {
         public override PacketTag Tag => PacketTag.SymmetricKeyEncrypted;
 
