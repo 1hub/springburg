@@ -158,7 +158,7 @@ namespace Springburg.Cryptography.OpenPgp
             PgpSymmetricKeyAlgorithm keyAlgorithm = (PgpSymmetricKeyAlgorithm)sessionData[0];
 
             if (keyAlgorithm == PgpSymmetricKeyAlgorithm.Null)
-                return inputStream;
+                throw new PgpException("Null algorithm is only allowed for encrypting keys, not data.");
 
             var key = sessionData.Slice(1);
             SymmetricAlgorithm encryptionAlgorithm = PgpUtilities.GetSymmetricAlgorithm(keyAlgorithm);
