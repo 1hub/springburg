@@ -371,6 +371,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         }
 
         [Test]
+        public void DSASmallSignatureRegression()
+        {
+            var pgpPriv = new PgpSecretKeyRing(dsaKeyRing);
+            var secretKey = pgpPriv.GetSecretKey();
+            var m = Convert.FromBase64String("kA0DAQIRzSP16cTKNEMBrEZ0CF9DT05TT0xFX+uYQWhlbGxvIHdvcmxkIQ0KaGVsbG8gd29ybGQhDQpoZWxsbyB3b3JsZCENCmhlbGxvIHdvcmxkIQ0KiD0DBQFf65hBzSP16cTKNEMRAvGjAJd00mbcvtYoZHENbtlbb+qmcg5jAJdR7jNL8HIA+LcuB5aUIT2n8pNp");
+            verifySignature(m, PgpHashAlgorithm.Sha1, secretKey.PublicKey, TEST_DATA_WITH_CRLF, checkTime: false);
+        }
+
+        [Test]
         public void PerformTest()
         {
             //
@@ -695,14 +704,15 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             byte[] encodedSig,
             PgpHashAlgorithm hashAlgorithm,
             PgpPublicKey pubKey,
-            byte[] original)
+            byte[] original,
+            bool checkTime = false)
         {
             var now = DateTime.UtcNow;
             var signedMessage = (PgpSignedMessage)PgpMessage.ReadMessage(encodedSig);
             var literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             literalMessage.GetStream().CopyTo(Stream.Null);
             Assert.IsTrue(signedMessage.Verify(pubKey, out DateTime creationTime));
-            Assert.IsTrue(Math.Abs((creationTime - now).TotalMinutes) < 10);
+            Assert.IsTrue(!checkTime || Math.Abs((creationTime - now).TotalMinutes) < 10);
             Assert.AreEqual(pubKey.KeyId, signedMessage.KeyId);
             /*
             sig.InitVerify(pubKey);

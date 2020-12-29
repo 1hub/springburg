@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using Ed25519Dsa = Springburg.Cryptography.Algorithms.Ed25519;
+using System.Formats.Asn1;
 
 namespace Springburg.Cryptography.OpenPgp
 {
@@ -458,10 +459,18 @@ namespace Springburg.Cryptography.OpenPgp
 
             if (key is RSA rsa)
                 return rsa.VerifyHash(hash, signature, PgpUtilities.GetHashAlgorithmName(hashAlgorithm), RSASignaturePadding.Pkcs1);
+
+            var asnWriter = new AsnWriter(AsnEncodingRules.DER);
+            using (var scope = asnWriter.PushSequence())
+            {
+                asnWriter.WriteIntegerUnsigned(signature.AsSpan(0, signature.Length / 2));
+                asnWriter.WriteIntegerUnsigned(signature.AsSpan(signature.Length / 2));
+            }
+
             if (key is DSA dsa)
-                return dsa.VerifySignature(hash, signature, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+                return dsa.VerifySignature(hash, asnWriter.Encode(), DSASignatureFormat.Rfc3279DerSequence);
             if (key is ECDsa ecdsa)
-                return ecdsa.VerifyHash(hash, signature, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+                return ecdsa.VerifyHash(hash, asnWriter.Encode(), DSASignatureFormat.Rfc3279DerSequence);
 
             throw new NotImplementedException();
         }
