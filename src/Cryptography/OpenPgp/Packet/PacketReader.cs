@@ -6,7 +6,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
     public class PacketReader : IPacketReader
     {
         private Stream inputStream;
-        private bool next = false;
+        private bool next;
         private int nextB;
 
         public PacketReader(Stream inputStream)

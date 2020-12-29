@@ -45,8 +45,10 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet.UserAttribute
             Format imageType,
             byte[] imageData)
         {
-            MemoryStream bOut = new MemoryStream();
-            bOut.WriteByte(0x10); bOut.WriteByte(0x00); bOut.WriteByte(0x01);
+            using var bOut = new MemoryStream();
+            bOut.WriteByte(0x10);
+            bOut.WriteByte(0x00);
+            bOut.WriteByte(0x01);
             bOut.WriteByte((byte)imageType);
             bOut.Write(Zeroes, 0, Zeroes.Length);
             bOut.Write(imageData, 0, imageData.Length);

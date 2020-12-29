@@ -3,7 +3,7 @@ using System.IO;
 
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
-    public class SymmetricEncIntegrityPacket : StreamablePacket
+    class SymmetricEncIntegrityPacket : StreamablePacket
     {
         private readonly byte version;
 

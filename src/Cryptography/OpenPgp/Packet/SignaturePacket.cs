@@ -234,13 +234,11 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
 
         private static byte[] GetEncodedSubpackets(SignatureSubpacket[] ps)
         {
-            MemoryStream sOut = new MemoryStream();
-
+            using var sOut = new MemoryStream();
             foreach (SignatureSubpacket p in ps)
             {
                 p.Encode(sOut);
             }
-
             return sOut.ToArray();
         }
     }

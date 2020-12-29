@@ -28,7 +28,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
             string notationName,
             string notationValue)
         {
-            MemoryStream os = new MemoryStream();
+            using MemoryStream os = new MemoryStream();
 
             // (4 octets of flags, 2 octets of name length (M),
             // 2 octets of value length (N),

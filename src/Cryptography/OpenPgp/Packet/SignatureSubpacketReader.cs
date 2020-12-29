@@ -104,7 +104,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
                 case SignatureSubpacketTag.PreferredSymmetricAlgorithms:
                     return new PreferredAlgorithms(type, isCritical, isLongLength, data);
                 case SignatureSubpacketTag.KeyFlags:
-                    return new Signature.KeyFlags(isCritical, isLongLength, data);
+                    return new KeyFlags(isCritical, isLongLength, data);
                 case SignatureSubpacketTag.PrimaryUserId:
                     return new PrimaryUserId(isCritical, isLongLength, data);
                 case SignatureSubpacketTag.SignerUserId:
@@ -115,7 +115,7 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
             return new SignatureSubpacket(type, isCritical, isLongLength, data);
         }
 
-        private byte[] CheckData(byte[] data, int expected, int bytesRead, string name)
+        private static byte[] CheckData(byte[] data, int expected, int bytesRead, string name)
         {
             if (bytesRead != expected)
                 throw new EndOfStreamException("truncated " + name + " subpacket data.");

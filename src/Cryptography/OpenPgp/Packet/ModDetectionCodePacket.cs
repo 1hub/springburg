@@ -4,14 +4,14 @@ using System.IO;
 
 namespace InflatablePalace.Cryptography.OpenPgp.Packet
 {
-    public class ModDetectionCodePacket : ContainedPacket
+    class ModDetectionCodePacket : ContainedPacket
     {
         private readonly byte[] digest;
 
         internal ModDetectionCodePacket(Stream bcpgIn)
         {
             if (bcpgIn == null)
-                throw new ArgumentNullException("bcpgIn");
+                throw new ArgumentNullException(nameof(bcpgIn));
             this.digest = new byte[20];
             bcpgIn.ReadFully(this.digest);
         }
@@ -19,12 +19,12 @@ namespace InflatablePalace.Cryptography.OpenPgp.Packet
         public ModDetectionCodePacket(byte[] digest)
         {
             if (digest == null)
-                throw new ArgumentNullException("digest");
+                throw new ArgumentNullException(nameof(digest));
 
             this.digest = (byte[])digest.Clone();
         }
 
-        public ReadOnlySpan<byte> GetDigest() => digest;
+        public ReadOnlySpan<byte> Digest => digest;
 
         public override PacketTag Tag => PacketTag.ModificationDetectionCode;
 

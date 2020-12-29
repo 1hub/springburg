@@ -1,4 +1,3 @@
-using InflatablePalace.Cryptography.Algorithms;
 using InflatablePalace.Cryptography.Helpers;
 using InflatablePalace.Cryptography.OpenPgp.Packet;
 using InflatablePalace.IO;
@@ -112,7 +111,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             methods.Add(new PubMethod(key));
         }
 
-        private void AddCheckSum(
+        private static void AddCheckSum(
             byte[] sessionInfo)
         {
             Debug.Assert(sessionInfo != null);
@@ -129,7 +128,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             sessionInfo[sessionInfo.Length - 1] = (byte)(check);
         }
 
-        private byte[] CreateSessionInfo(
+        private static byte[] CreateSessionInfo(
             PgpSymmetricKeyAlgorithm algorithm,
             byte[] keyBytes)
         {

@@ -67,7 +67,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
             if (userPacket is UserAttributePacket userAttributePacket)
             {
-                MemoryStream bOut = new MemoryStream();
+                using var bOut = new MemoryStream();
                 foreach (UserAttributeSubpacket packet in userAttributePacket.GetSubpackets())
                 {
                     packet.Encode(bOut);
@@ -103,6 +103,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
         /// <returns>True, if the signature matches, false otherwise.</returns>
         public bool Verify(PgpPublicKey signingKey)
         {
+            if (signingKey == null)
+                throw new ArgumentNullException(nameof(signingKey));
+
             Debug.Assert(signingKey.KeyId == KeyId);
             return signature.Verify(signingKey, GenerateCertificationData(signingKey, userPacket, publicKey));
         }
@@ -125,28 +128,12 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
-            return GenerateKeyBinding(PgpSignature.SubkeyBinding, masterKey, subKey, hashedAttributes, unhashedAttributes, hashAlgorithm);
-        }
+            if (masterKey == null)
+                throw new ArgumentNullException(nameof(masterKey));
+            if (subKey == null)
+                throw new ArgumentNullException(nameof(subKey));
 
-        /*public static PgpCertification GeneratePrimaryKeyBinding(
-            PgpKeyPair masterKey,
-            PgpPublicKey subKey,
-            PgpSignatureAttributes hashedAttributes? = null,
-            PgpSignatureAttributes unhashedAttributes? = null,
-            PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
-        {
-            return GenerateKeyBinding(PgpSignature.PrimaryKeyBinding, masterKey, subKey, hashedAttributes, unhashedAttributes, hashAlgorithm);
-        }*/
-
-        private static PgpCertification GenerateKeyBinding(
-            int signatureType,
-            PgpKeyPair masterKey,
-            PgpPublicKey subKey,
-            PgpSignatureAttributes? hashedAttributes = null,
-            PgpSignatureAttributes? unhashedAttributes = null,
-            PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
-        {
-            var signatureGenerator = new PgpSignatureGenerator(signatureType, masterKey.PrivateKey, hashAlgorithm);
+            var signatureGenerator = new PgpSignatureGenerator(PgpSignature.SubkeyBinding, masterKey.PrivateKey, hashAlgorithm);
             if (hashedAttributes != null)
                 signatureGenerator.HashedAttributes = hashedAttributes;
             if (unhashedAttributes != null)
@@ -165,6 +152,13 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
+            if (signingKey == null)
+                throw new ArgumentNullException(nameof(signingKey));
+            if (userId == null)
+                throw new ArgumentNullException(nameof(userId));
+            if (userPublicKey == null)
+                throw new ArgumentNullException(nameof(userPublicKey));
+
             var userPacket = new UserIdPacket(userId);
             var signatureGenerator = new PgpSignatureGenerator(signatureType, signingKey.PrivateKey, hashAlgorithm);
             if (hashedAttributes != null)
@@ -185,6 +179,13 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
+            if (signingKey == null)
+                throw new ArgumentNullException(nameof(signingKey));
+            if (userAttributes == null)
+                throw new ArgumentNullException(nameof(userAttributes));
+            if (userPublicKey == null)
+                throw new ArgumentNullException(nameof(userPublicKey));
+
             var userPacket = new UserAttributePacket(userAttributes.ToSubpacketArray());
             var signatureGenerator = new PgpSignatureGenerator(signatureType, signingKey.PrivateKey, hashAlgorithm);
             if (hashedAttributes != null)
@@ -202,6 +203,11 @@ namespace InflatablePalace.Cryptography.OpenPgp
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
+            if (signingKey == null)
+                throw new ArgumentNullException(nameof(signingKey));
+            if (revokedKey == null)
+                throw new ArgumentNullException(nameof(revokedKey));
+
             var signatureGenerator = new PgpSignatureGenerator(revokedKey.IsMasterKey ? PgpSignature.KeyRevocation : PgpSignature.SubkeyRevocation, signingKey.PrivateKey, hashAlgorithm);
             if (hashedAttributes != null)
                 signatureGenerator.HashedAttributes = hashedAttributes;

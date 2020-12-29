@@ -56,6 +56,9 @@ namespace InflatablePalace.Cryptography.OpenPgp
 
         public PgpMessage DecryptMessage(PgpPrivateKey privateKey)
         {
+            if (privateKey == null)
+                throw new ArgumentNullException(nameof(privateKey));
+
             foreach (var keyData in publicKeyEncSessionPackets)
             {
                 if (keyData.KeyId == privateKey.KeyId)
@@ -136,7 +139,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return CryptographicOperations.FixedTimeEquals(digest, streamDigest);
         }
 
-        private void VerifyInlineIV(ReadOnlySpan<byte> inlineIv, ReadOnlySpan<byte> check)
+        private static void VerifyInlineIV(ReadOnlySpan<byte> inlineIv, ReadOnlySpan<byte> check)
         {
             bool repeatCheckPassed = inlineIv[inlineIv.Length - 2] == (byte)check[0] && inlineIv[inlineIv.Length - 1] == (byte)check[1];
 
@@ -206,7 +209,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
             return encStream;
         }
 
-        private bool ConfirmCheckSum(ReadOnlySpan<byte> sessionInfo)
+        private static bool ConfirmCheckSum(ReadOnlySpan<byte> sessionInfo)
         {
             int check = 0;
             for (int i = 1; i != sessionInfo.Length - 2; i++)
@@ -215,7 +218,7 @@ namespace InflatablePalace.Cryptography.OpenPgp
         }
 
         /// <summary>Return the decrypted session data for the packet.</summary>
-        private byte[] GetSessionData(SymmetricKeyEncSessionPacket keyData, byte[] rawPassword)
+        private static byte[] GetSessionData(SymmetricKeyEncSessionPacket keyData, byte[] rawPassword)
         {
             byte[] key = Array.Empty<byte>();
             try
