@@ -2,7 +2,7 @@
 using System;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.Algorithms.Modes
+namespace Springburg.Cryptography.Algorithms.Modes
 {
     sealed class CFBMode : BasicSymmetricCipher
     {

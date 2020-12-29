@@ -1,7 +1,7 @@
-﻿using InflatablePalace.Cryptography.Algorithms;
-using InflatablePalace.Cryptography.Helpers;
-using InflatablePalace.Cryptography.OpenPgp.Packet;
-using InflatablePalace.IO;
+﻿using Springburg.Cryptography.Algorithms;
+using Springburg.Cryptography.Helpers;
+using Springburg.Cryptography.OpenPgp.Packet;
+using Springburg.IO;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     public class PgpEncryptedMessage : PgpMessage
     {

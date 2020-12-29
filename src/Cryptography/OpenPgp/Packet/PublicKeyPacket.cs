@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     class PublicKeyPacket : ContainedPacket
     {

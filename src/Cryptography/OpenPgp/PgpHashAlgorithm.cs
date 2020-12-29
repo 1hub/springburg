@@ -1,4 +1,4 @@
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>Basic tags for hash algorithms.</summary>
     public enum PgpHashAlgorithm : byte

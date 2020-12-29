@@ -1,11 +1,11 @@
-using InflatablePalace.Cryptography.OpenPgp.Packet;
-using InflatablePalace.Cryptography.OpenPgp.Packet.UserAttribute;
+using Springburg.Cryptography.OpenPgp.Packet;
+using Springburg.Cryptography.OpenPgp.Packet.UserAttribute;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>Container for a list of user attribute subpackets.</summary>
     public class PgpUserAttributes

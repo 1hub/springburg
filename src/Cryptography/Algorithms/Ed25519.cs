@@ -6,7 +6,7 @@ using System.Formats.Asn1;
 using System.Linq;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.Algorithms
+namespace Springburg.Cryptography.Algorithms
 {
     public class Ed25519 : ECDsa
     {

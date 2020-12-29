@@ -1,9 +1,9 @@
-﻿using InflatablePalace.Cryptography.OpenPgp.Packet;
+﻿using Springburg.Cryptography.OpenPgp.Packet;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>
     /// Class that represents OpenPGP user id or user attribute and all its associated

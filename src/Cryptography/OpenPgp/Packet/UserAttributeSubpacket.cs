@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     class UserAttributeSubpacket
     {

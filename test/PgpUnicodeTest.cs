@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using InflatablePalace.Cryptography.OpenPgp;
+using Springburg.Cryptography.OpenPgp;
 using NUnit.Framework;
 
 using Org.BouncyCastle.Utilities.Test;

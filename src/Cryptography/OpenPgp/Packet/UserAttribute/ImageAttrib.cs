@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.UserAttribute
+namespace Springburg.Cryptography.OpenPgp.Packet.UserAttribute
 {
     /// <summary>Basic type for a image attribute packet.</summary>
     class ImageAttrib : UserAttributeSubpacket

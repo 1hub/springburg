@@ -1,10 +1,10 @@
-using InflatablePalace.Cryptography.Algorithms;
-using InflatablePalace.Cryptography.OpenPgp.Packet;
+using Springburg.Cryptography.Algorithms;
+using Springburg.Cryptography.OpenPgp.Packet;
 using Internal.Cryptography;
 using System;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>General class to contain a private key for use with other OpenPGP objects.</summary>
     public class PgpPrivateKey

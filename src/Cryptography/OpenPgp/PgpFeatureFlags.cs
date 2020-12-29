@@ -1,6 +1,6 @@
 using System;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     [Flags]
     public enum PgpFeatureFlags : byte

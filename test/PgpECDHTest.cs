@@ -3,8 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using InflatablePalace.Cryptography.Algorithms;
-using InflatablePalace.Cryptography.OpenPgp;
+using Springburg.Cryptography.Algorithms;
+using Springburg.Cryptography.OpenPgp;
 using NUnit.Framework;
 
 namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests

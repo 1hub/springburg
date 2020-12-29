@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace InflatablePalace.Cryptography.Algorithms
+namespace Springburg.Cryptography.Algorithms
 {
     [Serializable]
     public struct ElGamalParameters

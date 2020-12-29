@@ -1,6 +1,6 @@
 using System;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>Key flag values for the KeyFlags subpacket.</summary>
     [Flags]

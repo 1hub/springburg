@@ -1,6 +1,6 @@
 using System;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
+namespace Springburg.Cryptography.OpenPgp.Packet.Signature
 {
     class KeyExpirationTime : SignatureSubpacket
     {

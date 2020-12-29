@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace InflatablePalace.IO.Checksum
+namespace Springburg.IO.Checksum
 {
     class Crc24 : HashAlgorithm
     {

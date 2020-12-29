@@ -1,4 +1,4 @@
-# Inflatable Palace
+# Springburg
 
 This library takes OpenPGP implementation from BouncyCastle and updates it to work on top of .NET cryptography classes instead of BouncyCastle ones. It also updates the API to use generics and latest C# features. Where deemed reasonable it also tries to avoid mistakes that were present in the original BouncyCastle design like  passing in parameters that are already implied by other means and where mismatch would only result in error.
 

@@ -1,11 +1,11 @@
-﻿using InflatablePalace.Cryptography.Helpers;
-using InflatablePalace.Cryptography.OpenPgp.Packet;
-using InflatablePalace.IO.Checksum;
+﻿using Springburg.Cryptography.Helpers;
+using Springburg.Cryptography.OpenPgp.Packet;
+using Springburg.IO.Checksum;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     public class PgpCompressedMessage : PgpMessage
     {

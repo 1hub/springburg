@@ -1,9 +1,9 @@
-﻿using InflatablePalace.Cryptography.OpenPgp.Packet;
+﻿using Springburg.Cryptography.OpenPgp.Packet;
 using System;
 using System.IO;
 using System.IO.Compression;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     public class PgpMessageGenerator : IDisposable
     {

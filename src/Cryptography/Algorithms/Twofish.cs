@@ -1,8 +1,8 @@
-using InflatablePalace.Cryptography.Algorithms.Modes;
+using Springburg.Cryptography.Algorithms.Modes;
 using System;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.Algorithms
+namespace Springburg.Cryptography.Algorithms
 {
     /// <summary>
     /// Twofish encryption algorithm

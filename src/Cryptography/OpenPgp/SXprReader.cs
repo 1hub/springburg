@@ -1,10 +1,10 @@
-﻿using InflatablePalace.Cryptography.OpenPgp.Packet;
-using InflatablePalace.IO;
+﻿using Springburg.Cryptography.OpenPgp.Packet;
+using Springburg.IO;
 using System;
 using System.IO;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>
     /// Reader for S-expression keys. This class will move when it finds a better home!

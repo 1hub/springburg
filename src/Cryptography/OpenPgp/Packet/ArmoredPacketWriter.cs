@@ -1,4 +1,4 @@
-﻿using InflatablePalace.IO.Checksum;
+﻿using Springburg.IO.Checksum;
 using System;
 using System.Buffers.Text;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     public class ArmoredPacketWriter : IPacketWriter
     {

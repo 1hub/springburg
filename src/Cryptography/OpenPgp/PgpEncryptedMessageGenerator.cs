@@ -1,6 +1,6 @@
-using InflatablePalace.Cryptography.Helpers;
-using InflatablePalace.Cryptography.OpenPgp.Packet;
-using InflatablePalace.IO;
+using Springburg.Cryptography.Helpers;
+using Springburg.Cryptography.OpenPgp.Packet;
+using Springburg.IO;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +8,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>Generator for encrypted objects.</summary>
     public class PgpEncryptedMessageGenerator : PgpMessageGenerator

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     public class PacketWriter : IPacketWriter
     {

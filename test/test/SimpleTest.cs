@@ -16,7 +16,7 @@ namespace Org.BouncyCastle.Utilities.Test
 
 		private static string GetFullName(string name)
 		{
-            return "InflatablePalace.Test.data." + name;
+            return "Springburg.Test.data." + name;
 		}
     }
 }

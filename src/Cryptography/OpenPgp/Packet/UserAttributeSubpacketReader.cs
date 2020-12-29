@@ -1,8 +1,8 @@
-using InflatablePalace.Cryptography.OpenPgp.Packet.UserAttribute;
-using InflatablePalace.IO;
+using Springburg.Cryptography.OpenPgp.Packet.UserAttribute;
+using Springburg.IO;
 using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     class UserAttributeSubpacketParser
     {

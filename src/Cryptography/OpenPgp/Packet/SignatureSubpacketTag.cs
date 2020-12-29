@@ -1,4 +1,4 @@
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     /// <summary>Basic PGP signature sub-packet tag types.</summary>
     enum SignatureSubpacketTag

@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     class ECSecretBcpgKey : BcpgKey
     {

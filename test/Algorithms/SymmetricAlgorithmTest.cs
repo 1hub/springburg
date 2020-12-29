@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace InflatablePalace.Test.Algorithms
+namespace Springburg.Test.Algorithms
 {
     [TestFixture]
     public abstract class SymmetricAlgorithmTest<T>

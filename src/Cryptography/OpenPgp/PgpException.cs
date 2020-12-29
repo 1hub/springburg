@@ -1,6 +1,6 @@
 using System;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <remarks>Generic exception class for PGP encoding/decoding problems.</remarks>
     [Serializable]

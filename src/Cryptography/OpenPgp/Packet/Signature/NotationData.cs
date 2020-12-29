@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
+namespace Springburg.Cryptography.OpenPgp.Packet.Signature
 {
     /// <summary>
     /// Class provided a NotationData object according to RFC 4880bis, 5.2.3.17. Notation Data

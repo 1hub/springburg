@@ -1,4 +1,4 @@
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
+namespace Springburg.Cryptography.OpenPgp.Packet.Signature
 {
     enum RevocationKeyTag : byte
     {

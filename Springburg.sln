@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30709.64
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InflatablePalace", "src\InflatablePalace.csproj", "{6EC15F3F-73A9-4BBD-9902-4092A23E474D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Springburg", "src\Springburg.csproj", "{6EC15F3F-73A9-4BBD-9902-4092A23E474D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InflatablePalace.Test", "test\InflatablePalace.Test.csproj", "{6E3D5974-09D9-42FC-8F66-9F71747AFAC4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Springburg.Test", "test\Springburg.Test.csproj", "{6E3D5974-09D9-42FC-8F66-9F71747AFAC4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{67D18B80-9204-4765-8A7E-ED93EB946A6C}"
 	ProjectSection(SolutionItems) = preProject

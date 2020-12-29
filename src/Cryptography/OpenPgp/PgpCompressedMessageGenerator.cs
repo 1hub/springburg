@@ -1,14 +1,14 @@
-using InflatablePalace.Cryptography.Algorithms;
-using InflatablePalace.Cryptography.OpenPgp.Packet;
-using InflatablePalace.IO;
-using InflatablePalace.IO.Checksum;
+using Springburg.Cryptography.Algorithms;
+using Springburg.Cryptography.OpenPgp.Packet;
+using Springburg.IO;
+using Springburg.IO.Checksum;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>Class for producing compressed data packets.</summary>
     class PgpCompressedMessageGenerator : PgpMessageGenerator

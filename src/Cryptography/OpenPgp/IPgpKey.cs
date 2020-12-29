@@ -1,4 +1,4 @@
-﻿namespace InflatablePalace.Cryptography.OpenPgp
+﻿namespace Springburg.Cryptography.OpenPgp
 {
     interface IPgpKey
     {

@@ -1,5 +1,5 @@
-using InflatablePalace.Cryptography.Algorithms;
-using InflatablePalace.Cryptography.OpenPgp.Packet;
+using Springburg.Cryptography.Algorithms;
+using Springburg.Cryptography.OpenPgp.Packet;
 using Internal.Cryptography;
 using System;
 using System.Collections.Generic;
@@ -7,9 +7,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using Ed25519Dsa = InflatablePalace.Cryptography.Algorithms.Ed25519;
+using Ed25519Dsa = Springburg.Cryptography.Algorithms.Ed25519;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>General class to handle a PGP public key object.</summary>
     public class PgpPublicKey : PgpEncodable, IPgpKey

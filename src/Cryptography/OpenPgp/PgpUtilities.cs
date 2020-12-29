@@ -1,9 +1,9 @@
-using InflatablePalace.Cryptography.Algorithms;
-using InflatablePalace.Cryptography.OpenPgp.Packet;
+using Springburg.Cryptography.Algorithms;
+using Springburg.Cryptography.OpenPgp.Packet;
 using System;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>Basic utility class.</summary>
     public static class PgpUtilities

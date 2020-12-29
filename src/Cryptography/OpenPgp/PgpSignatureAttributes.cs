@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using InflatablePalace.Cryptography.OpenPgp.Packet;
-using InflatablePalace.Cryptography.OpenPgp.Packet.Signature;
+using Springburg.Cryptography.OpenPgp.Packet;
+using Springburg.Cryptography.OpenPgp.Packet.Signature;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     public class PgpSignatureAttributes
     {

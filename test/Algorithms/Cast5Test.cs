@@ -1,7 +1,7 @@
-﻿using InflatablePalace.Cryptography.Algorithms;
+﻿using Springburg.Cryptography.Algorithms;
 using NUnit.Framework;
 
-namespace InflatablePalace.Test.Algorithms
+namespace Springburg.Test.Algorithms
 {
     [TestFixture]
     public class Cast5Test : SymmetricAlgorithmTest<CAST5>

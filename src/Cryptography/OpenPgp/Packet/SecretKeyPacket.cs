@@ -1,9 +1,9 @@
-using InflatablePalace.IO;
+using Springburg.IO;
 using System;
 using System.Diagnostics;
 using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     class SecretKeyPacket : ContainedPacket
     {

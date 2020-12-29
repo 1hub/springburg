@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace InflatablePalace.IO
+namespace Springburg.IO
 {
     static class StreamExtensions
     {

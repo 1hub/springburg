@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.Algorithms
+namespace Springburg.Cryptography.Algorithms
 {
     public class X25519 : ECDiffieHellman
     {

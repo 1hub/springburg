@@ -1,5 +1,5 @@
-﻿using InflatablePalace.Cryptography.OpenPgp;
-using InflatablePalace.Cryptography.OpenPgp.Packet;
+﻿using Springburg.Cryptography.OpenPgp;
+using Springburg.Cryptography.OpenPgp.Packet;
 using NUnit.Framework;
 using Org.BouncyCastle.Bcpg.OpenPgp.Tests;
 using System;
@@ -7,7 +7,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace InflatablePalace.Test
+namespace Springburg.Test
 {
     [TestFixture]
     public class PgpArmorTest

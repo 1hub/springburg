@@ -1,9 +1,9 @@
-using InflatablePalace.Cryptography.OpenPgp.Packet.Signature;
-using InflatablePalace.IO;
+using Springburg.Cryptography.OpenPgp.Packet.Signature;
+using Springburg.IO;
 using System;
 using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     class SignatureSubpacketParser
     {

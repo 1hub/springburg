@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /**
      * Writer for S-expression keys

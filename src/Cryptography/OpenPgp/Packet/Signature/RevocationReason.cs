@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
+namespace Springburg.Cryptography.OpenPgp.Packet.Signature
 {
     /// <summary>
     /// Represents revocation reason OpenPGP signature sub packet.

@@ -4,7 +4,7 @@ using System;
 using System.Numerics;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.Algorithms
+namespace Springburg.Cryptography.Algorithms
 {
     public class ElGamal : AsymmetricAlgorithm
     {

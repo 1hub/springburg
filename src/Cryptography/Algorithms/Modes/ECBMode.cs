@@ -1,7 +1,7 @@
 ﻿using Internal.Cryptography;
 using System;
 
-namespace InflatablePalace.Cryptography.Algorithms.Modes
+namespace Springburg.Cryptography.Algorithms.Modes
 {
     sealed class ECBMode : BasicSymmetricCipher
     {

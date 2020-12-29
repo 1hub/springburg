@@ -1,8 +1,8 @@
-using InflatablePalace.Cryptography.OpenPgp.Packet;
-using InflatablePalace.IO;
+using Springburg.Cryptography.OpenPgp.Packet;
+using Springburg.IO;
 using System;
 using System.IO;
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>Class for producing literal data packets.</summary>
     class PgpLiteralMessageGenerator

@@ -1,9 +1,9 @@
-using InflatablePalace.IO;
+using Springburg.IO;
 using System;
 using System.IO;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     class LiteralDataPacket : StreamablePacket
     {

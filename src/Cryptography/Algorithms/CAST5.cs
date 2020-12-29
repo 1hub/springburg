@@ -1,9 +1,9 @@
-﻿using InflatablePalace.Cryptography.Algorithms;
-using InflatablePalace.Cryptography.Algorithms.Modes;
+﻿using Springburg.Cryptography.Algorithms;
+using Springburg.Cryptography.Algorithms.Modes;
 using System;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.Algorithms
+namespace Springburg.Cryptography.Algorithms
 {
     public sealed class CAST5 : SymmetricAlgorithm
     {

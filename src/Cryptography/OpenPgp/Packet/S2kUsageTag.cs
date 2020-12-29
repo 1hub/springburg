@@ -1,4 +1,4 @@
-﻿namespace InflatablePalace.Cryptography.OpenPgp.Packet
+﻿namespace Springburg.Cryptography.OpenPgp.Packet
 {
     enum S2kUsageTag : byte
     {

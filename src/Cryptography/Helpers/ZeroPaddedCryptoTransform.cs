@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.Helpers
+namespace Springburg.Cryptography.Helpers
 {
     /// <summary>
     /// Wrapper around cryptography transformations that generates and

@@ -1,6 +1,6 @@
 using System;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
+namespace Springburg.Cryptography.OpenPgp.Packet.Signature
 {
     /// <summary>
     /// Represents revocation key OpenPGP signature sub packet.

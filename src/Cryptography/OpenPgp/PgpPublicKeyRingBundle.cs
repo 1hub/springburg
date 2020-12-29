@@ -1,11 +1,11 @@
-using InflatablePalace.Cryptography.OpenPgp.Packet;
+using Springburg.Cryptography.OpenPgp.Packet;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>
     /// Often a PGP key ring file is made up of a succession of master/sub-key key rings.

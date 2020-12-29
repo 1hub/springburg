@@ -1,9 +1,9 @@
-using InflatablePalace.Cryptography.OpenPgp.Packet;
+using Springburg.Cryptography.OpenPgp.Packet;
 using System;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>A PGP signature object.</summary>
     public class PgpSignature : PgpEncodable

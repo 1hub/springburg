@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     public interface IPacketReader : IDisposable
     {

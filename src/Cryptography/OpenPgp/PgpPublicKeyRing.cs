@@ -1,10 +1,10 @@
-using InflatablePalace.Cryptography.OpenPgp.Packet;
+using Springburg.Cryptography.OpenPgp.Packet;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>
     /// Class to hold a single master public key and its subkeys.

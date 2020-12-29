@@ -1,4 +1,4 @@
-﻿using InflatablePalace.Cryptography.OpenPgp;
+﻿using Springburg.Cryptography.OpenPgp;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InflatablePalace.Test
+namespace Springburg.Test
 {
     [TestFixture]
     public class PgpCompositionTest

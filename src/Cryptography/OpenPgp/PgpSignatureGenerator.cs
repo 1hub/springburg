@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using InflatablePalace.Cryptography.OpenPgp.Packet;
+using Springburg.Cryptography.OpenPgp.Packet;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>Generator for PGP signatures.</summary>
     public class PgpSignatureGenerator

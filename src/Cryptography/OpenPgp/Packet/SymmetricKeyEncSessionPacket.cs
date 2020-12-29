@@ -1,7 +1,7 @@
-using InflatablePalace.IO;
+using Springburg.IO;
 using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     class SymmetricKeyEncSessionPacket : ContainedPacket
     {

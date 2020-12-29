@@ -1,5 +1,5 @@
-using InflatablePalace.Cryptography.Algorithms;
-using InflatablePalace.Cryptography.OpenPgp;
+using Springburg.Cryptography.Algorithms;
+using Springburg.Cryptography.OpenPgp;
 using NUnit.Framework;
 using System;
 using System.IO;

@@ -1,10 +1,10 @@
-﻿using InflatablePalace.Cryptography.OpenPgp.Packet;
+﻿using Springburg.Cryptography.OpenPgp.Packet;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>
     /// Class that represent OpenPGP certification signature and methods for verifying

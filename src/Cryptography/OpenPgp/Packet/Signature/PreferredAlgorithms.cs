@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet.Signature
+namespace Springburg.Cryptography.OpenPgp.Packet.Signature
 {
     class PreferredAlgorithms : SignatureSubpacket
     {

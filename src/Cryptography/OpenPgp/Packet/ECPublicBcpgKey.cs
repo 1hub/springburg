@@ -2,10 +2,10 @@
 using System.Security.Cryptography;
 using System.Formats.Asn1;
 using System;
-using InflatablePalace.IO;
+using Springburg.IO;
 using System.Diagnostics;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     abstract class ECPublicBcpgKey : BcpgKey
     {

@@ -1,4 +1,4 @@
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>Basic tags for symmetric key algorithms</summary>
     public enum PgpSymmetricKeyAlgorithm : byte

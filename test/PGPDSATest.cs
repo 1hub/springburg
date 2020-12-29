@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
-using InflatablePalace.Cryptography.OpenPgp;
+using Springburg.Cryptography.OpenPgp;
 using NUnit.Framework;
 
 using Org.BouncyCastle.Utilities.Test;

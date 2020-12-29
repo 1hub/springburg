@@ -1,7 +1,7 @@
 using System;
 using System.Security.Cryptography;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     /// <summary>
     /// General class to handle .NET key pairs and convert them into OpenPGP ones.

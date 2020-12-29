@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     /// <summary>Basic type for a PGP Signature sub-packet.</summary>
     class SignatureSubpacket

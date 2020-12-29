@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace InflatablePalace.IO
+namespace Springburg.IO
 {
     class FilterStream : Stream
     {

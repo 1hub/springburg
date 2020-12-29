@@ -1,8 +1,8 @@
-using InflatablePalace.IO;
+using Springburg.IO;
 using System;
 using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     /// <summary>Basic type for a trust packet.</summary>
     class TrustPacket : ContainedPacket

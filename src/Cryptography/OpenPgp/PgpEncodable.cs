@@ -1,7 +1,7 @@
-﻿using InflatablePalace.Cryptography.OpenPgp.Packet;
+﻿using Springburg.Cryptography.OpenPgp.Packet;
 using System.IO;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     public abstract class PgpEncodable
     {

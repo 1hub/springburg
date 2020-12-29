@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace InflatablePalace.Cryptography.OpenPgp
+namespace Springburg.Cryptography.OpenPgp
 {
     [Serializable]
     public class PgpUnexpectedPacketException : PgpException

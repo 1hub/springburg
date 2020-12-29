@@ -1,8 +1,8 @@
-using InflatablePalace.IO;
+using Springburg.IO;
 using System.IO;
 using System.Text;
 
-namespace InflatablePalace.Cryptography.OpenPgp.Packet
+namespace Springburg.Cryptography.OpenPgp.Packet
 {
     class UserIdPacket : ContainedPacket
     {
