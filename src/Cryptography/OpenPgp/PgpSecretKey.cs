@@ -329,8 +329,12 @@ namespace Springburg.Cryptography.OpenPgp
                     int halfModulusLength = (n.Length + 1) / 2;
 
                     var privateExponent = new BigInteger(rsaPriv.PrivateExponent.Value, isBigEndian: true, isUnsigned: true);
-                    var DP = BigInteger.Remainder(privateExponent, new BigInteger(rsaPriv.PrimeP.Value, isBigEndian: true, isUnsigned: true) - BigInteger.One);
-                    var DQ = BigInteger.Remainder(privateExponent, new BigInteger(rsaPriv.PrimeQ.Value, isBigEndian: true, isUnsigned: true) - BigInteger.One);
+                    var P = new BigInteger(rsaPriv.PrimeP.Value, isBigEndian: true, isUnsigned: true);
+                    var Q = new BigInteger(rsaPriv.PrimeQ.Value, isBigEndian: true, isUnsigned: true);
+                    var DP = BigInteger.Remainder(privateExponent, P - BigInteger.One);
+                    var DQ = BigInteger.Remainder(privateExponent, Q - BigInteger.One);
+                    // Lot of the public keys in the test suite have this wrong (switched P/Q)
+                    var InverseQ = BigInteger.ModPow(Q, P - BigInteger.One - BigInteger.One, P);
 
                     var rsaParameters = new RSAParameters
                     {
@@ -341,7 +345,7 @@ namespace Springburg.Cryptography.OpenPgp
                         Q = ExportKeyParameter(rsaPriv.PrimeQ.Value, halfModulusLength),
                         DP = ExportKeyParameter(DP, halfModulusLength),
                         DQ = ExportKeyParameter(DQ, halfModulusLength),
-                        InverseQ = ExportKeyParameter(rsaPriv.InverseQ.Value, halfModulusLength),
+                        InverseQ = ExportKeyParameter(/*rsaPriv.InverseQ.Value*/InverseQ, halfModulusLength),
                     };
                     privateKey = RSA.Create(rsaParameters);
                     break;
