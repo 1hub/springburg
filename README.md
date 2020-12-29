@@ -1,14 +1,14 @@
 # Springburg
 
-This library takes OpenPGP implementation from BouncyCastle and updates it to work on top of .NET cryptography classes instead of BouncyCastle ones. It also updates the API to use generics and latest C# features. Where deemed reasonable it also tries to avoid mistakes that were present in the original BouncyCastle design like  passing in parameters that are already implied by other means and where mismatch would only result in error.
+This is an experimental OpenPGP library for .NET. At the moment the API is unstable, bugs are all around the place and it is not ready for production use.
 
-At the moment this is not a production ready code and some features of the original API are missing or not working:
+The library uses parts of the OpenPGP implementation from [Bouncy Castle](https://github.com/bcgit/bc-csharp/) but it's heavily rewritten. It updates the API to use generics, latest C# features and offer more fool proof type-safe API for building OpenPGP applications. Where deemed reasonable it also tries to avoid mistakes that were present in the original BouncyCastle design like passing in parameters that are already implied by other means and where mismatch would only result in error.
+
+Where possible the .NET cryptography APIs are used under the hood (RSA, DSA, ECDsa, ECDiffieHellman, AES, 3DES, etc.). X25519 and Ed25519 algorithms are implemented using the [NSec library](https://nsec.rocks/). Few more algorithms are implemented in managed code to offer legacy compatibility (ElGamal encryption and Twofish, IDEA and CAST5 symmetric ciphers). The eventual goal is to offer an option to drop these legacy algorithm where compatibility is not a concern. They are not requirement of the OpenPGP specification but older versions of PGP and GnuPG software are known to use some of these algorithms as default. The impementations were used to bootstrap some of the ported Bouncy Castle unit tests.
+
+The following features of the original API are missing or not working properly:
 - Bzip2 compression and decompression
 - SHA224 hash algorithm
 - DSA with large keys or 224-bit Q value
 
-Unlike BouncyCastle 1.8.9 which this code is forked from it adds support for X25519 key exchange algorithm and Ed25519 signature algorithm. Both are currently implemented as wrappers around the NSec security library since .NET lacks cross platform implementation.
-
-Implementations of legacy algorithms (IDEA, CAST5, TwoFish, ElGamal) are provided for compatibility but generally don't meet the code quality required for cryptographic code.
-
-Just as BouncyCastle the library is licensed under MIT license.
+Just as Bouncy Castle the library is licensed under MIT license.
