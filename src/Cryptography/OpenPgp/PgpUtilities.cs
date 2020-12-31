@@ -89,143 +89,11 @@ namespace Springburg.Cryptography.OpenPgp
             }
         }
 
-        internal static byte[] DoMakeKeyFromPassPhrase(PgpSymmetricKeyAlgorithm algorithm, S2k? s2k, byte[] rawPassPhrase)
-        {
-            int keySize = GetKeySize(algorithm);
-            byte[] pBytes = rawPassPhrase;
-            byte[] keyBytes = new byte[(keySize + 7) / 8];
-
-            int generatedBytes = 0;
-            int loopCount = 0;
-
-            while (generatedBytes < keyBytes.Length)
-            {
-                byte[] hashValue;
-
-                if (s2k != null)
-                {
-                    using var digest = GetHashAlgorithm(s2k.HashAlgorithm);
-
-                    for (int i = 0; i != loopCount; i++)
-                    {
-                        digest.TransformBlock(new byte[] { 0 }, 0, 1, null, 0);
-                    }
-
-                    byte[] iv = s2k.GetIV().ToArray();
-
-                    switch (s2k.Type)
-                    {
-                        case S2k.Simple:
-                            digest.TransformBlock(pBytes, 0, pBytes.Length, null, 0);
-                            break;
-                        case S2k.Salted:
-                            digest.TransformBlock(iv, 0, iv.Length, null, 0);
-                            digest.TransformBlock(pBytes, 0, pBytes.Length, null, 0);
-                            break;
-                        case S2k.SaltedAndIterated:
-                            long count = s2k.IterationCount;
-                            digest.TransformBlock(iv, 0, iv.Length, null, 0);
-                            digest.TransformBlock(pBytes, 0, pBytes.Length, null, 0);
-
-                            count -= iv.Length + pBytes.Length;
-
-                            while (count > 0)
-                            {
-                                if (count < iv.Length)
-                                {
-                                    digest.TransformBlock(iv, 0, (int)count, null, 0);
-                                    break;
-                                }
-                                else
-                                {
-                                    digest.TransformBlock(iv, 0, iv.Length, null, 0);
-                                    count -= iv.Length;
-                                }
-
-                                if (count < pBytes.Length)
-                                {
-                                    digest.TransformBlock(pBytes, 0, (int)count, null, 0);
-                                    count = 0;
-                                }
-                                else
-                                {
-                                    digest.TransformBlock(pBytes, 0, pBytes.Length, null, 0);
-                                    count -= pBytes.Length;
-                                }
-                            }
-                            break;
-                        default:
-                            throw new PgpException("unknown S2k type: " + s2k.Type);
-                    }
-
-                    digest.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-                    hashValue = digest.Hash!;
-                }
-                else
-                {
-                    using var digest = MD5.Create();
-
-                    for (int i = 0; i != loopCount; i++)
-                    {
-                        digest.TransformBlock(new byte[] { 0 }, 0, 1, null, 0);
-                    }
-
-                    digest.TransformBlock(pBytes, 0, pBytes.Length, null, 0);
-
-                    digest.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-                    hashValue = digest.Hash!;
-                }
-
-
-                if (hashValue.Length > (keyBytes.Length - generatedBytes))
-                {
-                    Array.Copy(hashValue, 0, keyBytes, generatedBytes, keyBytes.Length - generatedBytes);
-                }
-                else
-                {
-                    Array.Copy(hashValue, 0, keyBytes, generatedBytes, hashValue.Length);
-                }
-
-                generatedBytes += hashValue.Length;
-
-                loopCount++;
-            }
-
-            return keyBytes;// MakeKey(algorithm, keyBytes);
-        }
-
         internal static S2k GenerateS2k(PgpHashAlgorithm hashAlgorithm, int s2kCount)
         {
             byte[] iv = new byte[8];
             RandomNumberGenerator.Fill(iv);
             return new S2k(hashAlgorithm, iv, s2kCount);
-        }
-
-        internal static ECPoint DecodePoint(MPInteger point)
-        {
-            var pointBytes = point.Value;
-            if (pointBytes[0] == 4) // Uncompressed point
-            {
-                var expectedLength = (pointBytes.Length - 1) / 2;
-                return new ECPoint { X = pointBytes.AsSpan(1, expectedLength).ToArray(), Y = pointBytes.AsSpan(expectedLength + 1, expectedLength).ToArray() };
-            }
-            else if (pointBytes[0] == 0x40) // Compressed point
-            {
-                return new ECPoint { X = pointBytes.AsSpan(1).ToArray(), Y = new byte[pointBytes.Length - 1] };
-            }
-            else
-            {
-                throw new PgpException("unsupported point format");
-            }
-        }
-
-        internal static MPInteger EncodePoint(ECPoint point)
-        {
-            var pointBytes = new byte[1 + point.X!.Length + point.Y!.Length];
-            pointBytes[0] = 4;
-            Array.Copy(point.X, 0, pointBytes, 1, point.X.Length);
-            Array.Copy(point.Y, 0, pointBytes, 1 + point.X.Length, point.Y.Length);
-            return new MPInteger(pointBytes);
         }
 
         public static PgpHashAlgorithm GetHashAlgorithm(string name)
@@ -327,20 +195,6 @@ namespace Springburg.Cryptography.OpenPgp
             symmetricAlgorithm.FeedbackSize = symmetricAlgorithm.BlockSize;
             symmetricAlgorithm.Padding = PaddingMode.None;
             return symmetricAlgorithm;
-        }
-
-        internal static ECDiffieHellman GetECDiffieHellman(ECParameters parameters)
-        {
-            if (parameters.Curve.Oid.Value == "1.3.6.1.4.1.3029.1.5.1")
-                return new X25519(parameters);
-            return ECDiffieHellman.Create(parameters);
-        }
-
-        internal static ECDiffieHellman GetECDiffieHellman(ECCurve curve)
-        {
-            if (curve.Oid.Value == "1.3.6.1.4.1.3029.1.5.1")
-                return new X25519();
-            return ECDiffieHellman.Create(curve);
         }
     }
 }

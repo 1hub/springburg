@@ -124,7 +124,7 @@ namespace Springburg.Cryptography.OpenPgp
 
             var certifiedSubKey = PgpPublicKey.AddCertification(publicSubKey, subkeyBinding);
 
-            keys.Add(new PgpSecretKey(new PgpPrivateKey(certifiedSubKey.KeyId, certifiedSubKey.PublicKeyPacket, subKey), certifiedSubKey, encAlgorithm, rawPassPhrase, useSha1, false));
+            keys.Add(new PgpSecretKey(new PgpPrivateKey(certifiedSubKey.KeyId, subKey, publicSubKey.Fingerprint), certifiedSubKey, encAlgorithm, rawPassPhrase, useSha1, false));
         }
 
 

@@ -1,14 +1,11 @@
 using Springburg.Cryptography.Algorithms;
 using Springburg.Cryptography.OpenPgp.Packet;
-using Internal.Cryptography;
+using Springburg.Cryptography.OpenPgp.Keys;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using Ed25519Dsa = Springburg.Cryptography.Algorithms.Ed25519;
-using System.Formats.Asn1;
 
 namespace Springburg.Cryptography.OpenPgp
 {
@@ -18,20 +15,46 @@ namespace Springburg.Cryptography.OpenPgp
         private long keyId;
         private byte[] fingerprint;
 
-        private AsymmetricAlgorithm? key;
+        private IAsymmetricPublicKey? key;
         internal PublicKeyPacket publicPk;
         internal TrustPacket? trustPk;
         internal List<PgpCertification> keyCertifications;
         internal List<PgpUser> ids;
 
+        private byte[] CalculateFingerprint()
+        {
+            //BcpgKey key = Key;
+            HashAlgorithm digest;
+
+            if (Version <= 3)
+            {
+                var rsaParameters = RsaKey.ReadOpenPgpPublicKey(publicPk.KeyBytes, out var _);
+                digest = MD5.Create();
+                digest.TransformBlock(rsaParameters.Modulus!, 0, rsaParameters.Modulus!.Length, null, 0);
+                digest.TransformBlock(rsaParameters.Exponent!, 0, rsaParameters.Exponent!.Length, null, 0);
+            }
+            else
+            {
+                byte[] kBytes = publicPk.GetEncodedContents();
+                digest = SHA1.Create();
+                digest.TransformBlock(new byte[] { 0x99, (byte)(kBytes.Length >> 8), (byte)kBytes.Length }, 0, 3, null, 0);
+                digest.TransformBlock(kBytes, 0, kBytes.Length, null, 0);
+            }
+
+            digest.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+
+            return digest.Hash!;
+        }
+
         private void Init()
         {
-            this.fingerprint = publicPk.CalculateFingerprint();
+            this.fingerprint = CalculateFingerprint();
 
             if (publicPk.Version <= 3)
             {
-                RsaPublicBcpgKey rK = (RsaPublicBcpgKey)publicPk.Key;
-                var modulus = rK.Modulus.Value;
+                var rsaParameters = RsaKey.ReadOpenPgpPublicKey(publicPk.KeyBytes, out var _);
+                //RsaPublicBcpgKey rK = (RsaPublicBcpgKey)publicPk.Key;
+                var modulus = rsaParameters.Modulus;
 
                 this.keyId = (long)(((ulong)modulus[modulus.Length - 8] << 56)
                     | ((ulong)modulus[modulus.Length - 7] << 48)
@@ -72,89 +95,34 @@ namespace Springburg.Cryptography.OpenPgp
             DateTime time,
             bool isMasterKey = true)
         {
-            BcpgKey bcpgKey;
-            PgpPublicKeyAlgorithm algorithm;
-            this.key = pubKey;
-            if (pubKey is RSA rK)
-            {
-                var rKParams = rK.ExportParameters(false);
-                algorithm = PgpPublicKeyAlgorithm.RsaGeneral;
-                bcpgKey = new RsaPublicBcpgKey(
-                    new MPInteger(rKParams.Modulus),
-                    new MPInteger(rKParams.Exponent));
-            }
-            else if (pubKey is DSA dK)
-            {
-                var dKParams = dK.ExportParameters(false);
-                algorithm = PgpPublicKeyAlgorithm.Dsa;
-                bcpgKey = new DsaPublicBcpgKey(
-                    new MPInteger(dKParams.P),
-                    new MPInteger(dKParams.Q),
-                    new MPInteger(dKParams.G),
-                    new MPInteger(dKParams.Y));
+            byte[]? ecdhFingerprint = null;
 
-            }
-            else if (pubKey is X25519 x25519K)
-            {
-                var ecdhKParams = x25519K.ExportParameters(false);
-                algorithm = PgpPublicKeyAlgorithm.ECDH;
-                bcpgKey = new ECDHPublicBcpgKey(
-                    new Oid("1.3.6.1.4.1.3029.1.5.1"),
-                    new MPInteger(new byte[] { 0x40 }.Concat(ecdhKParams.Q.X!).ToArray()),
-                    PgpHashAlgorithm.Sha256,
-                    PgpSymmetricKeyAlgorithm.Aes128);
-            }
-            else if (pubKey is ECDiffieHellman ecdhK)
-            {
-                var ecdhKParams = ecdhK.ExportParameters(false);
-                algorithm = PgpPublicKeyAlgorithm.ECDH;
-                bcpgKey = new ECDHPublicBcpgKey(
-                    ecdhKParams.Curve.Oid,
-                    PgpUtilities.EncodePoint(ecdhKParams.Q),
-                    PgpHashAlgorithm.Sha256,
-                    PgpSymmetricKeyAlgorithm.Aes128);
-            }
-            else if (pubKey is Ed25519Dsa ed25519K)
-            {
-                var ed25519KParams = ed25519K.ExportParameters(false);
-                var pointBytes = new byte[1 + ed25519KParams.Q.X!.Length];
-                pointBytes[0] = 0x40;
-                Array.Copy(ed25519KParams.Q.X, 0, pointBytes, 1, ed25519KParams.Q.X.Length);
-                algorithm = PgpPublicKeyAlgorithm.EdDsa;
-                bcpgKey = new ECDsaPublicBcpgKey(
-                    new Oid("1.3.6.1.4.1.11591.15.1"),
-                    new MPInteger(pointBytes));
-            }
-            else if (pubKey is ECDsa ecdsaK)
-            {
-                var ecdsaKParams = ecdsaK.ExportParameters(false);
-                algorithm = PgpPublicKeyAlgorithm.ECDsa;
-                bcpgKey = new ECDsaPublicBcpgKey(
-                    ecdsaKParams.Curve.Oid,
-                    PgpUtilities.EncodePoint(ecdsaKParams.Q));
-            }
-            else if (pubKey is ElGamal elgamalK)
-            {
-                var elgamalKParams = elgamalK.ExportParameters(false);
-                algorithm = PgpPublicKeyAlgorithm.ElGamalGeneral;
-                bcpgKey = new ElGamalPublicBcpgKey(
-                    new MPInteger(elgamalKParams.P),
-                    new MPInteger(elgamalKParams.G),
-                    new MPInteger(elgamalKParams.Y));
-            }
+            if (pubKey is RSA rsa)
+                this.key = new RsaKey(rsa);
+            else if (pubKey is DSA dsa)
+                this.key = new DsaKey(dsa);
+            else if (pubKey is ElGamal elGamal)
+                this.key = new ElGamalKey(elGamal);
+            else if (pubKey is ECDiffieHellman ecdh)
+                this.key = new ECDiffieHellmanKey(ecdh, new byte[] { 0, (byte)PgpHashAlgorithm.Sha256, (byte)PgpSymmetricKeyAlgorithm.Aes128 }, ecdhFingerprint = new byte[20]);
+            else if (pubKey is ECDsa ecdsa)
+                this.key = new ECDsaKey(ecdsa);
             else
-            {
-                throw new PgpException("unknown key class");
-            }
+                throw new NotSupportedException();
+
+            var keyBytes = this.key.ExportPublicKey();
 
             this.publicPk = isMasterKey ?
-                new PublicKeyPacket(algorithm, time, bcpgKey) :
-                new PublicSubkeyPacket(algorithm, time, bcpgKey);
+                new PublicKeyPacket(this.key.Algorithm, time, keyBytes) :
+                new PublicSubkeyPacket(this.key.Algorithm, time, keyBytes);
             this.keyCertifications = new List<PgpCertification>();
             this.ids = new List<PgpUser>();
 
             Init();
             Debug.Assert(this.fingerprint != null);
+
+            if (ecdhFingerprint != null)
+                this.fingerprint.AsSpan(0, 20).CopyTo(ecdhFingerprint);
         }
 
         internal PgpPublicKey(PublicKeyPacket publicPk)
@@ -229,7 +197,7 @@ namespace Springburg.Cryptography.OpenPgp
         public int Version => publicPk.Version;
 
         /// <summary>The creation time of this key.</summary>
-        public DateTime CreationTime => publicPk.GetTime();
+        public DateTime CreationTime => publicPk.CreationTime;
 
         /// <summary>Return the trust data associated with the public key, if present.</summary>
         /// <returns>A byte array with trust data, null otherwise.</returns>
@@ -352,7 +320,7 @@ namespace Springburg.Cryptography.OpenPgp
         /// <summary>The public key contained in the object.</summary>
         /// <returns>A lightweight public key.</returns>
         /// <exception cref="PgpException">If the key algorithm is not recognised.</exception>
-        private AsymmetricAlgorithm GetKey()
+        private IAsymmetricPublicKey GetKey()
         {
             if (key != null)
             {
@@ -364,43 +332,18 @@ namespace Springburg.Cryptography.OpenPgp
                 case PgpPublicKeyAlgorithm.RsaEncrypt:
                 case PgpPublicKeyAlgorithm.RsaGeneral:
                 case PgpPublicKeyAlgorithm.RsaSign:
-                    RsaPublicBcpgKey rsaK = (RsaPublicBcpgKey)publicPk.Key;
-                    return key = RSA.Create(new RSAParameters
-                    {
-                        Modulus = rsaK.Modulus.Value,
-                        Exponent = rsaK.PublicExponent.Value
-                    });
+                    return key = RsaKey.CreatePublic(publicPk.KeyBytes, out var _);
                 case PgpPublicKeyAlgorithm.Dsa:
-                    DsaPublicBcpgKey dsaK = (DsaPublicBcpgKey)publicPk.Key;
-                    return key = DSA.Create(new DSAParameters
-                    {
-                        Y = dsaK.Y.Value,
-                        P = dsaK.P.Value,
-                        Q = dsaK.Q.Value,
-                        G = dsaK.G.Value,
-                    });
-                case PgpPublicKeyAlgorithm.ECDsa:
-                case PgpPublicKeyAlgorithm.ECDH:
-                    ECPublicBcpgKey ecK = (ECPublicBcpgKey)publicPk.Key;
-                    var curve = ECCurve.CreateFromOid(ecK.CurveOid);
-                    var ecParameters = new ECParameters { Curve = curve, Q = PgpUtilities.DecodePoint(ecK.EncodedPoint) };
-                    key = publicPk.Algorithm == PgpPublicKeyAlgorithm.ECDsa ? ECDsa.Create(ecParameters) : PgpUtilities.GetECDiffieHellman(ecParameters);
-                    return key;
-
-                case PgpPublicKeyAlgorithm.EdDsa:
-                    ecK = (ECPublicBcpgKey)publicPk.Key;
-                    if (ecK.CurveOid.Value == "1.3.6.1.4.1.11591.15.1")
-                    {
-                        // FIXME: Check first byte for 0x40
-                        return key = new Ed25519Dsa(ecK.EncodedPoint.Value.AsSpan(1).ToArray());
-                    }
-                    goto default;
-
+                    return key = DsaKey.CreatePublic(publicPk.KeyBytes, out var _);
                 case PgpPublicKeyAlgorithm.ElGamalEncrypt:
                 case PgpPublicKeyAlgorithm.ElGamalGeneral:
-                    ElGamalPublicBcpgKey elK = (ElGamalPublicBcpgKey)publicPk.Key;
-                    return key = ElGamal.Create(new ElGamalParameters { Y = elK.Y.Value, P = elK.P.Value, G = elK.G.Value });
-
+                    return key = ElGamalKey.CreatePublic(publicPk.KeyBytes, out var _);
+                case PgpPublicKeyAlgorithm.ECDsa:
+                    return key = ECDsaKey.CreatePublic(publicPk.KeyBytes, out var _);
+                case PgpPublicKeyAlgorithm.ECDH:
+                    return key = ECDiffieHellmanKey.CreatePublic(fingerprint, publicPk.KeyBytes, out var _);
+                case PgpPublicKeyAlgorithm.EdDsa:
+                    return key = ECDsaKey.CreatePublic(publicPk.KeyBytes, out var _);
                 default:
                     throw new PgpException("unknown public key algorithm encountered");
             }
@@ -408,71 +351,22 @@ namespace Springburg.Cryptography.OpenPgp
 
         public byte[] EncryptSessionInfo(byte[] sessionInfo)
         {
-            if (!IsEncryptionKey)
+            var key = GetKey();
+
+            if (!key.CanEncrypt)
                 throw new PgpException("Key is not usable for encryption");
 
-            var asymmetricAlgorithm = GetKey();
-
-            if (asymmetricAlgorithm is RSA rsa)
-            {
-                return rsa.Encrypt(sessionInfo, RSAEncryptionPadding.Pkcs1);
-            }
-
-            if (asymmetricAlgorithm is ECDiffieHellman otherPartyKey)
-            {
-                ECDHPublicBcpgKey ecKey = (ECDHPublicBcpgKey)publicPk.Key;
-
-                // Generate the ephemeral key pair
-                var ecCurve = ECCurve.CreateFromOid(ecKey.CurveOid);
-                var ecdh = PgpUtilities.GetECDiffieHellman(ecCurve);
-                var derivedKey = ecdh.DeriveKeyFromHash(
-                    otherPartyKey.PublicKey,
-                    PgpUtilities.GetHashAlgorithmName(ecKey.HashAlgorithm),
-                    new byte[] { 0, 0, 0, 1 },
-                    Rfc6637Utilities.CreateUserKeyingMaterial(publicPk));
-
-                derivedKey = derivedKey.AsSpan(0, PgpUtilities.GetKeySize(ecKey.SymmetricKeyAlgorithm) / 8).ToArray();
-
-                byte[] paddedSessionData = PgpPad.PadSessionData(sessionInfo);
-                byte[] C = SymmetricKeyWrap.AESKeyWrapEncrypt(derivedKey, paddedSessionData);
-                var ep = ecdh.PublicKey.ExportParameters();
-                byte[] VB = PgpUtilities.EncodePoint(ep.Q).GetEncoded();
-                byte[] rv = new byte[VB.Length + 1 + C.Length];
-                Array.Copy(VB, 0, rv, 0, VB.Length);
-                rv[VB.Length] = (byte)C.Length;
-                Array.Copy(C, 0, rv, VB.Length + 1, C.Length);
-
-                return rv;
-            }
-
-            if (asymmetricAlgorithm is ElGamal elGamal)
-            {
-                return elGamal.Encrypt(sessionInfo, RSAEncryptionPadding.Pkcs1).ToArray();
-            }
-
-            throw new NotImplementedException();
+            return key.EncryptSessionInfo(sessionInfo);
         }
 
         public bool Verify(byte[] hash, byte[] signature, PgpHashAlgorithm hashAlgorithm)
         {
             var key = GetKey();
 
-            if (key is RSA rsa)
-                return rsa.VerifyHash(hash, signature, PgpUtilities.GetHashAlgorithmName(hashAlgorithm), RSASignaturePadding.Pkcs1);
+            if (!key.CanSign)
+                throw new PgpException("Key is not usable for singing");
 
-            var asnWriter = new AsnWriter(AsnEncodingRules.DER);
-            using (var scope = asnWriter.PushSequence())
-            {
-                asnWriter.WriteIntegerUnsigned(signature.AsSpan(0, signature.Length / 2));
-                asnWriter.WriteIntegerUnsigned(signature.AsSpan(signature.Length / 2));
-            }
-
-            if (key is DSA dsa)
-                return dsa.VerifySignature(hash, asnWriter.Encode(), DSASignatureFormat.Rfc3279DerSequence);
-            if (key is ECDsa ecdsa)
-                return ecdsa.VerifyHash(hash, asnWriter.Encode(), DSASignatureFormat.Rfc3279DerSequence);
-
-            throw new NotImplementedException();
+            return key.VerifySignature(hash, signature, hashAlgorithm);
         }
 
         /// <summary>Allows enumeration of any user IDs associated with the key.</summary>

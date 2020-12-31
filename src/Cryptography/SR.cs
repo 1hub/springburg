@@ -13,6 +13,12 @@
         public static string Cryptography_CSP_NoPrivateKey = "Object contains only the public half of a key pair.A private key must also be provided.";
         public static string Cryptography_HashAlgorithmNameNullOrEmpty = "The hash algorithm name cannot be null or empty.";
         public static string Cryptography_TlsRequires64ByteSeed = "The TLS key derivation function requires a seed value of exactly 64 bytes.";
+
         public static string Argument_DestinationTooShort = "Destination is too short.";
+
+        public static string Cryptography_OpenPgp_InvalidMPInteger = "Invalid encoding of MP integer in signature or key.";
+        public static string Cryptography_OpenPgp_UnsupportedECPoint = "Unsupported EC point format.";
+        public static string Cryptography_OpenPgp_HashMustBeSHA256OrStronger = "Hash algorithm must be SHA-256 or stronger.";
+        public static string Cryptography_OpenPgp_SymmetricKeyAlgorithmMustBeAES256OrStronger = "Symmetric key algorithm must be AES-128 or stronger.";
     }
 }

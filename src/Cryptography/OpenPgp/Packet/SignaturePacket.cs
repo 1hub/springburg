@@ -105,27 +105,7 @@ namespace Springburg.Cryptography.OpenPgp.Packet
             if (bcpgIn.ReadFully(fingerprint) < fingerprint.Length)
                 throw new EndOfStreamException();
 
-            switch (keyAlgorithm)
-            {
-                case PgpPublicKeyAlgorithm.RsaGeneral:
-                case PgpPublicKeyAlgorithm.RsaSign:
-                    MPInteger v = new MPInteger(bcpgIn);
-                    signature = v.Value;
-                    break;
-                case PgpPublicKeyAlgorithm.Dsa:
-                case PgpPublicKeyAlgorithm.ECDsa:
-                case PgpPublicKeyAlgorithm.EdDsa:
-                    MPInteger r = new MPInteger(bcpgIn);
-                    MPInteger s = new MPInteger(bcpgIn);
-                    int halfLength = Math.Max(r.Value.Length, s.Value.Length);
-                    signature = new byte[halfLength * 2];
-                    r.Value.CopyTo(signature.AsSpan(halfLength - r.Value.Length));
-                    s.Value.CopyTo(signature.AsSpan(signature.Length - s.Value.Length));
-                    break;
-                default:
-                    signature = bcpgIn.ReadAll();
-                    break;
-            }
+            signature = bcpgIn.ReadAll();
         }
 
         public SignaturePacket(
@@ -205,24 +185,7 @@ namespace Springburg.Cryptography.OpenPgp.Packet
             }
 
             bcpgOut.Write(fingerprint);
-
-            switch (keyAlgorithm)
-            {
-                case PgpPublicKeyAlgorithm.RsaGeneral:
-                case PgpPublicKeyAlgorithm.RsaSign:
-                    new MPInteger(signature).Encode(bcpgOut);
-                    break;
-                case PgpPublicKeyAlgorithm.Dsa:
-                case PgpPublicKeyAlgorithm.ECDsa:
-                case PgpPublicKeyAlgorithm.EdDsa:
-                    int halfLength = signature.Length / 2;
-                    new MPInteger(signature.AsSpan(0, halfLength)).Encode(bcpgOut);
-                    new MPInteger(signature.AsSpan(halfLength)).Encode(bcpgOut);
-                    break;
-                default:
-                    bcpgOut.Write(signature);
-                    break;
-            }
+            bcpgOut.Write(signature);
         }
 
         private static void EncodeLengthAndData(Stream pOut, byte[] data)

@@ -20,7 +20,7 @@ namespace Springburg.Cryptography.OpenPgp
             DateTime time)
         {
             this.PublicKey = new PgpPublicKey(keyPair, time, isMasterKey: true);
-            this.PrivateKey = new PgpPrivateKey(this.PublicKey.KeyId, this.PublicKey.PublicKeyPacket, keyPair);
+            this.PrivateKey = new PgpPrivateKey(this.PublicKey.KeyId, keyPair, PublicKey.Fingerprint);
         }
 
         /// <summary>Create a key pair from a PgpPrivateKey and a PgpPublicKey.</summary>
