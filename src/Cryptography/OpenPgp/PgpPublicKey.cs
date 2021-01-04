@@ -286,23 +286,9 @@ namespace Springburg.Cryptography.OpenPgp
         /// <returns>
         /// <c>true</c> if this key algorithm is suitable for encryption.
         /// </returns>
-        public bool IsEncryptionKey
-        {
-            get
-            {
-                switch (publicPk.Algorithm)
-                {
-                    case PgpPublicKeyAlgorithm.ECDH:
-                    case PgpPublicKeyAlgorithm.ElGamalEncrypt:
-                    case PgpPublicKeyAlgorithm.ElGamalGeneral:
-                    case PgpPublicKeyAlgorithm.RsaEncrypt:
-                    case PgpPublicKeyAlgorithm.RsaGeneral:
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-        }
+        public bool IsEncryptionKey => GetKey().CanEncrypt;
+
+        public bool IsSigningKey => GetKey().CanSign;
 
         /// <summary>True, if this could be a master key.</summary>
         public bool IsMasterKey

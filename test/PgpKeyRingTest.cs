@@ -2131,20 +2131,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
                     // re-encrypt the key with an empty password
                     pgpPriv = PgpSecretKeyRing.RemoveSecretKey(pgpPriv, pgpKeyEnum);
-                    PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(
-                        pgpKeyEnum,
-                        rewrapPass,
-                        "",
-                        PgpSymmetricKeyAlgorithm.Null);
+                    PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(pgpKeyEnum, rewrapPass, "");
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);
 
-                    // this should succeed
-                    PgpPrivateKey privTmp = pgpKey.ExtractPrivateKey("");
-
-                    /*if (pgpKey.KeyId != oldKeyID || pgpKey.S2kUsage != S2kUsageTag.None)
-                    {
-                        Fail("usage/key ID mismatch");
-                    }*/
+                    Assert.NotNull(pgpKey.ExtractPrivateKey(""));
+                    Assert.AreEqual(pgpKey.KeyId, oldKeyID);
                 }
 
                 foreach (PgpSecretKey pgpKeyEnum in pgpPriv.GetSecretKeys())
@@ -2153,20 +2144,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
                     // re-encrypt the key with an empty password
                     pgpPriv = PgpSecretKeyRing.RemoveSecretKey(pgpPriv, pgpKeyEnum);
-                    PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(
-                        pgpKeyEnum,
-                        "",
-                        newPass,
-                        PgpSymmetricKeyAlgorithm.Cast5);
+                    PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(pgpKeyEnum, "", newPass);
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);
 
-                    // this should succeed
-                    PgpPrivateKey privTmp = pgpKey.ExtractPrivateKey(newPass);
-
-                    /*if (pgpKey.KeyId != oldKeyID || pgpKey.S2kUsage != S2kUsageTag.Checksum)
-                    {
-                        Fail("usage/key ID mismatch");
-                    }*/
+                    Assert.NotNull(pgpKey.ExtractPrivateKey(newPass));
+                    Assert.AreEqual(pgpKey.KeyId, oldKeyID);
                 }
             }
         }
@@ -2190,42 +2172,24 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
                     // re-encrypt the key with an empty password
                     pgpPriv = PgpSecretKeyRing.RemoveSecretKey(pgpPriv, pgpKeyEnum);
-                    PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(
-                        pgpKeyEnum,
-                        v3KeyPass,
-                        "",
-                        PgpSymmetricKeyAlgorithm.Null);
+                    PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(pgpKeyEnum, v3KeyPass, "");
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);
 
-                    // this should succeed
-                    PgpPrivateKey privTmp = pgpKey.ExtractPrivateKey("");
-
-                    if (pgpKey.KeyId != oldKeyID)
-                    {
-                        Fail("key ID mismatch");
-                    }
+                    Assert.NotNull(pgpKey.ExtractPrivateKey(""));
+                    Assert.AreEqual(pgpKey.KeyId, oldKeyID);
                 }
 
                 foreach (PgpSecretKey pgpKeyEnum in pgpPriv.GetSecretKeys())
                 {
                     long oldKeyID = pgpKeyEnum.KeyId;
 
-                    // re-encrypt the key with an empty password
+                    // re-encrypt the key with a non-empty password
                     pgpPriv = PgpSecretKeyRing.RemoveSecretKey(pgpPriv, pgpKeyEnum);
-                    PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(
-                        pgpKeyEnum,
-                        "",
-                        newPass,
-                        PgpSymmetricKeyAlgorithm.Cast5);
+                    PgpSecretKey pgpKey = PgpSecretKey.CopyWithNewPassword(pgpKeyEnum, "", newPass);
                     pgpPriv = PgpSecretKeyRing.InsertSecretKey(pgpPriv, pgpKey);
 
-                    // this should succeed
-                    PgpPrivateKey privTmp = pgpKey.ExtractPrivateKey(newPass);
-
-                    if (pgpKey.KeyId != oldKeyID)
-                    {
-                        Fail("key ID mismatch");
-                    }
+                    Assert.NotNull(pgpKey.ExtractPrivateKey(newPass));
+                    Assert.AreEqual(pgpKey.KeyId, oldKeyID);
                 }
             }
         }

@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Internal.Cryptography;
 using System.Formats.Asn1;
+using System.Net.Http.Headers;
 
 namespace Springburg.Cryptography.OpenPgp
 {
@@ -50,46 +51,18 @@ namespace Springburg.Cryptography.OpenPgp
             }
         }
 
-        /// <summary>
-        /// Check if this key has an algorithm type that makes it suitable to use for signing.
-        /// </summary>
-        /// <remarks>
-        /// Note: with version 4 keys KeyFlags subpackets should also be considered when present for
-        /// determining the preferred use of the key.
-        /// </remarks>
-        /// <returns>
-        /// <c>true</c> if this key algorithm is suitable for use with signing.
-        /// </returns>
-        public bool IsSigningKey
-        {
-            get
-            {
-                switch (pub.Algorithm)
-                {
-                    case PgpPublicKeyAlgorithm.RsaGeneral:
-                    case PgpPublicKeyAlgorithm.RsaSign:
-                    case PgpPublicKeyAlgorithm.Dsa:
-                    case PgpPublicKeyAlgorithm.ECDsa:
-                    case PgpPublicKeyAlgorithm.EdDsa:
-                    case PgpPublicKeyAlgorithm.ElGamalGeneral:
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-        }
+        public bool IsEncryptionKey => pub.IsEncryptionKey;
 
-        /// <summary>True, if this is a master key.</summary>
-        public bool IsMasterKey
-        {
-            get { return pub.IsMasterKey; }
-        }
+        public bool IsSigningKey => pub.IsSigningKey;
+
+        public bool IsMasterKey => pub.IsMasterKey;
 
         /// <summary>Detect if the Secret Key's Private Key is empty or not</summary>
         public bool IsPrivateKeyEmpty
         {
             get
             {
+                // FIXME: Move this elsewhere
                 var s2k = secret.KeyBytes.AsSpan(secret.PublicKeyLength);
                 if (s2k.Length < 3)
                     return true;
@@ -102,15 +75,7 @@ namespace Springburg.Cryptography.OpenPgp
                     }
                 }
                 return false;
-                //byte[]? secKeyData = secret.GetSecretKeyData();
-                //return secKeyData == null || secKeyData.Length == 0;
             }
-        }
-
-        /// <summary>The algorithm the key is encrypted with.</summary>
-        public PgpSymmetricKeyAlgorithm KeyEncryptionAlgorithm
-        {
-            get { return PgpSymmetricKeyAlgorithm.Aes128; }
         }
 
         /// <summary>The key ID of the public key associated with this key.</summary>
@@ -124,102 +89,6 @@ namespace Springburg.Cryptography.OpenPgp
 
         /// <summary>Allows enumeration of any user attribute vectors associated with the key.</summary>
         public IEnumerable<PgpUser> UserAttributes => pub.GetUserAttributes();
-
-        /*private byte[] ExtractKeyData(byte[] rawPassPhrase)
-        {
-            PgpSymmetricKeyAlgorithm encAlgorithm = secret.EncAlgorithm;
-            byte[] encData = secret.GetSecretKeyData() ?? Array.Empty<byte>();
-
-            if (encAlgorithm == PgpSymmetricKeyAlgorithm.Null)
-                // TODO Check checksum here?
-                return encData;
-
-            // TODO Factor this block out as 'decryptData'
-            byte[] key = PgpUtilities.DoMakeKeyFromPassPhrase(secret.EncAlgorithm, secret.S2k, rawPassPhrase);
-            byte[] iv = secret.GetIV().ToArray();
-            byte[] data;
-
-            if (secret.PublicKeyPacket.Version >= 4)
-            {
-                data = RecoverKeyData(encAlgorithm, CipherMode.CFB, key, iv, encData, 0, encData.Length);
-
-                bool useSha1 = secret.S2kUsage == S2kUsageTag.Sha1;
-                byte[] check = Checksum(useSha1, data, (useSha1) ? data.Length - 20 : data.Length - 2);
-
-                for (int i = 0; i != check.Length; i++)
-                {
-                    if (check[i] != data[data.Length - check.Length + i])
-                    {
-                        throw new PgpException("Checksum mismatch at " + i + " of " + check.Length);
-                    }
-                }
-            }
-            else // version 2 or 3, RSA only.
-            {
-                data = new byte[encData.Length];
-
-                iv = (byte[])iv.Clone();
-
-                //
-                // read in the four numbers
-                //
-                int pos = 0;
-
-                for (int i = 0; i != 4; i++)
-                {
-                    int encLen = ((((encData[pos] & 0xff) << 8) | (encData[pos + 1] & 0xff)) + 7) / 8;
-
-                    data[pos] = encData[pos];
-                    data[pos + 1] = encData[pos + 1];
-                    pos += 2;
-
-                    if (encLen > (encData.Length - pos))
-                        throw new PgpException("out of range encLen found in encData");
-
-                    byte[] tmp = RecoverKeyData(encAlgorithm, CipherMode.CFB, key, iv, encData, pos, encLen);
-                    Array.Copy(tmp, 0, data, pos, encLen);
-                    pos += encLen;
-
-                    if (i != 3)
-                    {
-                        Array.Copy(encData, pos - iv.Length, iv, 0, iv.Length);
-                    }
-                }
-
-                //
-                // verify and copy checksum
-                //
-
-                data[pos] = encData[pos];
-                data[pos + 1] = encData[pos + 1];
-
-                int cs = ((encData[pos] << 8) & 0xff00) | (encData[pos + 1] & 0xff);
-                int calcCs = 0;
-                for (int j = 0; j < pos; j++)
-                {
-                    calcCs += data[j] & 0xff;
-                }
-
-                calcCs &= 0xffff;
-                if (calcCs != cs)
-                {
-                    throw new PgpException("Checksum mismatch: passphrase wrong, expected "
-                        + cs.ToString("X")
-                        + " found " + calcCs.ToString("X"));
-                }
-            }
-
-            return data;
-        }
-
-        private static byte[] RecoverKeyData(PgpSymmetricKeyAlgorithm encAlgorithm, CipherMode cipherMode,
-            byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
-        {
-            using var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
-            c.Mode = cipherMode;
-            using var decryptor = new ZeroPaddedCryptoTransform(c.CreateDecryptor(key, iv.ToArray()));
-            return decryptor.TransformFinalBlock(keyData, keyOff, keyLen);
-        }*/
 
         /// <summary>Extract a <c>PgpPrivateKey</c> from this secret key's encrypted contents.</summary>
         /// <remarks>
@@ -291,28 +160,6 @@ namespace Springburg.Cryptography.OpenPgp
             throw new PgpException("unknown public key version encountered");
         }
 
-        private static byte[] Checksum(
-            bool useSha1,
-            byte[] bytes,
-            int length)
-        {
-            if (useSha1)
-            {
-                using var sha1 = SHA1.Create();
-                return sha1.ComputeHash(bytes, 0, length);
-            }
-            else
-            {
-                int Checksum = 0;
-                for (int i = 0; i != length; i++)
-                {
-                    Checksum += bytes[i];
-                }
-
-                return new byte[] { (byte)(Checksum >> 8), (byte)Checksum };
-            }
-        }
-
         public override void Encode(IPacketWriter packetWriter)
         {
             if (packetWriter == null)
@@ -331,21 +178,27 @@ namespace Springburg.Cryptography.OpenPgp
         /// Return a copy of the passed in secret key, encrypted using a new password
         /// and the passed in algorithm.
         /// </summary>
-        /// <remarks>
-        /// Conversion of the passphrase characters to bytes is performed using Convert.ToByte(), which is
-        /// the historical behaviour of the library (1.7 and earlier).
-        /// </remarks>
         /// <param name="key">The PgpSecretKey to be copied.</param>
         /// <param name="oldPassPhrase">The current password for the key.</param>
         /// <param name="newPassPhrase">The new password for the key.</param>
-        /// <param name="newEncAlgorithm">The algorithm to be used for the encryption.</param>
         public static PgpSecretKey CopyWithNewPassword(
             PgpSecretKey key,
-            string oldPassPhrase,
-            string newPassPhrase,
-            PgpSymmetricKeyAlgorithm newEncAlgorithm)
+            ReadOnlySpan<char> oldPassPhrase,
+            ReadOnlySpan<char> newPassPhrase)
         {
-            return CopyWithNewPassword(key, Encoding.UTF8.GetBytes(oldPassPhrase), Encoding.UTF8.GetBytes(newPassPhrase), newEncAlgorithm);
+            int oldPassPhraseByteCount = Encoding.UTF8.GetByteCount(oldPassPhrase);
+            int newPassPhraseByteCount = Encoding.UTF8.GetByteCount(newPassPhrase);
+            byte[] passphraseBuffer = CryptoPool.Rent(oldPassPhraseByteCount + newPassPhraseByteCount);
+            try
+            {
+                Encoding.UTF8.GetBytes(oldPassPhrase, passphraseBuffer);
+                Encoding.UTF8.GetBytes(newPassPhrase, passphraseBuffer.AsSpan(oldPassPhraseByteCount));
+                return CopyWithNewPassword(key, passphraseBuffer.AsSpan(0, oldPassPhraseByteCount), passphraseBuffer.AsSpan(oldPassPhraseByteCount, newPassPhraseByteCount));
+            }
+            finally
+            {
+                CryptoPool.Return(passphraseBuffer, oldPassPhraseByteCount + newPassPhraseByteCount);
+            }
         }
 
         /// <summary>
@@ -358,13 +211,10 @@ namespace Springburg.Cryptography.OpenPgp
         /// <param name="key">The PgpSecretKey to be copied.</param>
         /// <param name="rawOldPassPhrase">The current password for the key.</param>
         /// <param name="rawNewPassPhrase">The new password for the key.</param>
-        /// <param name="newEncAlgorithm">The algorithm to be used for the encryption.</param>
-        /// <param name="rand">Source of randomness.</param>
         public static PgpSecretKey CopyWithNewPassword(
             PgpSecretKey key,
             ReadOnlySpan<byte> rawOldPassPhrase,
-            ReadOnlySpan<byte> rawNewPassPhrase,
-            PgpSymmetricKeyAlgorithm newEncAlgorithm)
+            ReadOnlySpan<byte> rawNewPassPhrase)
         {
             if (key == null)
                 throw new ArgumentNullException(nameof(key));
@@ -381,7 +231,8 @@ namespace Springburg.Cryptography.OpenPgp
                     out int rawKeySize,
                     key.secret.Version);
 
-                var s2kParameters = new S2kParameters { };
+                // Use the default S2K parameters
+                var s2kParameters = new S2kParameters();
 
                 var newKeyData = new byte[S2kBasedEncryption.GetEncryptedLength(s2kParameters, rawKeySize, key.secret.Version) + key.secret.PublicKeyLength];
                 key.secret.KeyBytes.AsSpan(0, key.secret.PublicKeyLength).CopyTo(newKeyData);
@@ -409,72 +260,6 @@ namespace Springburg.Cryptography.OpenPgp
             {
                 CryptoPool.Return(rawKeyData);
             }
-            /*
-            byte[] rawKeyData = key.ExtractKeyData(rawOldPassPhrase);
-            S2kUsageTag s2kUsage = key.secret.S2kUsage;
-            byte[]? iv = null;
-            S2k? s2k = null;
-            byte[] keyData;
-            PublicKeyPacket pubKeyPacket = key.secret.PublicKeyPacket;
-
-            if (newEncAlgorithm == PgpSymmetricKeyAlgorithm.Null)
-            {
-                s2kUsage = S2kUsageTag.None;
-                if (key.secret.S2kUsage == S2kUsageTag.Sha1)   // SHA-1 hash, need to rewrite Checksum
-                {
-                    keyData = new byte[rawKeyData.Length - 18];
-
-                    Array.Copy(rawKeyData, 0, keyData, 0, keyData.Length - 2);
-
-                    byte[] check = Checksum(false, keyData, keyData.Length - 2);
-
-                    keyData[keyData.Length - 2] = check[0];
-                    keyData[keyData.Length - 1] = check[1];
-                }
-                else
-                {
-                    keyData = rawKeyData;
-                }
-            }
-            else
-            {
-                if (s2kUsage == S2kUsageTag.None)
-                {
-                    s2kUsage = S2kUsageTag.Checksum;
-                }
-
-                try
-                {
-                    if (pubKeyPacket.Version >= 4)
-                    {
-                        keyData = EncryptKeyDataV4(rawKeyData, newEncAlgorithm, PgpHashAlgorithm.Sha1, rawNewPassPhrase, out s2k, out iv);
-                    }
-                    else
-                    {
-                        keyData = EncryptKeyDataV3(rawKeyData, newEncAlgorithm, rawNewPassPhrase, out s2k, out iv);
-                    }
-                }
-                catch (PgpException e)
-                {
-                    throw e;
-                }
-                catch (Exception e)
-                {
-                    throw new PgpException("Exception encrypting key", e);
-                }
-            }
-
-            SecretKeyPacket secret;
-            if (key.secret is SecretSubkeyPacket)
-            {
-                secret = new SecretSubkeyPacket(pubKeyPacket, newEncAlgorithm, s2kUsage, s2k, iv, keyData);
-            }
-            else
-            {
-                secret = new SecretKeyPacket(pubKeyPacket, newEncAlgorithm, s2kUsage, s2k, iv, keyData);
-            }
-
-            return new PgpSecretKey(secret, key.pub);*/
         }
 
         /// <summary>Replace the passed the public key on the passed in secret key.</summary>

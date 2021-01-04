@@ -676,7 +676,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             const string newPass = "newPass";
 
-            secretKey = PgpSecretKey.CopyWithNewPassword(secretKey, passPhrase, newPass, secretKey.KeyEncryptionAlgorithm);
+            secretKey = PgpSecretKey.CopyWithNewPassword(secretKey, passPhrase, newPass);
 
             secretKey.ExtractPrivateKey(newPass);
 

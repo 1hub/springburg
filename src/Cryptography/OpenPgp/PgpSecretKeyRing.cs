@@ -136,8 +136,7 @@ namespace Springburg.Cryptography.OpenPgp
         public static PgpSecretKeyRing CopyWithNewPassword(
             PgpSecretKeyRing ring,
             string oldPassPhrase,
-            string newPassPhrase,
-            PgpSymmetricKeyAlgorithm newEncAlgorithm)
+            string newPassPhrase)
         {
             IList<PgpSecretKey> newKeys = new List<PgpSecretKey>(ring.keys.Count);
             foreach (PgpSecretKey secretKey in ring.GetSecretKeys())
@@ -148,7 +147,7 @@ namespace Springburg.Cryptography.OpenPgp
                 }
                 else
                 {
-                    newKeys.Add(PgpSecretKey.CopyWithNewPassword(secretKey, oldPassPhrase, newPassPhrase, newEncAlgorithm));
+                    newKeys.Add(PgpSecretKey.CopyWithNewPassword(secretKey, oldPassPhrase, newPassPhrase));
                 }
             }
 
