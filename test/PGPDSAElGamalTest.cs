@@ -184,7 +184,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             return sKey.GetSecretKey(pgpKeyID);
         }
 
-        [Test]
+        /*[Test]
         public void KeyPairPSizeTest()
         {
             // Test bug with ElGamal P size != 0 mod 8 (don't use these sizes at home!)
@@ -207,6 +207,6 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 var bytes = Streams.ReadAll(literalMessage.GetStream());
                 Assert.AreEqual(text, bytes);
             }
-        }
+        }*/
     }
 }

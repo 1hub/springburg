@@ -1,5 +1,4 @@
-﻿using Aprismatic;
-using Internal.Cryptography;
+﻿using Internal.Cryptography;
 using System;
 using System.Numerics;
 using System.Security.Cryptography;
@@ -34,25 +33,7 @@ namespace Springburg.Cryptography.Algorithms
                 P: new BigInteger(parameters.P, isUnsigned: true, isBigEndian: true),
                 G: new BigInteger(parameters.G, isUnsigned: true, isBigEndian: true),
                 Y: new BigInteger(parameters.Y, isUnsigned: true, isBigEndian: true),
-                X:parameters.X != null ? new BigInteger(parameters.X, isUnsigned: true, isBigEndian: true) : BigInteger.Zero);
-        }
-
-        public static ElGamal Create(int keySize)
-        {
-            BigInteger P, G, Y, X;
-
-            // create the large prime number P, and regenerate P when P length is not same as KeySize in bytes
-            do
-            {
-                P = BigIntegerExt.GenPseudoPrime(keySize, 16);
-            } while (P.GetBitLength() < keySize - 7);
-
-            // create the two random numbers, which are smaller than P
-            X = BigIntegerExt.GenRandomBits(keySize - 1);
-            G = BigIntegerExt.GenRandomBits(keySize - 1);
-            Y = BigInteger.ModPow(G, X, P);
-
-            return new ElGamal(P, G, Y, X);
+                X: parameters.X != null ? new BigInteger(parameters.X, isUnsigned: true, isBigEndian: true) : BigInteger.Zero);
         }
 
         public ElGamalParameters ExportParameters(bool includePrivateParams)
@@ -114,7 +95,7 @@ namespace Springburg.Cryptography.Algorithms
             BigInteger k;
             do
             {
-                k = BigIntegerExt.GenRandomBits(kSize);
+                k = GenRandomBits(kSize);
             } while (!BigInteger.GreatestCommonDivisor(k, pSub1).IsOne);
 
             BigInteger g = G;
@@ -130,6 +111,45 @@ namespace Springburg.Cryptography.Algorithms
             CryptographicOperations.ZeroMemory(paddedData);
 
             return output;
+        }
+
+        /// <summary>
+        /// Returns the specified amount of random bits
+        /// </summary>
+        private static BigInteger GenRandomBits(int bits)
+        {
+            if (bits <= 0)
+                throw new ArithmeticException("Number of required bits is not valid.");
+
+            var bytes = bits >> 3;
+            var remBits = bits % 8;
+
+            if (remBits != 0)
+                bytes++;
+
+            var data = new byte[bytes];
+
+            RandomNumberGenerator.Fill(data);
+
+            if (remBits != 0)
+            {
+                byte mask;
+
+                if (bits != 1)
+                {
+                    mask = (byte)(0x01 << (remBits - 1));
+                    data[bytes - 1] |= mask;
+                }
+
+                mask = (byte)(0xFF >> (8 - remBits));
+                data[bytes - 1] &= mask;
+            }
+            else
+                data[bytes - 1] |= 0x80;
+
+            data[bytes - 1] &= 0x7F;
+
+            return new BigInteger(data);
         }
     }
 }

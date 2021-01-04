@@ -1983,8 +1983,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         public void GenerateTest()
         {
             var passPhrase = "hello";
-            var dsa = DSA.Create(512);
-            var elGamal = ElGamal.Create(1024);
+            var dsa = DSA.Create(1024);
+            // Kids, don't do this at home
+            var dsaParameters = dsa.ExportParameters(true);
+            var elGamal = ElGamal.Create(new ElGamalParameters { P = dsaParameters.P, G = dsaParameters.G, Y = dsaParameters.Y, X = dsaParameters.X });
 
             var keyRingGen = new PgpKeyRingGenerator(dsa, "test", passPhrase);
             keyRingGen.AddSubKey(elGamal);
@@ -2064,8 +2066,10 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             var passPhrase = "hello";
 
-            var dsa = DSA.Create(512);
-            var elGamal = ElGamal.Create(1024);
+            var dsa = DSA.Create(1024);
+            // Kids, don't do this at home
+            var dsaParameters = dsa.ExportParameters(true);
+            var elGamal = ElGamal.Create(new ElGamalParameters { P = dsaParameters.P, G = dsaParameters.G, Y = dsaParameters.Y, X = dsaParameters.X });
 
             var keyRingGen = new PgpKeyRingGenerator(dsa, "test", passPhrase);
             keyRingGen.AddSubKey(elGamal);
