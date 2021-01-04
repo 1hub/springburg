@@ -53,7 +53,7 @@ namespace Springburg.Cryptography.OpenPgp
             }
 
             SecretKeyPacket secret = (SecretKeyPacket)packetReader.ReadContainedPacket();
-            keys.Add(new PgpSecretKey(secret, ReadPublicKey(packetReader, secret.PublicKeyPacket)));
+            keys.Add(new PgpSecretKey(secret, ReadPublicKey(packetReader, new PublicKeyPacket(secret))));
 
             // Read subkeys
             while (packetReader.NextPacketTag() == PacketTag.SecretSubkey || packetReader.NextPacketTag() == PacketTag.PublicSubkey)
@@ -61,7 +61,8 @@ namespace Springburg.Cryptography.OpenPgp
                 if (packetReader.NextPacketTag() == PacketTag.SecretSubkey)
                 {
                     SecretSubkeyPacket sub = (SecretSubkeyPacket)packetReader.ReadContainedPacket();
-                    keys.Add(new PgpSecretKey(sub, ReadPublicKey(packetReader, sub.PublicKeyPacket, subKey: true)));
+                    PublicSubkeyPacket pub = new PublicSubkeyPacket(sub);
+                    keys.Add(new PgpSecretKey(sub, ReadPublicKey(packetReader, pub, subKey: true)));
                 }
                 else
                 {
@@ -135,8 +136,7 @@ namespace Springburg.Cryptography.OpenPgp
         public static PgpSecretKeyRing CopyWithNewPassword(
             PgpSecretKeyRing ring,
             string oldPassPhrase,
-            string newPassPhrase,
-            PgpSymmetricKeyAlgorithm newEncAlgorithm)
+            string newPassPhrase)
         {
             IList<PgpSecretKey> newKeys = new List<PgpSecretKey>(ring.keys.Count);
             foreach (PgpSecretKey secretKey in ring.GetSecretKeys())
@@ -147,7 +147,7 @@ namespace Springburg.Cryptography.OpenPgp
                 }
                 else
                 {
-                    newKeys.Add(PgpSecretKey.CopyWithNewPassword(secretKey, oldPassPhrase, newPassPhrase, newEncAlgorithm));
+                    newKeys.Add(PgpSecretKey.CopyWithNewPassword(secretKey, oldPassPhrase, newPassPhrase));
                 }
             }
 

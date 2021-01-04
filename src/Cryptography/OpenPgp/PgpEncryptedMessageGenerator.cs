@@ -1,4 +1,6 @@
+using Internal.Cryptography;
 using Springburg.Cryptography.Helpers;
+using Springburg.Cryptography.OpenPgp.Keys;
 using Springburg.Cryptography.OpenPgp.Packet;
 using Springburg.IO;
 using System;
@@ -88,16 +90,28 @@ namespace Springburg.Cryptography.OpenPgp
         }
 
         /// <summary>Add a PBE encryption method to the encrypted object.</summary>
-        public void AddMethod(string passPhrase, PgpHashAlgorithm s2kDigest)
+        public void AddMethod(ReadOnlySpan<char> passPhrase, PgpHashAlgorithm s2kDigest)
         {
-            AddMethod(Encoding.UTF8.GetBytes(passPhrase), s2kDigest);
+            byte[] rawPassPhrase = Array.Empty<byte>();
+            try
+            {
+                rawPassPhrase = CryptoPool.Rent(Encoding.UTF8.GetByteCount(passPhrase));
+                int bytesWritten = Encoding.UTF8.GetBytes(passPhrase, rawPassPhrase);
+                AddMethod(rawPassPhrase.AsSpan(0, bytesWritten), s2kDigest);
+            }
+            finally
+            {
+                CryptoPool.Return(rawPassPhrase);
+            }
         }
 
         /// <summary>Add a PBE encryption method to the encrypted object.</summary>
-        public void AddMethod(byte[] rawPassPhrase, PgpHashAlgorithm s2kDigest)
+        public void AddMethod(ReadOnlySpan<byte> rawPassPhrase, PgpHashAlgorithm s2kDigest)
         {
             S2k s2k = PgpUtilities.GenerateS2k(s2kDigest, 0x60);
-            methods.Add(new PbeMethod(defAlgorithm, s2k, PgpUtilities.DoMakeKeyFromPassPhrase(defAlgorithm, s2k, rawPassPhrase)));
+            byte[] key = new byte[PgpUtilities.GetKeySize(defAlgorithm) / 8];
+            S2kBasedEncryption.MakeKey(rawPassPhrase, s2kDigest, s2k.GetIV(), s2k.IterationCount, key);
+            methods.Add(new PbeMethod(defAlgorithm, s2k, key));
         }
 
         /// <summary>Add a public key encrypted session key to the encrypted object.</summary>

@@ -5,14 +5,18 @@ namespace Springburg.Cryptography.OpenPgp.Packet
 {
     class PublicSubkeyPacket : PublicKeyPacket
     {
-        internal PublicSubkeyPacket(Stream bcpgIn)
+        public PublicSubkeyPacket(Stream bcpgIn)
             : base(bcpgIn)
         {
         }
 
-        /// <summary>Construct a version 4 public subkey packet.</summary>
-        public PublicSubkeyPacket(PgpPublicKeyAlgorithm algorithm, DateTime time, BcpgKey key)
-            : base(algorithm, time, key)
+        public PublicSubkeyPacket(PgpPublicKeyAlgorithm algorithm, DateTime creationTime, byte[] keyBytes)
+            : base(algorithm, creationTime, keyBytes)
+        {
+        }
+
+        public PublicSubkeyPacket(SecretSubkeyPacket secretSubkeyPacket)
+            : base(secretSubkeyPacket)
         {
         }
 

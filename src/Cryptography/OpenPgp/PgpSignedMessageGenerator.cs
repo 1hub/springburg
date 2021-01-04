@@ -111,7 +111,7 @@ namespace Springburg.Cryptography.OpenPgp
                 var onePassPacket = new OnePassSignaturePacket(
                     generator.signatureGenerator.SignatureType,
                     generator.signatureGenerator.HashAlgorithm,
-                    generator.signatureGenerator.PrivateKey.PublicKeyPacket.Algorithm,
+                    generator.signatureGenerator.PrivateKey.Algorithm,
                     generator.signatureGenerator.PrivateKey.KeyId,
                     isNested);
                 innerWriter.WritePacket(onePassPacket);

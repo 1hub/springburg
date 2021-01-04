@@ -107,13 +107,13 @@ namespace Springburg.Cryptography.OpenPgp
 
             helper.Finish(
                 version,
-                privateKey.PublicKeyPacket.Algorithm,
+                privateKey.Algorithm,
                 creationTime,
                 hashedPackets);
 
             var signature = privateKey.Sign(helper.Hash!, helper.HashAlgorithm);
             return new SignaturePacket(
-                version, helper.SignatureType, privateKey.KeyId, privateKey.PublicKeyPacket.Algorithm,
+                version, helper.SignatureType, privateKey.KeyId, privateKey.Algorithm,
                 hashAlgorithm, creationTime,
                 hashedPackets,
                 unhashedAttributes == null ? Array.Empty<SignatureSubpacket>() : unhashedAttributes.ToSubpacketArray(),

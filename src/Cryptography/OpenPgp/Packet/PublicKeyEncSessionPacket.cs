@@ -27,27 +27,7 @@ namespace Springburg.Cryptography.OpenPgp.Packet
 
             algorithm = (PgpPublicKeyAlgorithm)bcpgIn.ReadByte();
 
-            switch (algorithm)
-            {
-                case PgpPublicKeyAlgorithm.RsaEncrypt:
-                case PgpPublicKeyAlgorithm.RsaGeneral:
-                    sessionKey = new MPInteger(bcpgIn).Value;
-                    break;
-                case PgpPublicKeyAlgorithm.ElGamalEncrypt:
-                case PgpPublicKeyAlgorithm.ElGamalGeneral:
-                    MPInteger p = new MPInteger(bcpgIn);
-                    MPInteger g = new MPInteger(bcpgIn);
-                    int halfLength = Math.Max(p.Value.Length, g.Value.Length);
-                    sessionKey = new byte[halfLength * 2];
-                    p.Value.CopyTo(sessionKey.AsSpan(halfLength - p.Value.Length));
-                    g.Value.CopyTo(sessionKey.AsSpan(sessionKey.Length - g.Value.Length));
-                    break;
-                case PgpPublicKeyAlgorithm.ECDH:
-                    sessionKey = bcpgIn.ReadAll();
-                    break;
-                default:
-                    throw new IOException("unknown PGP public key algorithm encountered");
-            }
+            sessionKey = bcpgIn.ReadAll();
         }
 
         public PublicKeyEncSessionPacket(
@@ -76,25 +56,7 @@ namespace Springburg.Cryptography.OpenPgp.Packet
             bcpgOut.WriteByte((byte)version);
             bcpgOut.Write(PgpUtilities.KeyIdToBytes(keyId));
             bcpgOut.WriteByte((byte)algorithm);
-
-            switch (algorithm)
-            {
-                case PgpPublicKeyAlgorithm.RsaEncrypt:
-                case PgpPublicKeyAlgorithm.RsaGeneral:
-                    new MPInteger(sessionKey).Encode(bcpgOut);
-                    break;
-                case PgpPublicKeyAlgorithm.ElGamalEncrypt:
-                case PgpPublicKeyAlgorithm.ElGamalGeneral:
-                    int halfLength = sessionKey.Length / 2;
-                    new MPInteger(sessionKey.AsSpan(0, halfLength)).Encode(bcpgOut);
-                    new MPInteger(sessionKey.AsSpan(halfLength)).Encode(bcpgOut);
-                    break;
-                case PgpPublicKeyAlgorithm.ECDH:
-                    bcpgOut.Write(sessionKey);
-                    break;
-                default:
-                    throw new IOException("unknown PGP public key algorithm encountered");
-            }
+            bcpgOut.Write(sessionKey);
         }
     }
 }

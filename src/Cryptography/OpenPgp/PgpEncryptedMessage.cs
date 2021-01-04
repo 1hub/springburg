@@ -1,5 +1,7 @@
-﻿using Springburg.Cryptography.Algorithms;
+﻿using Internal.Cryptography;
+using Springburg.Cryptography.Algorithms;
 using Springburg.Cryptography.Helpers;
+using Springburg.Cryptography.OpenPgp.Keys;
 using Springburg.Cryptography.OpenPgp.Packet;
 using Springburg.IO;
 using System;
@@ -63,24 +65,23 @@ namespace Springburg.Cryptography.OpenPgp
             {
                 if (keyData.KeyId == privateKey.KeyId)
                 {
-                    byte[] sessionData = Array.Empty<byte>();
+                    byte[] sessionData = CryptoPool.Rent(keyData.SessionKey.Length);
                     try
                     {
-                        sessionData = privateKey.DecryptSessionData(keyData.SessionKey);
+                        privateKey.TryDecryptSessionInfo(keyData.SessionKey, sessionData, out int bytesWritten);
 
-                        if (!ConfirmCheckSum(sessionData))
+                        if (!ConfirmCheckSum(sessionData.AsSpan(0, bytesWritten)))
                         {
                             throw new PgpException("Checksum validation failed");
                         }
 
                         // Note: the oracle attack on the "quick check" bytes is deemed
                         // a security risk for typical public key encryption usages.
-                        //return GetDataStream(symmAlg, sessionData.AsSpan(1, sessionData.Length - 3), verifyIntegrity: false);
-                        return ReadMessage(packetReader.CreateNestedReader(GetDataStream(sessionData.AsSpan(0, sessionData.Length - 2), verifyIntegrity: false)));
+                        return ReadMessage(packetReader.CreateNestedReader(GetDataStream(sessionData.AsSpan(0, bytesWritten - 2), verifyIntegrity: false)));
                     }
                     finally
                     {
-                        CryptographicOperations.ZeroMemory(sessionData.AsSpan());
+                        CryptoPool.Return(sessionData);
                     }
                 }
             }
@@ -218,12 +219,13 @@ namespace Springburg.Cryptography.OpenPgp
         }
 
         /// <summary>Return the decrypted session data for the packet.</summary>
-        private static byte[] GetSessionData(SymmetricKeyEncSessionPacket keyData, byte[] rawPassword)
+        private static byte[] GetSessionData(SymmetricKeyEncSessionPacket keyData, ReadOnlySpan<byte> rawPassword)
         {
             byte[] key = Array.Empty<byte>();
             try
             {
-                key = PgpUtilities.DoMakeKeyFromPassPhrase(keyData.EncAlgorithm, keyData.S2k, rawPassword);
+                key = new byte[PgpUtilities.GetKeySize(keyData.EncAlgorithm) / 8];
+                S2kBasedEncryption.MakeKey(rawPassword, keyData.S2k.HashAlgorithm, keyData.S2k.GetIV(), keyData.S2k.IterationCount, key);
                 if (keyData.SecKeyData?.Length > 0)
                 {
                     using var keyCipher = PgpUtilities.GetSymmetricAlgorithm(keyData.EncAlgorithm);

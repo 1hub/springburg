@@ -10,20 +10,15 @@ namespace Springburg.Cryptography.Algorithms
     public class X25519 : ECDiffieHellman
     {
         Key? privateKey;
-        PublicKey publicKey;
+        PublicKey? publicKey;
 
         public X25519()
         {
-            this.privateKey = Key.Create(KeyAgreementAlgorithm.X25519, new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
-            this.publicKey = this.privateKey.PublicKey;
         }
 
         public X25519(ECParameters parameters)
         {
-            // TODO: Verify curve id
-            if (parameters.D != null)
-                this.privateKey = Key.Import(KeyAgreementAlgorithm.X25519, parameters.D, KeyBlobFormat.RawPrivateKey);
-            this.publicKey = NSec.Cryptography.PublicKey.Import(KeyAgreementAlgorithm.X25519, parameters.Q.X, KeyBlobFormat.RawPublicKey);
+            ImportParameters(parameters);
         }
 
         protected override void Dispose(bool disposing)
@@ -35,8 +30,16 @@ namespace Springburg.Cryptography.Algorithms
             base.Dispose(disposing);
         }
 
+        private void CreateKeys()
+        {
+            this.privateKey = Key.Create(KeyAgreementAlgorithm.X25519, new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+            this.publicKey = this.privateKey.PublicKey;
+        }
+
         public override byte[] DeriveKeyFromHash(ECDiffieHellmanPublicKey otherPartyPublicKey, HashAlgorithmName hashAlgorithm, byte[]? secretPrepend, byte[]? secretAppend)
         {
+            if (this.publicKey == null)
+                CreateKeys();
             if (this.privateKey == null)
                 throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
             if (string.IsNullOrEmpty(hashAlgorithm.Name))
@@ -47,6 +50,8 @@ namespace Springburg.Cryptography.Algorithms
 
         public override byte[] DeriveKeyFromHmac(ECDiffieHellmanPublicKey otherPartyPublicKey, HashAlgorithmName hashAlgorithm, byte[]? hmacKey, byte[]? secretPrepend, byte[]? secretAppend)
         {
+            if (this.publicKey == null)
+                CreateKeys();
             if (this.privateKey == null)
                 throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
             if (string.IsNullOrEmpty(hashAlgorithm.Name))
@@ -62,6 +67,8 @@ namespace Springburg.Cryptography.Algorithms
 
         public override byte[] DeriveKeyTls(ECDiffieHellmanPublicKey otherPartyPublicKey, byte[] prfLabel, byte[] prfSeed)
         {
+            if (this.publicKey == null)
+                CreateKeys();
             if (this.privateKey == null)
                 throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
 
@@ -105,8 +112,22 @@ namespace Springburg.Cryptography.Algorithms
             return null;
         }
 
+        public override void ImportParameters(ECParameters parameters)
+        {
+            privateKey?.Dispose();
+            privateKey = null;
+            publicKey = null;
+
+            // TODO: Verify curve id, parameter sizes
+            this.publicKey = NSec.Cryptography.PublicKey.Import(KeyAgreementAlgorithm.X25519, parameters.Q.X, KeyBlobFormat.RawPublicKey);
+            if (parameters.D != null)
+                this.privateKey = Key.Import(KeyAgreementAlgorithm.X25519, parameters.D, KeyBlobFormat.RawPrivateKey);
+        }
+
         public override ECParameters ExportParameters(bool includePrivateParameters)
         {
+            if (this.publicKey == null)
+                CreateKeys();
             if (this.privateKey == null && includePrivateParameters)
                 throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
 
@@ -114,11 +135,19 @@ namespace Springburg.Cryptography.Algorithms
             {
                 Curve = ECCurve.CreateFromOid(new Oid("1.3.6.1.4.1.3029.1.5.1")),
                 D = includePrivateParameters ? privateKey!.Export(KeyBlobFormat.RawPrivateKey) : null,
-                Q = new ECPoint { X = publicKey.Export(KeyBlobFormat.RawPublicKey), Y = new byte[32] }
+                Q = new ECPoint { X = publicKey!.Export(KeyBlobFormat.RawPublicKey), Y = new byte[32] }
             };
         }
 
-        public override ECDiffieHellmanPublicKey PublicKey => new X25519PublicKey(publicKey);
+        public override ECDiffieHellmanPublicKey PublicKey
+        {
+            get
+            {
+                if (publicKey == null)
+                    CreateKeys();
+                return new X25519PublicKey(publicKey!);
+            }
+        }
 
         class X25519PublicKey : ECDiffieHellmanPublicKey
         {

@@ -11,34 +11,15 @@ namespace Springburg.Cryptography.Algorithms
     public class Ed25519 : ECDsa
     {
         Key? privateKey;
-        PublicKey publicKey;
+        PublicKey? publicKey;
 
         public Ed25519()
         {
-            this.privateKey = Key.Create(NSec.Cryptography.SignatureAlgorithm.Ed25519, new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
-            this.publicKey = this.privateKey.PublicKey;
         }
 
-        public Ed25519(byte[] publicKey)
+        public Ed25519(ECParameters ecParameters)
         {
-            if (publicKey == null)
-                throw new ArgumentNullException(nameof(publicKey));
-
-            Debug.Assert(publicKey.Length == 32);
-            this.publicKey = PublicKey.Import(NSec.Cryptography.SignatureAlgorithm.Ed25519, publicKey, KeyBlobFormat.RawPublicKey);
-        }
-
-        public Ed25519(byte[] privateKey, byte[] publicKey)
-        {
-            if (privateKey == null)
-                throw new ArgumentNullException(nameof(privateKey));
-            if (publicKey == null)
-                throw new ArgumentNullException(nameof(publicKey));
-
-            Debug.Assert(publicKey.Length == 32);
-            Debug.Assert(privateKey.Length == 32);
-            this.privateKey = Key.Import(NSec.Cryptography.SignatureAlgorithm.Ed25519, privateKey, KeyBlobFormat.RawPrivateKey);
-            this.publicKey = PublicKey.Import(NSec.Cryptography.SignatureAlgorithm.Ed25519, publicKey, KeyBlobFormat.RawPublicKey);
+            ImportParameters(ecParameters);
         }
 
         protected override void Dispose(bool disposing)
@@ -50,8 +31,16 @@ namespace Springburg.Cryptography.Algorithms
             base.Dispose(disposing);
         }
 
+        private void CreateKeys()
+        {
+            this.privateKey = Key.Create(NSec.Cryptography.SignatureAlgorithm.Ed25519, new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+            this.publicKey = this.privateKey.PublicKey;
+        }
+
         protected override byte[] SignHashCore(ReadOnlySpan<byte> hash, DSASignatureFormat signatureFormat)
         {
+            if (this.publicKey == null)
+                CreateKeys();
             if (this.privateKey == null)
                 throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
 
@@ -73,6 +62,12 @@ namespace Springburg.Cryptography.Algorithms
 
         protected override bool VerifyHashCore(ReadOnlySpan<byte> hash, ReadOnlySpan<byte> signature, DSASignatureFormat signatureFormat)
         {
+            if (this.publicKey == null)
+            {
+                CreateKeys();
+                Debug.Assert(this.publicKey != null);
+            }
+
             if (signatureFormat == DSASignatureFormat.Rfc3279DerSequence)
             {
                 var reader = new AsnReader(signature.ToArray(), AsnEncodingRules.DER);
@@ -98,8 +93,26 @@ namespace Springburg.Cryptography.Algorithms
             return VerifyHash(hash, signature, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
         }
 
+        public override void ImportParameters(ECParameters parameters)
+        {
+            privateKey?.Dispose();
+            privateKey = null;
+            publicKey = null;
+
+            if (parameters.Q.X == null || parameters.Q.X?.Length != 32)
+                throw new ArgumentException("Invalid public key parameters");
+            if (parameters.D != null && parameters.D.Length != 32)
+                throw new ArgumentException("Invalid private key parameters");
+
+            this.publicKey = PublicKey.Import(NSec.Cryptography.SignatureAlgorithm.Ed25519, parameters.Q.X, KeyBlobFormat.RawPublicKey);
+            if (parameters.D != null)
+                this.privateKey = Key.Import(NSec.Cryptography.SignatureAlgorithm.Ed25519, parameters.D, KeyBlobFormat.RawPrivateKey);
+        }
+
         public override ECParameters ExportParameters(bool includePrivateParameters)
         {
+            if (this.publicKey == null)
+                CreateKeys();
             if (this.privateKey == null && includePrivateParameters)
                 throw new CryptographicException(SR.Cryptography_CSP_NoPrivateKey);
 
@@ -107,7 +120,7 @@ namespace Springburg.Cryptography.Algorithms
             {
                 Curve = ECCurve.CreateFromOid(new Oid("1.3.6.1.4.1.11591.15.1")),
                 D = includePrivateParameters ? privateKey!.Export(KeyBlobFormat.RawPrivateKey) : null,
-                Q = new ECPoint { X = publicKey.Export(KeyBlobFormat.RawPublicKey), Y = new byte[32] }
+                Q = new ECPoint { X = publicKey!.Export(KeyBlobFormat.RawPublicKey), Y = new byte[32] }
             };
         }
     }

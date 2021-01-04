@@ -1,15 +1,15 @@
-using Springburg.Cryptography.Algorithms;
 using Springburg.Cryptography.Helpers;
 using Springburg.Cryptography.OpenPgp.Packet;
+using Springburg.Cryptography.OpenPgp.Keys;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
-using Ed25519Dsa = Springburg.Cryptography.Algorithms.Ed25519;
+using Internal.Cryptography;
+using System.Formats.Asn1;
+using System.Net.Http.Headers;
 
 namespace Springburg.Cryptography.OpenPgp
 {
@@ -31,159 +31,51 @@ namespace Springburg.Cryptography.OpenPgp
             PgpPrivateKey privKey,
             PgpPublicKey pubKey,
             PgpSymmetricKeyAlgorithm encAlgorithm,
-            byte[] rawPassPhrase,
+            ReadOnlySpan<byte> rawPassPhrase,
             bool useSha1,
             bool isMasterKey)
         {
-            BcpgKey secKey;
-
             this.pub = pubKey;
 
-            switch (pubKey.Algorithm)
+            var keyData = privKey.privateKey.ExportPrivateKey(
+                rawPassPhrase,
+                new S2kParameters { UsageTag = useSha1 ? S2kUsageTag.Sha1 : S2kUsageTag.Checksum, EncryptionAlgorithm = encAlgorithm });
+
+            if (isMasterKey)
             {
-                case PgpPublicKeyAlgorithm.RsaEncrypt:
-                case PgpPublicKeyAlgorithm.RsaSign:
-                case PgpPublicKeyAlgorithm.RsaGeneral:
-                    RSA rsK = (RSA)privKey.Key;
-                    var rsKParams = rsK.ExportParameters(true);
-                    secKey = new RsaSecretBcpgKey(
-                        new MPInteger(rsKParams.D),
-                        new MPInteger(rsKParams.P),
-                        new MPInteger(rsKParams.Q),
-                        new MPInteger(rsKParams.InverseQ));
-                    break;
-                case PgpPublicKeyAlgorithm.Dsa:
-                    DSA dsK = (DSA)privKey.Key;
-                    var dsKParams = dsK.ExportParameters(true);
-                    secKey = new DsaSecretBcpgKey(new MPInteger(dsKParams.X));
-                    break;
-                case PgpPublicKeyAlgorithm.ECDH:
-                    ECDiffieHellman ecdhK = (ECDiffieHellman)privKey.Key;
-                    var ecdhKParams = ecdhK.ExportParameters(true);
-                    secKey = new ECSecretBcpgKey(new MPInteger(ecdhKParams.Curve.Oid.Value != "1.3.6.1.4.1.3029.1.5.1" ? ecdhKParams.D : ecdhKParams.D!.Reverse().ToArray()));
-                    break;
-                case PgpPublicKeyAlgorithm.ECDsa:
-                case PgpPublicKeyAlgorithm.EdDsa:
-                    ECDsa ecdsaK = (ECDsa)privKey.Key;
-                    var ecdsaKParams = ecdsaK.ExportParameters(true);
-                    secKey = new ECSecretBcpgKey(new MPInteger(ecdsaKParams.D));
-                    break;
-                case PgpPublicKeyAlgorithm.ElGamalEncrypt:
-                case PgpPublicKeyAlgorithm.ElGamalGeneral:
-                    ElGamal esK = (ElGamal)privKey.Key;
-                    var esKParams = esK.ExportParameters(true);
-                    secKey = new ElGamalSecretBcpgKey(new MPInteger(esKParams.X));
-                    break;
-                default:
-                    throw new PgpException("unknown key class");
+                this.secret = new SecretKeyPacket(privKey.Algorithm, pub.CreationTime, keyData);
             }
-
-            // FIXME: All this should be cleared out from memory
-            byte[] keyData = Array.Empty<byte>();
-
-            try
+            else
             {
-                MemoryStream bOut = new MemoryStream();
-                secKey.Encode(bOut);
-                bOut.Write(Checksum(useSha1, bOut.GetBuffer(), (int)bOut.Length));
-                keyData = bOut.ToArray();
-
-                if (encAlgorithm == PgpSymmetricKeyAlgorithm.Null)
-                {
-                    if (isMasterKey)
-                    {
-                        this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, null, null, keyData);
-                    }
-                    else
-                    {
-                        this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, null, null, keyData);
-                    }
-                }
-                else
-                {
-                    S2k? s2k;
-                    byte[]? iv;
-                    byte[] encData;
-
-                    if (pub.Version >= 4)
-                    {
-                        encData = EncryptKeyDataV4(keyData, encAlgorithm, PgpHashAlgorithm.Sha1, rawPassPhrase, out s2k, out iv);
-                    }
-                    else
-                    {
-                        encData = EncryptKeyDataV3(keyData, encAlgorithm, rawPassPhrase, out s2k, out iv);
-                    }
-
-                    S2kUsageTag s2kUsage = useSha1 ? S2kUsageTag.Sha1 : S2kUsageTag.Checksum;
-
-                    if (isMasterKey)
-                    {
-                        this.secret = new SecretKeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
-                    }
-                    else
-                    {
-                        this.secret = new SecretSubkeyPacket(pub.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
-                    }
-                }
-            }
-            finally
-            {
-                if (encAlgorithm != PgpSymmetricKeyAlgorithm.Null)
-                {
-                    CryptographicOperations.ZeroMemory(keyData);
-                }
+                this.secret = new SecretSubkeyPacket(privKey.Algorithm, pub.CreationTime, keyData);
             }
         }
 
-        /// <summary>
-        /// Check if this key has an algorithm type that makes it suitable to use for signing.
-        /// </summary>
-        /// <remarks>
-        /// Note: with version 4 keys KeyFlags subpackets should also be considered when present for
-        /// determining the preferred use of the key.
-        /// </remarks>
-        /// <returns>
-        /// <c>true</c> if this key algorithm is suitable for use with signing.
-        /// </returns>
-        public bool IsSigningKey
-        {
-            get
-            {
-                switch (pub.Algorithm)
-                {
-                    case PgpPublicKeyAlgorithm.RsaGeneral:
-                    case PgpPublicKeyAlgorithm.RsaSign:
-                    case PgpPublicKeyAlgorithm.Dsa:
-                    case PgpPublicKeyAlgorithm.ECDsa:
-                    case PgpPublicKeyAlgorithm.EdDsa:
-                    case PgpPublicKeyAlgorithm.ElGamalGeneral:
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-        }
+        public bool IsEncryptionKey => pub.IsEncryptionKey;
 
-        /// <summary>True, if this is a master key.</summary>
-        public bool IsMasterKey
-        {
-            get { return pub.IsMasterKey; }
-        }
+        public bool IsSigningKey => pub.IsSigningKey;
+
+        public bool IsMasterKey => pub.IsMasterKey;
 
         /// <summary>Detect if the Secret Key's Private Key is empty or not</summary>
         public bool IsPrivateKeyEmpty
         {
             get
             {
-                byte[]? secKeyData = secret.GetSecretKeyData();
-                return secKeyData == null || secKeyData.Length == 0;
+                // FIXME: Move this elsewhere
+                var s2k = secret.KeyBytes.AsSpan(secret.PublicKeyLength);
+                if (s2k.Length < 3)
+                    return true;
+                if (s2k[0] == (byte)S2kUsageTag.Checksum || s2k[0] == (byte)S2kUsageTag.Sha1 /*|| s2k[0] == (byte)S2kUsageTag.Aead*/)
+                {
+                    if (s2k[2] == 101) // GNU private
+                    {
+                        // TODO: Check for GNU string
+                        return true;
+                    }
+                }
+                return false;
             }
-        }
-
-        /// <summary>The algorithm the key is encrypted with.</summary>
-        public PgpSymmetricKeyAlgorithm KeyEncryptionAlgorithm
-        {
-            get { return secret.EncAlgorithm; }
         }
 
         /// <summary>The key ID of the public key associated with this key.</summary>
@@ -198,259 +90,74 @@ namespace Springburg.Cryptography.OpenPgp
         /// <summary>Allows enumeration of any user attribute vectors associated with the key.</summary>
         public IEnumerable<PgpUser> UserAttributes => pub.GetUserAttributes();
 
-        private byte[] ExtractKeyData(byte[] rawPassPhrase)
-        {
-            PgpSymmetricKeyAlgorithm encAlgorithm = secret.EncAlgorithm;
-            byte[] encData = secret.GetSecretKeyData() ?? Array.Empty<byte>();
-
-            if (encAlgorithm == PgpSymmetricKeyAlgorithm.Null)
-                // TODO Check checksum here?
-                return encData;
-
-            // TODO Factor this block out as 'decryptData'
-            byte[] key = PgpUtilities.DoMakeKeyFromPassPhrase(secret.EncAlgorithm, secret.S2k, rawPassPhrase);
-            byte[] iv = secret.GetIV().ToArray();
-            byte[] data;
-
-            if (secret.PublicKeyPacket.Version >= 4)
-            {
-                data = RecoverKeyData(encAlgorithm, CipherMode.CFB, key, iv, encData, 0, encData.Length);
-
-                bool useSha1 = secret.S2kUsage == S2kUsageTag.Sha1;
-                byte[] check = Checksum(useSha1, data, (useSha1) ? data.Length - 20 : data.Length - 2);
-
-                for (int i = 0; i != check.Length; i++)
-                {
-                    if (check[i] != data[data.Length - check.Length + i])
-                    {
-                        throw new PgpException("Checksum mismatch at " + i + " of " + check.Length);
-                    }
-                }
-            }
-            else // version 2 or 3, RSA only.
-            {
-                data = new byte[encData.Length];
-
-                iv = (byte[])iv.Clone();
-
-                //
-                // read in the four numbers
-                //
-                int pos = 0;
-
-                for (int i = 0; i != 4; i++)
-                {
-                    int encLen = ((((encData[pos] & 0xff) << 8) | (encData[pos + 1] & 0xff)) + 7) / 8;
-
-                    data[pos] = encData[pos];
-                    data[pos + 1] = encData[pos + 1];
-                    pos += 2;
-
-                    if (encLen > (encData.Length - pos))
-                        throw new PgpException("out of range encLen found in encData");
-
-                    byte[] tmp = RecoverKeyData(encAlgorithm, CipherMode.CFB, key, iv, encData, pos, encLen);
-                    Array.Copy(tmp, 0, data, pos, encLen);
-                    pos += encLen;
-
-                    if (i != 3)
-                    {
-                        Array.Copy(encData, pos - iv.Length, iv, 0, iv.Length);
-                    }
-                }
-
-                //
-                // verify and copy checksum
-                //
-
-                data[pos] = encData[pos];
-                data[pos + 1] = encData[pos + 1];
-
-                int cs = ((encData[pos] << 8) & 0xff00) | (encData[pos + 1] & 0xff);
-                int calcCs = 0;
-                for (int j = 0; j < pos; j++)
-                {
-                    calcCs += data[j] & 0xff;
-                }
-
-                calcCs &= 0xffff;
-                if (calcCs != cs)
-                {
-                    throw new PgpException("Checksum mismatch: passphrase wrong, expected "
-                        + cs.ToString("X")
-                        + " found " + calcCs.ToString("X"));
-                }
-            }
-
-            return data;
-        }
-
-        private static byte[] RecoverKeyData(PgpSymmetricKeyAlgorithm encAlgorithm, CipherMode cipherMode,
-            byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
-        {
-            using var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
-            c.Mode = cipherMode;
-            using var decryptor = new ZeroPaddedCryptoTransform(c.CreateDecryptor(key, iv.ToArray()));
-            return decryptor.TransformFinalBlock(keyData, keyOff, keyLen);
-        }
-
         /// <summary>Extract a <c>PgpPrivateKey</c> from this secret key's encrypted contents.</summary>
         /// <remarks>
         /// The passphrase is encoded to bytes using UTF8 (Encoding.UTF8.GetBytes).
         /// </remarks>
-        public PgpPrivateKey? ExtractPrivateKey(string passPhrase)
+        public PgpPrivateKey? ExtractPrivateKey(ReadOnlySpan<char> passPhrase)
         {
-            return ExtractPrivateKey(Encoding.UTF8.GetBytes(passPhrase));
+            byte[] rawPassPhrase = Array.Empty<byte>();
+            try
+            {
+                rawPassPhrase = new byte[Encoding.UTF8.GetByteCount(passPhrase)];
+                Encoding.UTF8.GetBytes(passPhrase, rawPassPhrase);
+                return ExtractPrivateKey(rawPassPhrase);
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(rawPassPhrase);
+            }
         }
 
         /// <summary>Extract a <c>PgpPrivateKey</c> from this secret key's encrypted contents.</summary>
         /// <remarks>
         /// Allows the caller to handle the encoding of the passphrase to bytes.
         /// </remarks>
-        public PgpPrivateKey? ExtractPrivateKey(byte[] rawPassPhrase)
+        public PgpPrivateKey? ExtractPrivateKey(ReadOnlySpan<byte> rawPassPhrase)
         {
             if (IsPrivateKeyEmpty)
                 return null;
 
-            PublicKeyPacket pubPk = secret.PublicKeyPacket;
-            byte[] data = ExtractKeyData(rawPassPhrase);
-            var bcpgIn = new MemoryStream(data, false);
-            AsymmetricAlgorithm privateKey;
-            switch (pubPk.Algorithm)
+            if (secret.Version < 4)
             {
-                case PgpPublicKeyAlgorithm.RsaEncrypt:
-                case PgpPublicKeyAlgorithm.RsaGeneral:
-                case PgpPublicKeyAlgorithm.RsaSign:
-                    RsaPublicBcpgKey rsaPub = (RsaPublicBcpgKey)pubPk.Key;
-                    RsaSecretBcpgKey rsaPriv = new RsaSecretBcpgKey(bcpgIn);
-
-                    // The modulus size determines the encoded output size of the CRT parameters.
-                    byte[] n = rsaPub.Modulus.Value;
-                    int halfModulusLength = (n.Length + 1) / 2;
-
-                    var privateExponent = new BigInteger(rsaPriv.PrivateExponent.Value, isBigEndian: true, isUnsigned: true);
-                    var P = new BigInteger(rsaPriv.PrimeP.Value, isBigEndian: true, isUnsigned: true);
-                    var Q = new BigInteger(rsaPriv.PrimeQ.Value, isBigEndian: true, isUnsigned: true);
-                    var DP = BigInteger.Remainder(privateExponent, P - BigInteger.One);
-                    var DQ = BigInteger.Remainder(privateExponent, Q - BigInteger.One);
-                    // Lot of the public keys in the test suite have this wrong (switched P/Q)
-                    var InverseQ = BigInteger.ModPow(Q, P - BigInteger.One - BigInteger.One, P);
-
-                    var rsaParameters = new RSAParameters
-                    {
-                        Modulus = n,
-                        Exponent = rsaPub.PublicExponent.Value,
-                        D = ExportKeyParameter(rsaPriv.PrivateExponent.Value, n.Length),
-                        P = ExportKeyParameter(rsaPriv.PrimeP.Value, halfModulusLength),
-                        Q = ExportKeyParameter(rsaPriv.PrimeQ.Value, halfModulusLength),
-                        DP = ExportKeyParameter(DP, halfModulusLength),
-                        DQ = ExportKeyParameter(DQ, halfModulusLength),
-                        InverseQ = ExportKeyParameter(/*rsaPriv.InverseQ.Value*/InverseQ, halfModulusLength),
-                    };
-                    privateKey = RSA.Create(rsaParameters);
-                    break;
-
-                case PgpPublicKeyAlgorithm.Dsa:
-                    DsaPublicBcpgKey dsaPub = (DsaPublicBcpgKey)pubPk.Key;
-                    DsaSecretBcpgKey dsaPriv = new DsaSecretBcpgKey(bcpgIn);
-                    int xqSize = Math.Max(dsaPriv.X.Value.Length, dsaPub.Q.Value.Length);
-                    privateKey = DSA.Create(new DSAParameters
-                    {
-                        X = ExportKeyParameter(dsaPriv.X.Value, xqSize),
-                        Y = dsaPub.Y.Value,
-                        P = dsaPub.P.Value,
-                        Q = ExportKeyParameter(dsaPub.Q.Value, xqSize),
-                        G = dsaPub.G.Value,
-                    });
-                    break;
-
-                case PgpPublicKeyAlgorithm.ECDH:
-                case PgpPublicKeyAlgorithm.ECDsa:
-                    ECPublicBcpgKey ecdsaPub = (ECPublicBcpgKey)secret.PublicKeyPacket.Key;
-                    ECSecretBcpgKey ecdsaPriv = new ECSecretBcpgKey(bcpgIn);
-                    var ecCurve = ECCurve.CreateFromOid(ecdsaPub.CurveOid);
-                    var qPoint = PgpUtilities.DecodePoint(ecdsaPub.EncodedPoint);
-                    var ecParams = new ECParameters
-                    {
-                        Curve = ecCurve,
-                        D = ExportKeyParameter(ecCurve.Oid.Value != "1.3.6.1.4.1.3029.1.5.1" ? ecdsaPriv.X.Value : ecdsaPriv.X.Value.Reverse().ToArray(), qPoint.X!.Length),
-                        Q = qPoint,
-                    };
-                    privateKey = pubPk.Algorithm == PgpPublicKeyAlgorithm.ECDH ? PgpUtilities.GetECDiffieHellman(ecParams) : ECDsa.Create(ecParams);
-                    break;
-
-                case PgpPublicKeyAlgorithm.EdDsa:
-                    ECPublicBcpgKey eddsaPub = (ECPublicBcpgKey)secret.PublicKeyPacket.Key;
-                    ECSecretBcpgKey eddsaPriv = new ECSecretBcpgKey(bcpgIn);
-                    privateKey = new Ed25519Dsa(
-                        eddsaPriv.X.Value,
-                        eddsaPub.EncodedPoint.Value.AsSpan(1).ToArray());
-                    break;
-
-                case PgpPublicKeyAlgorithm.ElGamalEncrypt:
-                case PgpPublicKeyAlgorithm.ElGamalGeneral:
-                    ElGamalPublicBcpgKey elPub = (ElGamalPublicBcpgKey)pubPk.Key;
-                    ElGamalSecretBcpgKey elPriv = new ElGamalSecretBcpgKey(bcpgIn);
-                    ElGamalParameters elParams = new ElGamalParameters { P = elPub.P.Value, G = elPub.G.Value, Y = elPub.Y.Value, X = elPriv.X.Value };
-                    privateKey = ElGamal.Create(elParams);
-                    break;
-
-                default:
-                    throw new PgpException("unknown public key algorithm encountered");
+                Debug.Assert(secret.Algorithm == PgpPublicKeyAlgorithm.RsaGeneral || secret.Algorithm == PgpPublicKeyAlgorithm.RsaEncrypt || secret.Algorithm == PgpPublicKeyAlgorithm.RsaSign);
+                var rsa = RsaKey.CreatePrivate(rawPassPhrase, secret.KeyBytes, out var _, version: 3);
+                return new PgpPrivateKey(KeyId, rsa);
             }
-
-            return new PgpPrivateKey(KeyId, pubPk, privateKey);
-        }
-
-        private static byte[] ExportKeyParameter(byte[] value, int length)
-        {
-            if (value.Length < length)
+            else if (secret.Version >= 4)
             {
-                byte[] target = new byte[length];
-                value.CopyTo(target, length - value.Length);
-                return target;
-            }
-            return value;
-        }
-
-        private static byte[] ExportKeyParameter(BigInteger value, int length)
-        {
-            byte[] target = new byte[length];
-
-            if (value.TryWriteBytes(target, out int bytesWritten, isUnsigned: true, isBigEndian: true))
-            {
-                if (bytesWritten < length)
+                switch (secret.Algorithm)
                 {
-                    Buffer.BlockCopy(target, 0, target, length - bytesWritten, bytesWritten);
-                    target.AsSpan(0, length - bytesWritten).Clear();
+                    case PgpPublicKeyAlgorithm.RsaGeneral:
+                    case PgpPublicKeyAlgorithm.RsaSign:
+                    case PgpPublicKeyAlgorithm.RsaEncrypt:
+                        var rsa = RsaKey.CreatePrivate(rawPassPhrase, secret.KeyBytes, out var _);
+                        return new PgpPrivateKey(KeyId, rsa);
+
+                    case PgpPublicKeyAlgorithm.Dsa:
+                        var dsa = DsaKey.CreatePrivate(rawPassPhrase, secret.KeyBytes, out var _);
+                        return new PgpPrivateKey(KeyId, dsa);
+
+                    case PgpPublicKeyAlgorithm.ECDH:
+                        var ecdh = ECDiffieHellmanKey.CreatePrivate(pub.Fingerprint, rawPassPhrase, secret.KeyBytes, out var _);
+                        return new PgpPrivateKey(KeyId, ecdh);
+
+                    case PgpPublicKeyAlgorithm.ECDsa:
+                        var ecdsa = ECDsaKey.CreatePrivate(rawPassPhrase, secret.KeyBytes, out var _);
+                        return new PgpPrivateKey(KeyId, ecdsa);
+
+                    case PgpPublicKeyAlgorithm.EdDsa:
+                        var eddsa = EdDsaKey.CreatePrivate(rawPassPhrase, secret.KeyBytes, out var _);
+                        return new PgpPrivateKey(KeyId, eddsa);
+
+                    case PgpPublicKeyAlgorithm.ElGamalEncrypt:
+                    case PgpPublicKeyAlgorithm.ElGamalGeneral:
+                        var elgamal = ElGamalKey.CreatePrivate(rawPassPhrase, secret.KeyBytes, out var _);
+                        return new PgpPrivateKey(KeyId, elgamal);
                 }
-
-                return target;
             }
 
-            throw new CryptographicException(); //SR.Cryptography_NotValidPublicOrPrivateKey);
-        }
-
-        private static byte[] Checksum(
-            bool useSha1,
-            byte[] bytes,
-            int length)
-        {
-            if (useSha1)
-            {
-                using var sha1 = SHA1.Create();
-                return sha1.ComputeHash(bytes, 0, length);
-            }
-            else
-            {
-                int Checksum = 0;
-                for (int i = 0; i != length; i++)
-                {
-                    Checksum += bytes[i];
-                }
-
-                return new byte[] { (byte)(Checksum >> 8), (byte)Checksum };
-            }
+            throw new PgpException("unknown public key version encountered");
         }
 
         public override void Encode(IPacketWriter packetWriter)
@@ -471,21 +178,27 @@ namespace Springburg.Cryptography.OpenPgp
         /// Return a copy of the passed in secret key, encrypted using a new password
         /// and the passed in algorithm.
         /// </summary>
-        /// <remarks>
-        /// Conversion of the passphrase characters to bytes is performed using Convert.ToByte(), which is
-        /// the historical behaviour of the library (1.7 and earlier).
-        /// </remarks>
         /// <param name="key">The PgpSecretKey to be copied.</param>
         /// <param name="oldPassPhrase">The current password for the key.</param>
         /// <param name="newPassPhrase">The new password for the key.</param>
-        /// <param name="newEncAlgorithm">The algorithm to be used for the encryption.</param>
         public static PgpSecretKey CopyWithNewPassword(
             PgpSecretKey key,
-            string oldPassPhrase,
-            string newPassPhrase,
-            PgpSymmetricKeyAlgorithm newEncAlgorithm)
+            ReadOnlySpan<char> oldPassPhrase,
+            ReadOnlySpan<char> newPassPhrase)
         {
-            return CopyWithNewPassword(key, Encoding.UTF8.GetBytes(oldPassPhrase), Encoding.UTF8.GetBytes(newPassPhrase), newEncAlgorithm);
+            int oldPassPhraseByteCount = Encoding.UTF8.GetByteCount(oldPassPhrase);
+            int newPassPhraseByteCount = Encoding.UTF8.GetByteCount(newPassPhrase);
+            byte[] passphraseBuffer = CryptoPool.Rent(oldPassPhraseByteCount + newPassPhraseByteCount);
+            try
+            {
+                Encoding.UTF8.GetBytes(oldPassPhrase, passphraseBuffer);
+                Encoding.UTF8.GetBytes(newPassPhrase, passphraseBuffer.AsSpan(oldPassPhraseByteCount));
+                return CopyWithNewPassword(key, passphraseBuffer.AsSpan(0, oldPassPhraseByteCount), passphraseBuffer.AsSpan(oldPassPhraseByteCount, newPassPhraseByteCount));
+            }
+            finally
+            {
+                CryptoPool.Return(passphraseBuffer, oldPassPhraseByteCount + newPassPhraseByteCount);
+            }
         }
 
         /// <summary>
@@ -498,84 +211,55 @@ namespace Springburg.Cryptography.OpenPgp
         /// <param name="key">The PgpSecretKey to be copied.</param>
         /// <param name="rawOldPassPhrase">The current password for the key.</param>
         /// <param name="rawNewPassPhrase">The new password for the key.</param>
-        /// <param name="newEncAlgorithm">The algorithm to be used for the encryption.</param>
-        /// <param name="rand">Source of randomness.</param>
         public static PgpSecretKey CopyWithNewPassword(
             PgpSecretKey key,
-            byte[] rawOldPassPhrase,
-            byte[] rawNewPassPhrase,
-            PgpSymmetricKeyAlgorithm newEncAlgorithm)
+            ReadOnlySpan<byte> rawOldPassPhrase,
+            ReadOnlySpan<byte> rawNewPassPhrase)
         {
             if (key == null)
                 throw new ArgumentNullException(nameof(key));
             if (key.IsPrivateKeyEmpty)
                 throw new PgpException("no private key in this SecretKey - public key present only.");
 
-            byte[] rawKeyData = key.ExtractKeyData(rawOldPassPhrase);
-            S2kUsageTag s2kUsage = key.secret.S2kUsage;
-            byte[]? iv = null;
-            S2k? s2k = null;
-            byte[] keyData;
-            PublicKeyPacket pubKeyPacket = key.secret.PublicKeyPacket;
-
-            if (newEncAlgorithm == PgpSymmetricKeyAlgorithm.Null)
+            byte[] rawKeyData = CryptoPool.Rent(key.secret.KeyBytes.Length - key.secret.PublicKeyLength + 0x20);
+            try
             {
-                s2kUsage = S2kUsageTag.None;
-                if (key.secret.S2kUsage == S2kUsageTag.Sha1)   // SHA-1 hash, need to rewrite Checksum
+                S2kBasedEncryption.DecryptSecretKey(
+                    rawOldPassPhrase,
+                    key.secret.KeyBytes.AsSpan(key.secret.PublicKeyLength),
+                    rawKeyData,
+                    out int rawKeySize,
+                    key.secret.Version);
+
+                // Use the default S2K parameters
+                var s2kParameters = new S2kParameters();
+
+                var newKeyData = new byte[S2kBasedEncryption.GetEncryptedLength(s2kParameters, rawKeySize, key.secret.Version) + key.secret.PublicKeyLength];
+                key.secret.KeyBytes.AsSpan(0, key.secret.PublicKeyLength).CopyTo(newKeyData);
+
+                S2kBasedEncryption.EncryptSecretKey(
+                    rawNewPassPhrase,
+                    s2kParameters,
+                    rawKeyData.AsSpan(0, rawKeySize),
+                    newKeyData.AsSpan(key.secret.PublicKeyLength),
+                    key.secret.Version);
+
+                SecretKeyPacket secret;
+                if (key.secret is SecretSubkeyPacket)
                 {
-                    keyData = new byte[rawKeyData.Length - 18];
-
-                    Array.Copy(rawKeyData, 0, keyData, 0, keyData.Length - 2);
-
-                    byte[] check = Checksum(false, keyData, keyData.Length - 2);
-
-                    keyData[keyData.Length - 2] = check[0];
-                    keyData[keyData.Length - 1] = check[1];
+                    secret = new SecretSubkeyPacket(key.PublicKey.Algorithm, key.PublicKey.CreationTime, newKeyData);
                 }
                 else
                 {
-                    keyData = rawKeyData;
-                }
-            }
-            else
-            {
-                if (s2kUsage == S2kUsageTag.None)
-                {
-                    s2kUsage = S2kUsageTag.Checksum;
+                    secret = new SecretKeyPacket(key.PublicKey.Algorithm, key.PublicKey.CreationTime, newKeyData);
                 }
 
-                try
-                {
-                    if (pubKeyPacket.Version >= 4)
-                    {
-                        keyData = EncryptKeyDataV4(rawKeyData, newEncAlgorithm, PgpHashAlgorithm.Sha1, rawNewPassPhrase, out s2k, out iv);
-                    }
-                    else
-                    {
-                        keyData = EncryptKeyDataV3(rawKeyData, newEncAlgorithm, rawNewPassPhrase, out s2k, out iv);
-                    }
-                }
-                catch (PgpException e)
-                {
-                    throw e;
-                }
-                catch (Exception e)
-                {
-                    throw new PgpException("Exception encrypting key", e);
-                }
+                return new PgpSecretKey(secret, key.pub);
             }
-
-            SecretKeyPacket secret;
-            if (key.secret is SecretSubkeyPacket)
+            finally
             {
-                secret = new SecretSubkeyPacket(pubKeyPacket, newEncAlgorithm, s2kUsage, s2k, iv, keyData);
+                CryptoPool.Return(rawKeyData);
             }
-            else
-            {
-                secret = new SecretKeyPacket(pubKeyPacket, newEncAlgorithm, s2kUsage, s2k, iv, keyData);
-            }
-
-            return new PgpSecretKey(secret, key.pub);
         }
 
         /// <summary>Replace the passed the public key on the passed in secret key.</summary>
@@ -595,75 +279,6 @@ namespace Springburg.Cryptography.OpenPgp
                 throw new ArgumentException("KeyId's do not match");
 
             return new PgpSecretKey(secretKey.secret, publicKey);
-        }
-
-        private static byte[] EncryptKeyDataV3(
-            byte[] rawKeyData,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            byte[] rawPassPhrase,
-            out S2k? s2k,
-            out byte[]? iv)
-        {
-            // Version 2 or 3 - RSA Keys only
-
-            s2k = null;
-
-            byte[] keyData = new byte[rawKeyData.Length];
-
-            //
-            // process 4 numbers
-            //
-            int pos = 0;
-            using var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
-            c.Key = PgpUtilities.DoMakeKeyFromPassPhrase(encAlgorithm, s2k, rawPassPhrase);
-            c.GenerateIV();
-            iv = c.IV;
-            for (int i = 0; i != 4; i++)
-            {
-                int encLen = ((((rawKeyData[pos] & 0xff) << 8) | (rawKeyData[pos + 1] & 0xff)) + 7) / 8;
-
-                keyData[pos] = rawKeyData[pos];
-                keyData[pos + 1] = rawKeyData[pos + 1];
-
-                if (encLen > (rawKeyData.Length - (pos + 2)))
-                    throw new PgpException("out of range encLen found in rawKeyData");
-
-                byte[] tmp;
-                if (i != 0)
-                {
-                    c.IV = keyData.AsSpan(pos - iv.Length, iv.Length).ToArray();
-                }
-                using var encryptor = new ZeroPaddedCryptoTransform(c.CreateEncryptor());
-                tmp = encryptor.TransformFinalBlock(rawKeyData, pos + 2, encLen);
-
-                Array.Copy(tmp, 0, keyData, pos + 2, tmp.Length);
-                pos += 2 + encLen;
-            }
-
-            //
-            // copy in checksum.
-            //
-            keyData[pos] = rawKeyData[pos];
-            keyData[pos + 1] = rawKeyData[pos + 1];
-
-            return keyData;
-        }
-
-        private static byte[] EncryptKeyDataV4(
-            byte[] rawKeyData,
-            PgpSymmetricKeyAlgorithm encAlgorithm,
-            PgpHashAlgorithm hashAlgorithm,
-            byte[] rawPassPhrase,
-            out S2k? s2k,
-            out byte[]? iv)
-        {
-            using var c = PgpUtilities.GetSymmetricAlgorithm(encAlgorithm);
-            c.GenerateIV();
-            iv = c.IV;
-            s2k = PgpUtilities.GenerateS2k(hashAlgorithm, 0x60);
-            c.Key = PgpUtilities.DoMakeKeyFromPassPhrase(encAlgorithm, s2k, rawPassPhrase);
-            using var encryptor = new ZeroPaddedCryptoTransform(c.CreateEncryptor());
-            return encryptor.TransformFinalBlock(rawKeyData, 0, rawKeyData.Length);
         }
 
         /// <summary>
@@ -769,9 +384,19 @@ namespace Springburg.Cryptography.OpenPgp
 
                 if (pubKey == null)
                 {
+                    var writer = new AsnWriter(AsnEncodingRules.DER);
+                    writer.WriteObjectIdentifier(curveOid.Value!);
+
+                    int expectedLength = writer.GetEncodedLength() + 2 + qVal.Length;
+                    var destination = new byte[expectedLength];
+                    writer.TryEncode(destination, out int oidBytesWritten);
+                    Keys.MPInteger.TryWriteInteger(qVal, destination.AsSpan(oidBytesWritten), out int qBytesWritten);
+
+                    var pubKeyBytes = destination.AsSpan(1, oidBytesWritten + qBytesWritten - 1).ToArray();
+
                     PublicKeyPacket pubPacket = new PublicKeyPacket(
                         flags == "eddsa" ? PgpPublicKeyAlgorithm.EdDsa : PgpPublicKeyAlgorithm.ECDsa, DateTime.UtcNow,
-                        new ECDsaPublicBcpgKey(curveOid, new MPInteger(qVal)));
+                        pubKeyBytes);
                     pubKey = new PgpPublicKey(pubPacket);
                 }
 
@@ -779,8 +404,12 @@ namespace Springburg.Cryptography.OpenPgp
 
                 byte[] dValue = GetDValue(reader, pubKey.PublicKeyPacket, rawPassPhrase, curveName);
 
-                return new PgpSecretKey(new SecretKeyPacket(pubKey.PublicKeyPacket, PgpSymmetricKeyAlgorithm.Null, null, null,
-                    new MPInteger(dValue).GetEncoded()), pubKey);
+                var keyBytes = new byte[pubKey.PublicKeyPacket.PublicKeyLength + 3 + dValue.Length];
+                pubKey.PublicKeyPacket.KeyBytes.AsSpan(0, pubKey.PublicKeyPacket.PublicKeyLength).CopyTo(keyBytes);
+                keyBytes[pubKey.PublicKeyPacket.PublicKeyLength] = (byte)S2kUsageTag.None;
+                Keys.MPInteger.TryWriteInteger(dValue, keyBytes.AsSpan(pubKey.PublicKeyPacket.PublicKeyLength + 1), out var _);
+
+                return new PgpSecretKey(new SecretKeyPacket(pubKey.Algorithm, pubKey.CreationTime, keyBytes), pubKey);
             }
 
             throw new PgpException("unknown key type found");
@@ -788,6 +417,8 @@ namespace Springburg.Cryptography.OpenPgp
 
         private static void WriteSExprPublicKey(SXprWriter writer, PublicKeyPacket pubPacket, string curveName, string? protectedAt)
         {
+            throw new NotImplementedException();
+            /*
             writer.StartList();
             switch (pubPacket.Algorithm)
             {
@@ -838,7 +469,7 @@ namespace Springburg.Cryptography.OpenPgp
                 writer.WriteString(protectedAt);
                 writer.EndList();
             }
-            writer.EndList();
+            writer.EndList();*/
         }
 
         private static byte[] GetDValue(SXprReader reader, PublicKeyPacket publicKey, byte[] rawPassPhrase, string curveName)
@@ -882,7 +513,6 @@ namespace Springburg.Cryptography.OpenPgp
             }
 
             byte[] data;
-            byte[] key;
 
             switch (protection)
             {
@@ -892,15 +522,23 @@ namespace Springburg.Cryptography.OpenPgp
                         protection.Equals("openpgp-s2k3-sha1-aes256-cbc", StringComparison.Ordinal) ?
                         PgpSymmetricKeyAlgorithm.Aes256 :
                         PgpSymmetricKeyAlgorithm.Aes128;
-                    key = PgpUtilities.DoMakeKeyFromPassPhrase(symmAlg, s2k, rawPassPhrase);
-                    data = RecoverKeyData(symmAlg, CipherMode.CBC, key, iv, secKeyData, 0, secKeyData.Length);
-                    // TODO: check SHA-1 hash.
+                    using (var c = PgpUtilities.GetSymmetricAlgorithm(symmAlg))
+                    {
+                        var keyBytes = new byte[c.KeySize / 8];
+                        S2kBasedEncryption.MakeKey(rawPassPhrase, PgpHashAlgorithm.Sha1, s2k.GetIV(), s2k.IterationCount, keyBytes);
+                        c.Key = keyBytes;
+                        c.IV = iv;
+                        c.Mode = CipherMode.CBC;
+                        using var decryptor = new ZeroPaddedCryptoTransform(c.CreateDecryptor());
+                        data = decryptor.TransformFinalBlock(secKeyData, 0, secKeyData.Length);
+                        // TODO: check SHA-1 hash.
+                    }
                     break;
 
                 case "openpgp-s2k3-ocb-aes":
                     MemoryStream aad = new MemoryStream();
                     WriteSExprPublicKey(new SXprWriter(aad), publicKey, curveName, protectedAt);
-                    key = PgpUtilities.DoMakeKeyFromPassPhrase(PgpSymmetricKeyAlgorithm.Aes128, s2k, rawPassPhrase);
+                    //key = PgpUtilities.DoMakeKeyFromPassPhrase(PgpSymmetricKeyAlgorithm.Aes128, s2k, rawPassPhrase);
                     /*IBufferedCipher c = CipherUtilities.GetCipher("AES/OCB");
                     c.Init(false, new AeadParameters(key, 128, iv, aad.ToArray()));
                     data = c.DoFinal(secKeyData, 0, secKeyData.Length);*/

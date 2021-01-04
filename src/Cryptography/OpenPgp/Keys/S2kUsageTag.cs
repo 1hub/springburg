@@ -1,4 +1,4 @@
-﻿namespace Springburg.Cryptography.OpenPgp.Packet
+﻿namespace Springburg.Cryptography.OpenPgp.Keys
 {
     enum S2kUsageTag : byte
     {
