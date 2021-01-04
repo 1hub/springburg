@@ -101,11 +101,11 @@ namespace Springburg.Cryptography.OpenPgp
 
         /// <summary>Return the PGP public key associated with the given key id.</summary>
         /// <param name="keyId">The ID of the public key to return.</param>
-        public PgpPublicKey? GetPublicKey(long keyId)
+        public PgpKey? GetPublicKey(long keyId)
         {
             foreach (PgpPublicKeyRing pubRing in GetKeyRings())
             {
-                PgpPublicKey? pub = pubRing.GetPublicKey(keyId);
+                PgpKey? pub = pubRing.GetPublicKey(keyId);
                 if (pub != null)
                 {
                     return pub;
@@ -126,7 +126,7 @@ namespace Springburg.Cryptography.OpenPgp
 
             foreach (PgpPublicKeyRing pubRing in GetKeyRings())
             {
-                PgpPublicKey? pub = pubRing.GetPublicKey(keyId);
+                PgpKey? pub = pubRing.GetPublicKey(keyId);
 
                 if (pub != null)
                 {

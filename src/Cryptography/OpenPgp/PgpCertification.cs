@@ -14,19 +14,19 @@ namespace Springburg.Cryptography.OpenPgp
     {
         PgpSignature signature;
         ContainedPacket? userPacket;
-        PgpPublicKey publicKey;
+        PgpKey publicKey;
 
         internal PgpCertification(
             PgpSignature signature,
             ContainedPacket? userPacket,
-            PgpPublicKey publicKey)
+            PgpKey publicKey)
         {
             this.signature = signature;
             this.userPacket = userPacket;
             this.publicKey = publicKey;
         }
 
-        internal PgpPublicKey PublicKey => publicKey;
+        internal PgpKey PublicKey => publicKey;
 
         public long KeyId => signature.KeyId;
 
@@ -39,15 +39,15 @@ namespace Springburg.Cryptography.OpenPgp
         public PgpSignature Signature => signature;
 
         private static MemoryStream GenerateCertificationData(
-            PgpPublicKey signingKey,
+            PgpKey signingKey,
             ContainedPacket? userPacket,
-            PgpPublicKey publicKey)
+            PgpKey publicKey)
         {
             var data = new MemoryStream();
 
             if (!signingKey.Fingerprint.SequenceEqual(publicKey.Fingerprint) && userPacket == null)
             {
-                byte[] signingKeyBytes = signingKey.PublicKeyPacket.GetEncodedContents();
+                byte[] signingKeyBytes = signingKey.KeyPacket.GetEncodedContents();
                 data.Write(new[] {
                 (byte)0x99,
                 (byte)(signingKeyBytes.Length >> 8),
@@ -55,7 +55,7 @@ namespace Springburg.Cryptography.OpenPgp
                 data.Write(signingKeyBytes);
             }
 
-            byte[] keyBytes = publicKey.PublicKeyPacket.GetEncodedContents();
+            byte[] keyBytes = publicKey.KeyPacket.GetEncodedContents();
             data.Write(new[] {
                 (byte)0x99,
                 (byte)(keyBytes.Length >> 8),
@@ -101,7 +101,7 @@ namespace Springburg.Cryptography.OpenPgp
         /// Verify the signature as certifying by the passed in public key.
         /// </summary>
         /// <returns>True, if the signature matches, false otherwise.</returns>
-        public bool Verify(PgpPublicKey signingKey)
+        public bool Verify(PgpKey signingKey)
         {
             if (signingKey == null)
                 throw new ArgumentNullException(nameof(signingKey));
@@ -123,7 +123,7 @@ namespace Springburg.Cryptography.OpenPgp
         /// <returns>The certification.</returns>
         public static PgpCertification GenerateSubkeyBinding(
             PgpKeyPair masterKey,
-            PgpPublicKey subKey,
+            PgpKey subKey,
             PgpSignatureAttributes? hashedAttributes = null,
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
@@ -147,7 +147,7 @@ namespace Springburg.Cryptography.OpenPgp
             PgpSignatureType signatureType,
             PgpKeyPair signingKey,
             string userId,
-            PgpPublicKey userPublicKey,
+            PgpKey userPublicKey,
             PgpSignatureAttributes? hashedAttributes = null,
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
@@ -174,7 +174,7 @@ namespace Springburg.Cryptography.OpenPgp
             PgpSignatureType signatureType,
             PgpKeyPair signingKey,
             PgpUserAttributes userAttributes,
-            PgpPublicKey userPublicKey,
+            PgpKey userPublicKey,
             PgpSignatureAttributes? hashedAttributes = null,
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
@@ -198,7 +198,7 @@ namespace Springburg.Cryptography.OpenPgp
 
         public static PgpCertification GenerateKeyRevocation(
             PgpKeyPair signingKey,
-            PgpPublicKey revokedKey,
+            PgpKey revokedKey,
             PgpSignatureAttributes? hashedAttributes = null,
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)

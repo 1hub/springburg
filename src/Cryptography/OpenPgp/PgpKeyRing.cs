@@ -1,24 +1,14 @@
-using Springburg.Cryptography.OpenPgp.Packet;
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Springburg.Cryptography.OpenPgp
 {
     public abstract class PgpKeyRing : PgpEncodable
     {
-        private protected static PgpPublicKey ReadPublicKey(
-            IPacketReader packetReader,
-            PublicKeyPacket publicKeyPacket,
-            bool subKey = false)
-        {
-            return new PgpPublicKey(packetReader, publicKeyPacket, subKey);
-        }
-
         private protected static void InsertKey<T>(
             IList<T> keys,
             T keyToInsert)
-            where T : IPgpKey
+            where T : PgpKey
         {
             bool found = false;
             bool masterFound = false;
@@ -55,7 +45,7 @@ namespace Springburg.Cryptography.OpenPgp
         protected private static bool RemoveKey<T>(
             IList<T> keys,
             T keyToRemove)
-            where T : IPgpKey
+            where T : PgpKey
         {
             // FIXME: Disallow removing the master key?
 

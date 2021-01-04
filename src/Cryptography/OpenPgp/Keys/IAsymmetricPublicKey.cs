@@ -2,7 +2,7 @@
 
 namespace Springburg.Cryptography.OpenPgp.Keys
 {
-    interface IAsymmetricPublicKey : IAsymmetricKeyUsage
+    public interface IAsymmetricPublicKey : IAsymmetricKeyUsage
     {
         byte[] ExportPublicKey();
 

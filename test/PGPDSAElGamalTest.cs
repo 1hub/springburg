@@ -154,7 +154,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var messageGenerator = new PgpMessageGenerator(cbOut);
             using (var encryptedGenerator = messageGenerator.CreateEncrypted(PgpSymmetricKeyAlgorithm.TripleDes))
             {
-                encryptedGenerator.AddMethod(secretKey.PublicKey);
+                encryptedGenerator.AddMethod(secretKey);
                 using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Utf8, "", DateTime.UtcNow))
                     literalStream.Write(text);
             }

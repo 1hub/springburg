@@ -1,3 +1,6 @@
+using Springburg.Cryptography.Algorithms;
+using Springburg.Cryptography.OpenPgp.Keys;
+using Springburg.Cryptography.OpenPgp.Packet;
 using System;
 using System.Security.Cryptography;
 
@@ -16,17 +19,47 @@ namespace Springburg.Cryptography.OpenPgp
     public class PgpKeyPair
     {
         public PgpKeyPair(
-            AsymmetricAlgorithm keyPair,
-            DateTime time)
+            AsymmetricAlgorithm asymmetricAlgorithm,
+            DateTime creationTime,
+            bool isMasterKey = true)
         {
-            this.PublicKey = new PgpPublicKey(keyPair, time, isMasterKey: true);
-            this.PrivateKey = new PgpPrivateKey(this.PublicKey.KeyId, keyPair, PublicKey.Fingerprint);
+            IAsymmetricPrivateKey privateKey;
+            IAsymmetricPublicKey publicKey;
+            byte[]? ecdhFingerprint = null;
+
+            if (asymmetricAlgorithm is RSA rsa)
+                privateKey = new RsaKey(rsa);
+            else if (asymmetricAlgorithm is DSA dsa)
+                privateKey = new DsaKey(dsa);
+            else if (asymmetricAlgorithm is ElGamal elGamal)
+                privateKey = new ElGamalKey(elGamal);
+            else if (asymmetricAlgorithm is ECDiffieHellman ecdh)
+                privateKey = new ECDiffieHellmanKey(ecdh, new byte[] { 0, (byte)PgpHashAlgorithm.Sha256, (byte)PgpSymmetricKeyAlgorithm.Aes128 }, ecdhFingerprint = new byte[20]);
+            else if (asymmetricAlgorithm is Ed25519 eddsa)
+                privateKey = new EdDsaKey(eddsa);
+            else if (asymmetricAlgorithm is ECDsa ecdsa)
+                privateKey = new ECDsaKey(ecdsa);
+            else
+                throw new NotSupportedException();
+            publicKey = (IAsymmetricPublicKey)privateKey;
+
+            var keyBytes = publicKey.ExportPublicKey();
+            var keyPacket = isMasterKey ?
+                new PublicKeyPacket(publicKey.Algorithm, creationTime, keyBytes) :
+                new PublicSubkeyPacket(publicKey.Algorithm, creationTime, keyBytes);
+
+            this.PublicKey = new PgpPublicKey(keyPacket) { key = publicKey };
+
+            if (ecdhFingerprint != null)
+                this.PublicKey.Fingerprint.Slice(0, 20).CopyTo(ecdhFingerprint);
+
+            this.PrivateKey = new PgpPrivateKey(this.PublicKey.KeyId, privateKey);
         }
 
         /// <summary>Create a key pair from a PgpPrivateKey and a PgpPublicKey.</summary>
-        /// <param name="publicKey">The public key.</param>
+        /// <param name="publicOrSecretKey">The public key.</param>
         /// <param name="privateKey">The private key.</param>
-        public PgpKeyPair(PgpPublicKey publicKey, PgpPrivateKey privateKey)
+        public PgpKeyPair(PgpKey publicKey, PgpPrivateKey privateKey)
         {
             this.PublicKey = publicKey;
             this.PrivateKey = privateKey;
@@ -35,7 +68,7 @@ namespace Springburg.Cryptography.OpenPgp
         /// <summary>The keyId associated with this key pair.</summary>
         public long KeyId => PublicKey.KeyId;
 
-        public PgpPublicKey PublicKey { get; private set; }
+        public PgpKey PublicKey { get; private set; }
 
         public PgpPrivateKey PrivateKey { get; private set; }
     }

@@ -1437,7 +1437,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 foreach (PgpSecretKey k in pgpSec2.GetSecretKeys())
                 {
                     keyCount++;
-                    PgpPublicKey pk = k.PublicKey;
+                    PgpPublicKey pk = new PgpPublicKey(k);
 
                     //pk.GetSignatures();
 
@@ -1588,12 +1588,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
                 foreach (PgpSecretKey k in pgpSec2.GetSecretKeys())
                 {
                     keyCount++;
-                    PgpPublicKey pk = k.PublicKey;
 
-                    if (pk.KeyId == -1413891222336124627L)
+                    if (k.KeyId == -1413891222336124627L)
                     {
-                        Assert.AreEqual(1, pk.KeyCertifications.Count);
-                        Assert.AreEqual(PgpSignatureType.SubkeyBinding, pk.KeyCertifications[0].Signature.SignatureType);
+                        Assert.AreEqual(1, k.KeyCertifications.Count);
+                        Assert.AreEqual(PgpSignatureType.SubkeyBinding, k.KeyCertifications[0].Signature.SignatureType);
                     }
 
                     //pk.GetSignatures();
@@ -1958,26 +1957,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         public void PerformTest10()
         {
             PgpSecretKeyRing secretRing = new PgpSecretKeyRing(sec10);
-
             foreach (PgpSecretKey secretKey in secretRing.GetSecretKeys())
-            {
-                PgpPublicKey pubKey = secretKey.PublicKey;
-
-                if (pubKey.GetValidity() != TimeSpan.FromDays(28))
-                {
-                    Fail("validity wrong on secret key ring");
-                }
-            }
+                Assert.AreEqual(TimeSpan.FromDays(28), secretKey.GetValidity());
 
             PgpPublicKeyRing publicRing = new PgpPublicKeyRing(pub10);
-
             foreach (PgpPublicKey pubKey in publicRing.GetPublicKeys())
-            {
-                if (pubKey.GetValidity() != TimeSpan.FromDays(28))
-                {
-                    Fail("validity wrong on public key ring");
-                }
-            }
+                Assert.AreEqual(TimeSpan.FromDays(28), pubKey.GetValidity());
         }
 
         [Test]
@@ -2001,7 +1986,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var dsa = DSA.Create(512);
             var elGamal = ElGamal.Create(1024);
 
-            var keyRingGen = new PgpKeyRingGenerator(dsa, "test", passPhrase, useSha1: false);
+            var keyRingGen = new PgpKeyRingGenerator(dsa, "test", passPhrase);
             keyRingGen.AddSubKey(elGamal);
 
             PgpSecretKeyRing keyRing = keyRingGen.GenerateSecretKeyRing();

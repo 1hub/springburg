@@ -58,9 +58,9 @@ namespace Springburg.Cryptography.OpenPgp
 
         // TODO: Verify with key ring
 
-        public bool Verify(PgpPublicKey publicKey) => Verify(publicKey, out var _);
+        public bool Verify(PgpKey publicKey) => Verify(publicKey, out var _);
 
-        public bool Verify(PgpPublicKey publicKey, out DateTime creationTime)
+        public bool Verify(PgpKey publicKey, out DateTime creationTime)
         {
             if (signatureHelper == null)
                 throw new InvalidOperationException();

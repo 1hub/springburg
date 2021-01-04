@@ -85,7 +85,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             Assert.That(secRing.GetEncoded(), Is.EqualTo(secRingEnc.GetEncoded()), "secret key ring encoding failed");
 
             // try a signature using encoded key
-            KeyTestHelper.SignAndVerifyTestMessage(secRing.GetSecretKey().ExtractPrivateKey(passPhrase), secRing.GetSecretKey().PublicKey);
+            KeyTestHelper.SignAndVerifyTestMessage(secRing.GetSecretKey().ExtractPrivateKey(passPhrase), secRing.GetSecretKey());
         }
 
         [Test]

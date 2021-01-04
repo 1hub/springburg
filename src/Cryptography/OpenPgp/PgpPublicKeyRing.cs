@@ -43,13 +43,13 @@ namespace Springburg.Cryptography.OpenPgp
             }
 
             PublicKeyPacket pubPk = (PublicKeyPacket)packetReader.ReadContainedPacket();
-            keys.Add(ReadPublicKey(packetReader, pubPk));
+            keys.Add(new PgpPublicKey(packetReader, pubPk, subKey: false));
 
             // Read subkeys
             while (packetReader.NextPacketTag() == PacketTag.PublicSubkey)
             {
                 pubPk = (PublicSubkeyPacket)packetReader.ReadContainedPacket();
-                keys.Add(ReadPublicKey(packetReader, pubPk, subKey: true));
+                keys.Add(new PgpPublicKey(packetReader, pubPk, subKey: true));
             }
         }
 
@@ -68,7 +68,7 @@ namespace Springburg.Cryptography.OpenPgp
             if (outputStream == null)
                 throw new ArgumentNullException(nameof(outputStream));
 
-            foreach (PgpPublicKey k in keys)
+            foreach (PgpKey k in keys)
                 k.Encode(outputStream);
         }
 

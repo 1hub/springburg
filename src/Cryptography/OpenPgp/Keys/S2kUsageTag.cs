@@ -1,6 +1,6 @@
 ﻿namespace Springburg.Cryptography.OpenPgp.Keys
 {
-    enum S2kUsageTag : byte
+    public enum S2kUsageTag : byte
     {
         None = 0x00,
         Checksum = 0xff,
