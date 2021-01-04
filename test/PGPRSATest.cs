@@ -340,7 +340,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private void MixedTest(
             PgpPrivateKey pgpPrivKey,
-            PgpPublicKey pgpPubKey)
+            PgpKey pgpPubKey)
         {
             byte[] text = Encoding.ASCII.GetBytes("hello world!\n");
 
@@ -408,7 +408,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             var certification = PgpCertification.GenerateUserCertification(
                 PgpSignatureType.PositiveCertification,
-                new PgpKeyPair(pubKey, pgpSec.GetSecretKey().ExtractPrivateKey(pass)),
+                pubKey,
+                pgpSec.GetSecretKey().ExtractPrivateKey(pass),
                 vGen,
                 pubKey);
 
@@ -546,12 +547,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             byte[] shortText = { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o' };
 
             MemoryStream cbOut = new MemoryStream();
-            PgpPublicKey puK = pgpPriv.GetSecretKey(encKeyId).PublicKey;
             
             var messageGenerator = new PgpMessageGenerator(cbOut);
             using (var encryptedGenerator = messageGenerator.CreateEncrypted(PgpSymmetricKeyAlgorithm.Cast5))            
             {
-                encryptedGenerator.AddMethod(puK);
+                encryptedGenerator.AddMethod(pgpPriv.GetSecretKey(encKeyId));
                 using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))
                 {
                     literalStream.Write(shortText);
@@ -571,12 +571,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             // encrypt
             //
             cbOut = new MemoryStream();
-            puK = pgpPriv.GetSecretKey(encKeyId).PublicKey;
 
             messageGenerator = new PgpMessageGenerator(cbOut);
             using (var encryptedGenerator = messageGenerator.CreateEncrypted(PgpSymmetricKeyAlgorithm.Cast5))
             {
-                encryptedGenerator.AddMethod(puK);
+                encryptedGenerator.AddMethod(pgpPriv.GetSecretKey(encKeyId));
                 using (var literalStream = encryptedGenerator.CreateLiteral(PgpDataFormat.Binary, "", DateTime.UtcNow))
                 {
                     literalStream.Write(text);
@@ -611,7 +610,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             var secretKey = keyRingGenerator.GenerateSecretKeyRing().GetSecretKey();
 
-            PgpPublicKey key = secretKey.PublicKey;
+            PgpPublicKey key = new PgpPublicKey(secretKey);
 
             firstUserId = key.GetUserIds().FirstOrDefault();
             Assert.NotNull(firstUserId);
@@ -630,7 +629,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             keyEnc = key.GetEncoded();
 
             var revocation = PgpCertification.GenerateKeyRevocation(
-                new PgpKeyPair(secretKey.PublicKey, secretKey.ExtractPrivateKey(passPhrase)),
+                secretKey,
+                secretKey.ExtractPrivateKey(passPhrase),
                 key);
 
             key = PgpPublicKey.AddCertification(key, revocation);
@@ -658,12 +658,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             MixedTest(k2, k1);
 
             //
-            // key pair generation - AES_256 encryption.
+            // key pair generation - AES_256 encryption. -- XXX
             //
             //kp = kpg.GenerateKeyPair();
             rsa = RSA.Create(1024);
 
-            keyRingGenerator = new PgpKeyRingGenerator(rsa, "fred", passPhrase, encAlgorithm: PgpSymmetricKeyAlgorithm.Aes256);
+            keyRingGenerator = new PgpKeyRingGenerator(rsa, "fred", passPhrase /*, encAlgorithm: PgpSymmetricKeyAlgorithm.Aes256*/);
 
             secretKey = keyRingGenerator.GenerateSecretKeyRing().GetSecretKey();
 
@@ -682,7 +682,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             secretKey.Encode(new MemoryStream());
 
-            key = secretKey.PublicKey;
+            key = new PgpPublicKey(secretKey);
 
             key.Encode(new MemoryStream());
 
@@ -718,7 +718,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             Assert.AreEqual(testDateTime, literalMessage.ModificationTime);
             literalMessage.GetStream().CopyTo(Stream.Null);
-            Assert.IsTrue(signedMessage.Verify(secretKey.PublicKey));
+            Assert.IsTrue(signedMessage.Verify(secretKey));
 
             //
             // signature generation - version 3
@@ -741,7 +741,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             literalMessage = (PgpLiteralMessage)signedMessage.ReadMessage();
             Assert.AreEqual(testDateTime, literalMessage.ModificationTime);
             literalMessage.GetStream().CopyTo(Stream.Null);
-            Assert.IsTrue(signedMessage.Verify(secretKey.PublicKey));
+            Assert.IsTrue(signedMessage.Verify(secretKey));
 
             //
             // extract PGP 8 private key
@@ -755,14 +755,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // other sig tests
             //
-            PerformTestSig(PgpHashAlgorithm.Sha256, secretKey.PublicKey, pgpPrivKey);
-            PerformTestSig(PgpHashAlgorithm.Sha384, secretKey.PublicKey, pgpPrivKey);
-            PerformTestSig(PgpHashAlgorithm.Sha512, secretKey.PublicKey, pgpPrivKey);
+            PerformTestSig(PgpHashAlgorithm.Sha256, secretKey, pgpPrivKey);
+            PerformTestSig(PgpHashAlgorithm.Sha384, secretKey, pgpPrivKey);
+            PerformTestSig(PgpHashAlgorithm.Sha512, secretKey, pgpPrivKey);
         }
 
         private void PerformTestSig(
             PgpHashAlgorithm hashAlgorithm,
-            PgpPublicKey pubKey,
+            PgpKey pubKey,
             PgpPrivateKey privKey)
         {
             const string data = "hello world!";

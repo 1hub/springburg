@@ -67,7 +67,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             Assert.AreEqual(secRing.GetEncoded(), secRingEnc.GetEncoded(), "secret key ring encoding failed");
 
             // try a signature using encoded key
-            KeyTestHelper.SignAndVerifyTestMessage(secRing.GetSecretKey().ExtractPrivateKey(passPhrase), secRing.GetSecretKey().PublicKey);
+            KeyTestHelper.SignAndVerifyTestMessage(secRing.GetSecretKey().ExtractPrivateKey(passPhrase), secRing.GetSecretKey());
         }
 
         [Test]
@@ -96,7 +96,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             // sExpr
             PgpSecretKey key = PgpSecretKey.ParseSecretKeyFromSExpr(new MemoryStream(sExprKey, false), "test");
-            KeyTestHelper.SignAndVerifyTestMessage(key.ExtractPrivateKey(""), key.PublicKey);
+            KeyTestHelper.SignAndVerifyTestMessage(key.ExtractPrivateKey(""), key);
         }
     }
 }

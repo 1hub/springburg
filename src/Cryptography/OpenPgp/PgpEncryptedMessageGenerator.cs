@@ -59,9 +59,9 @@ namespace Springburg.Cryptography.OpenPgp
 
         private class PubMethod : EncMethod
         {
-            private PgpPublicKey pubKey;
+            private PgpKey pubKey;
 
-            public PubMethod(PgpPublicKey pubKey)
+            public PubMethod(PgpKey pubKey)
             {
                 this.pubKey = pubKey;
             }
@@ -115,7 +115,7 @@ namespace Springburg.Cryptography.OpenPgp
         }
 
         /// <summary>Add a public key encrypted session key to the encrypted object.</summary>
-        public void AddMethod(PgpPublicKey key)
+        public void AddMethod(PgpKey key)
         {
             if (!key.IsEncryptionKey)
             {

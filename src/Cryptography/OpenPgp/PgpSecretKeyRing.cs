@@ -53,7 +53,7 @@ namespace Springburg.Cryptography.OpenPgp
             }
 
             SecretKeyPacket secret = (SecretKeyPacket)packetReader.ReadContainedPacket();
-            keys.Add(new PgpSecretKey(secret, ReadPublicKey(packetReader, new PublicKeyPacket(secret))));
+            keys.Add(new PgpSecretKey(packetReader, secret, subKey: false));
 
             // Read subkeys
             while (packetReader.NextPacketTag() == PacketTag.SecretSubkey || packetReader.NextPacketTag() == PacketTag.PublicSubkey)
@@ -61,19 +61,18 @@ namespace Springburg.Cryptography.OpenPgp
                 if (packetReader.NextPacketTag() == PacketTag.SecretSubkey)
                 {
                     SecretSubkeyPacket sub = (SecretSubkeyPacket)packetReader.ReadContainedPacket();
-                    PublicSubkeyPacket pub = new PublicSubkeyPacket(sub);
-                    keys.Add(new PgpSecretKey(sub, ReadPublicKey(packetReader, pub, subKey: true)));
+                    keys.Add(new PgpSecretKey(packetReader, sub, subKey: true));
                 }
                 else
                 {
                     PublicSubkeyPacket sub = (PublicSubkeyPacket)packetReader.ReadContainedPacket();
-                    extraPubKeys.Add(ReadPublicKey(packetReader, sub, subKey: true));
+                    extraPubKeys.Add(new PgpPublicKey(packetReader, sub, subKey: true));
                 }
             }
         }
 
         /// <summary>Return the public key for the master key.</summary>
-        public PgpPublicKey GetPublicKey() => keys[0].PublicKey;
+        public PgpPublicKey GetPublicKey() => keys[0].GetPublicKey();
 
         /// <summary>Return the master private key.</summary>
         public PgpSecretKey GetSecretKey() => keys[0];
@@ -99,29 +98,8 @@ namespace Springburg.Cryptography.OpenPgp
 
             foreach (PgpSecretKey key in keys)
                 key.Encode(outputStream);
-            foreach (PgpPublicKey extraPubKey in extraPubKeys)
+            foreach (PgpKey extraPubKey in extraPubKeys)
                 extraPubKey.Encode(outputStream);
-        }
-
-        /// <summary>
-        /// Replace the public key set on the secret ring with the corresponding key off the public ring.
-        /// </summary>
-        /// <param name="secretRing">Secret ring to be changed.</param>
-        /// <param name="publicRing">Public ring containing the new public key set.</param>
-        public static PgpSecretKeyRing ReplacePublicKeys(
-            PgpSecretKeyRing secretRing,
-            PgpPublicKeyRing publicRing)
-        {
-            IList<PgpSecretKey> newList = new List<PgpSecretKey>(secretRing.keys.Count);
-
-            foreach (PgpSecretKey sk in secretRing.keys)
-            {
-                PgpPublicKey? pk = publicRing.GetPublicKey(sk.KeyId);
-                if (pk != null)
-                    newList.Add(PgpSecretKey.ReplacePublicKey(sk, pk));
-            }
-
-            return new PgpSecretKeyRing(newList);
         }
 
         /// <summary>
@@ -135,8 +113,8 @@ namespace Springburg.Cryptography.OpenPgp
         /// <param name="rand">Source of randomness.</param>
         public static PgpSecretKeyRing CopyWithNewPassword(
             PgpSecretKeyRing ring,
-            string oldPassPhrase,
-            string newPassPhrase)
+            ReadOnlySpan<char> oldPassPhrase,
+            ReadOnlySpan<char> newPassPhrase)
         {
             IList<PgpSecretKey> newKeys = new List<PgpSecretKey>(ring.keys.Count);
             foreach (PgpSecretKey secretKey in ring.GetSecretKeys())

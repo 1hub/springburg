@@ -1,6 +1,6 @@
 ﻿namespace Springburg.Cryptography.OpenPgp.Keys
 {
-    interface IAsymmetricKeyUsage
+    public interface IAsymmetricKeyUsage
     {
         PgpPublicKeyAlgorithm Algorithm { get; }
         bool CanSign { get; }

@@ -18,7 +18,7 @@ namespace Springburg.Cryptography.OpenPgp
         readonly List<PgpCertification> otherCertifications;
         readonly List<PgpCertification> revocationSignatures;
 
-        internal PgpUser(IPacketReader packetReader, PgpPublicKey publicKey)
+        internal PgpUser(IPacketReader packetReader, PgpKey publicKey)
         {
             Debug.Assert(packetReader.NextPacketTag() == PacketTag.UserId || packetReader.NextPacketTag() == PacketTag.UserAttribute);
 
@@ -39,7 +39,7 @@ namespace Springburg.Cryptography.OpenPgp
             }
         }
 
-        internal PgpUser(PgpUser user, PgpPublicKey publicKey)
+        internal PgpUser(PgpUser user, PgpKey publicKey)
         {
             this.userPacket = user.userPacket;
             //this.publicKey = publicKey;
@@ -54,7 +54,7 @@ namespace Springburg.Cryptography.OpenPgp
                 this.revocationSignatures.Add(new PgpCertification(certification.Signature, userPacket, publicKey));
         }
 
-        internal PgpUser(ContainedPacket userPacket, PgpPublicKey publicKey, PgpSignature signature)
+        internal PgpUser(ContainedPacket userPacket, PgpKey publicKey, PgpSignature signature)
         {
             this.userPacket = userPacket;
             //this.publicKey = publicKey;
@@ -64,14 +64,14 @@ namespace Springburg.Cryptography.OpenPgp
             AddCertification(publicKey, signature);
         }
 
-        public static PgpUser AddCertification(PgpUser user, PgpPublicKey publicKey, PgpSignature signature)
+        public static PgpUser AddCertification(PgpUser user, PgpKey publicKey, PgpSignature signature)
         {
             var newUser = new PgpUser(user, publicKey);
             newUser.AddCertification(publicKey, signature);
             return newUser;
         }
 
-        public static PgpUser RemoveCertification(PgpUser user, PgpPublicKey publicKey, PgpCertification certification)
+        public static PgpUser RemoveCertification(PgpUser user, PgpKey publicKey, PgpCertification certification)
         {
             var newUser = new PgpUser(user, publicKey);
             newUser.selfCertifications.RemoveAll(c => Equals(c.Signature, certification.Signature));
@@ -80,7 +80,7 @@ namespace Springburg.Cryptography.OpenPgp
             return newUser;
         }
 
-        private bool AddCertification(PgpPublicKey publicKey, PgpSignature signature)
+        private bool AddCertification(PgpKey publicKey, PgpSignature signature)
         {
             var certification = new PgpCertification(signature, userPacket, publicKey);
             switch (signature.SignatureType)

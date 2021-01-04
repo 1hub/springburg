@@ -43,32 +43,27 @@ namespace Springburg.Cryptography.OpenPgp.Keys
 
                 dsaParameters.X = MPInteger.ReadInteger(xArray, out int xConsumed).ToArray();
 
-                // Make sure Q and X have the same length (DSA implementation on Windows requires it)
-                if (dsaParameters.X.Length != dsaParameters.Q!.Length)
-                {
-                    int qxLength = Math.Max(dsaParameters.X.Length, dsaParameters.Q.Length);
-                    if (dsaParameters.X.Length != qxLength)
-                    {
-                        var X = dsaParameters.X;
-                        dsaParameters.X = new byte[qxLength];
-                        X.CopyTo(dsaParameters.X, qxLength - X.Length);
-                        CryptographicOperations.ZeroMemory(X);
-                    }
-                    if (dsaParameters.Q.Length != qxLength)
-                    {
-                        var Q = dsaParameters.Q;
-                        dsaParameters.Q = new byte[qxLength];
-                        Q.CopyTo(dsaParameters.Q, qxLength - Q.Length);
-                        CryptographicOperations.ZeroMemory(Q);
-                    }
-                }
-
+                // Make sure Q, X have the same length (DSA implementation on Windows requires it)
+                int qxLength = Math.Max(dsaParameters.X.Length, dsaParameters.Q!.Length);
+                ResizeArrayIfNeeded(ref dsaParameters.Q, qxLength);
+                ResizeArrayIfNeeded(ref dsaParameters.X, qxLength);
                 return new DsaKey(DSA.Create(dsaParameters));
             }
             finally
             {
                 CryptographicOperations.ZeroMemory(xArray);
                 CryptographicOperations.ZeroMemory(dsaParameters.X);
+            }
+        }
+
+        private static void ResizeArrayIfNeeded(ref byte[] originalArray, int newSize)
+        {
+            if (originalArray.Length < newSize)
+            {
+                var newArray = new byte[newSize];
+                originalArray.CopyTo(newArray, newArray.Length - originalArray.Length);
+                CryptographicOperations.ZeroMemory(originalArray);
+                originalArray = newArray;
             }
         }
 
@@ -83,6 +78,13 @@ namespace Springburg.Cryptography.OpenPgp.Keys
             source = source.Slice(gConsumed);
             dsaParameters.Y = MPInteger.ReadInteger(source, out int yConsumed).ToArray();
             bytesRead = pConsumed + qConsumed + gConsumed + yConsumed;
+
+            // Make sure P, G, Y have the same length (DSA implementation on Windows requires it)
+            int pgyLength = Math.Max(Math.Max(dsaParameters.P!.Length, dsaParameters.G!.Length), dsaParameters.Y!.Length);
+            ResizeArrayIfNeeded(ref dsaParameters.P, pgyLength);
+            ResizeArrayIfNeeded(ref dsaParameters.G, pgyLength);
+            ResizeArrayIfNeeded(ref dsaParameters.Y, pgyLength);
+
             return dsaParameters;
         }
 

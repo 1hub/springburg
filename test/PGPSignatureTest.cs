@@ -376,7 +376,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             var pgpPriv = new PgpSecretKeyRing(dsaKeyRing);
             var secretKey = pgpPriv.GetSecretKey();
             var m = Convert.FromBase64String("kA0DAQIRzSP16cTKNEMBrEZ0CF9DT05TT0xFX+uYQWhlbGxvIHdvcmxkIQ0KaGVsbG8gd29ybGQhDQpoZWxsbyB3b3JsZCENCmhlbGxvIHdvcmxkIQ0KiD0DBQFf65hBzSP16cTKNEMRAvGjAJd00mbcvtYoZHENbtlbb+qmcg5jAJdR7jNL8HIA+LcuB5aUIT2n8pNp");
-            verifySignature(m, PgpHashAlgorithm.Sha1, secretKey.PublicKey, TEST_DATA_WITH_CRLF, checkTime: false);
+            verifySignature(m, PgpHashAlgorithm.Sha1, secretKey, TEST_DATA_WITH_CRLF, checkTime: false);
         }
 
         [Test]
@@ -392,9 +392,9 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // certifications
             //
-            var revocation = PgpCertification.GenerateKeyRevocation(new PgpKeyPair(secretKey.PublicKey, pgpPrivKey), secretKey.PublicKey);
+            var revocation = PgpCertification.GenerateKeyRevocation(secretKey, pgpPrivKey, secretKey);
 
-            Assert.IsTrue(revocation.Verify(secretKey.PublicKey));
+            Assert.IsTrue(revocation.Verify(secretKey));
             Assert.IsTrue(revocation.Verify());
 
             PgpSecretKeyRing pgpDSAPriv = new PgpSecretKeyRing(dsaKeyRing);
@@ -409,11 +409,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             hashedAttributes.SetPreferredSymmetricAlgorithms(false, PREFERRED_SYMMETRIC_ALGORITHMS);
 
             var subkeyBinding = PgpCertification.GenerateSubkeyBinding(
-                new PgpKeyPair(secretDSAKey.PublicKey, pgpPrivDSAKey),
-                secretKey.PublicKey,
+                secretDSAKey,
+                pgpPrivDSAKey,
+                secretKey,
                 hashedAttributes);
 
-            Assert.IsTrue(subkeyBinding.Verify(secretDSAKey.PublicKey));
+            Assert.IsTrue(subkeyBinding.Verify(secretDSAKey));
 
             PgpSignatureAttributes hashedPcks = subkeyBinding.HashedAttributes;
             PgpSignatureAttributes unhashedPcks = subkeyBinding.UnhashedAttributes;
@@ -443,10 +444,11 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
 
             subkeyBinding = PgpCertification.GenerateSubkeyBinding(
-                new PgpKeyPair(secretDSAKey.PublicKey, pgpPrivDSAKey),
-                secretKey.PublicKey);
+                secretDSAKey,
+                pgpPrivDSAKey,
+                secretKey);
 
-            Assert.IsTrue(subkeyBinding.Verify(secretDSAKey.PublicKey));
+            Assert.IsTrue(subkeyBinding.Verify(secretDSAKey));
 
             hashedPcks = subkeyBinding.HashedAttributes;
             Assert.IsTrue(hashedPcks.SignatureCreationTime.HasValue);
@@ -474,11 +476,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             hashedAttributes.SetSignatureCreationTime(false, creationTime);
 
             subkeyBinding = PgpCertification.GenerateSubkeyBinding(
-                new PgpKeyPair(secretDSAKey.PublicKey, pgpPrivDSAKey),
-                secretKey.PublicKey,
+                secretDSAKey,
+                pgpPrivDSAKey,
+                secretKey,
                 hashedAttributes);
 
-            Assert.IsTrue(subkeyBinding.Verify(secretDSAKey.PublicKey));
+            Assert.IsTrue(subkeyBinding.Verify(secretDSAKey));
 
             hashedPcks = subkeyBinding.HashedAttributes;
 
@@ -500,14 +503,14 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // general signatures
             //
-            doTestSig(PgpHashAlgorithm.Sha256, secretKey.PublicKey, pgpPrivKey);
-            doTestSig(PgpHashAlgorithm.Sha384, secretKey.PublicKey, pgpPrivKey);
-            doTestSig(PgpHashAlgorithm.Sha512, secretKey.PublicKey, pgpPrivKey);
-            doTestSig(PgpHashAlgorithm.Sha1, secretKey.PublicKey, pgpPrivKey, version: 3);
-            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey.PublicKey, pgpPrivKey, TEST_DATA_WITH_CRLF, TEST_DATA_WITH_CRLF);
-            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey.PublicKey, pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF);
-            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey.PublicKey, pgpPrivKey, TEST_DATA_WITH_CRLF, TEST_DATA_WITH_CRLF, version: 3);
-            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey.PublicKey, pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF, version: 3);
+            doTestSig(PgpHashAlgorithm.Sha256, secretKey, pgpPrivKey);
+            doTestSig(PgpHashAlgorithm.Sha384, secretKey, pgpPrivKey);
+            doTestSig(PgpHashAlgorithm.Sha512, secretKey, pgpPrivKey);
+            doTestSig(PgpHashAlgorithm.Sha1, secretKey, pgpPrivKey, version: 3);
+            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey, pgpPrivKey, TEST_DATA_WITH_CRLF, TEST_DATA_WITH_CRLF);
+            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey, pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF);
+            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey, pgpPrivKey, TEST_DATA_WITH_CRLF, TEST_DATA_WITH_CRLF, version: 3);
+            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey, pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF, version: 3);
 
             //
             // DSA Tests
@@ -517,12 +520,12 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             pgpPrivKey = secretKey.ExtractPrivateKey(dsaPass);
 
 
-            doTestSig(PgpHashAlgorithm.Sha1, secretKey.PublicKey, pgpPrivKey);
-            doTestSig(PgpHashAlgorithm.Sha1, secretKey.PublicKey, pgpPrivKey, version: 3);
-            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey.PublicKey, pgpPrivKey, TEST_DATA_WITH_CRLF, TEST_DATA_WITH_CRLF);
-            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey.PublicKey, pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF);
-            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey.PublicKey, pgpPrivKey, TEST_DATA_WITH_CRLF, TEST_DATA_WITH_CRLF, version: 3);
-            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey.PublicKey, pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF, version: 3);
+            doTestSig(PgpHashAlgorithm.Sha1, secretKey, pgpPrivKey);
+            doTestSig(PgpHashAlgorithm.Sha1, secretKey, pgpPrivKey, version: 3);
+            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey, pgpPrivKey, TEST_DATA_WITH_CRLF, TEST_DATA_WITH_CRLF);
+            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey, pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF);
+            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey, pgpPrivKey, TEST_DATA_WITH_CRLF, TEST_DATA_WITH_CRLF, version: 3);
+            doTestTextSig(PgpHashAlgorithm.Sha1, secretKey, pgpPrivKey, TEST_DATA, TEST_DATA_WITH_CRLF, version: 3);
 
             // special cases
             //
@@ -658,7 +661,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private void doTestSig(
             PgpHashAlgorithm hashAlgorithm,
-            PgpPublicKey pubKey,
+            PgpKey pubKey,
             PgpPrivateKey privKey,
             int version = 4)
         {
@@ -677,7 +680,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
         private void doTestTextSig(
             PgpHashAlgorithm hashAlgorithm,
-            PgpPublicKey pubKey,
+            PgpKey pubKey,
             PgpPrivateKey privKey,
             byte[] data,
             byte[] canonicalData,
@@ -703,7 +706,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         private void verifySignature(
             byte[] encodedSig,
             PgpHashAlgorithm hashAlgorithm,
-            PgpPublicKey pubKey,
+            PgpKey pubKey,
             byte[] original,
             bool checkTime = false)
         {

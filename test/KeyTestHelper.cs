@@ -8,7 +8,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 {
     class KeyTestHelper
     {
-        public static void SignAndVerifyTestMessage(PgpPrivateKey privateKey, PgpPublicKey publicKey)
+        public static void SignAndVerifyTestMessage(PgpPrivateKey privateKey, PgpKey publicKey)
         {
             byte[] msg = Encoding.ASCII.GetBytes("hello world!");
             var encodedStream = new MemoryStream();

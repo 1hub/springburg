@@ -290,7 +290,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             using (var compressedGenerator = messageGenerator.CreateCompressed(PgpCompressionAlgorithm.Zip))
             using (var signingGenerator = compressedGenerator.CreateSigned(PgpSignatureType.BinaryDocument, pgpPrivKey, PgpHashAlgorithm.Sha1))
             {
-                signingGenerator.HashedAttributes.SetSignerUserId(true, secretKey.PublicKey.GetUserIds().First().UserId);
+                signingGenerator.HashedAttributes.SetSignerUserId(true, secretKey.GetUserIds().First().UserId);
                 using (var literalStream = signingGenerator.CreateLiteral(PgpDataFormat.Binary, "_CONSOLE", testDateTime))
                 {
                     literalStream.Write(dataBytes);
@@ -346,8 +346,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
         {
             DSA dsa = DSA.Create(512);
             PgpKeyPair pgpKp = new PgpKeyPair(dsa, DateTime.UtcNow);
-            PgpPublicKey k1 = pgpKp.PublicKey;
-            PgpPrivateKey k2 = pgpKp.PrivateKey;
+            var k1 = pgpKp.PublicKey;
+            var k2 = pgpKp.PrivateKey;
         }
 
         [Test]

@@ -52,7 +52,7 @@ namespace Springburg.Cryptography.OpenPgp
         /// <summary>The hash algorithm associated with this signature.</summary>
         public PgpHashAlgorithm HashAlgorithm => sigPck.HashAlgorithm;
 
-        public bool Verify(PgpPublicKey publicKey, Stream stream, bool ignoreTrailingWhitespace = false)
+        public bool Verify(PgpKey publicKey, Stream stream, bool ignoreTrailingWhitespace = false)
         {
             var helper = new PgpSignatureTransformation(SignatureType, HashAlgorithm, ignoreTrailingWhitespace);
             new CryptoStream(stream, helper, CryptoStreamMode.Read).CopyTo(Stream.Null);

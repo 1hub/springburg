@@ -1,4 +1,5 @@
-﻿using Springburg.Cryptography.OpenPgp.Packet;
+﻿using Internal.Cryptography;
+using Springburg.Cryptography.OpenPgp.Packet;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -14,19 +15,19 @@ namespace Springburg.Cryptography.OpenPgp
     {
         PgpSignature signature;
         ContainedPacket? userPacket;
-        PgpPublicKey publicKey;
+        PgpKey publicKey;
 
         internal PgpCertification(
             PgpSignature signature,
             ContainedPacket? userPacket,
-            PgpPublicKey publicKey)
+            PgpKey publicKey)
         {
             this.signature = signature;
             this.userPacket = userPacket;
             this.publicKey = publicKey;
         }
 
-        internal PgpPublicKey PublicKey => publicKey;
+        internal PgpKey PublicKey => publicKey;
 
         public long KeyId => signature.KeyId;
 
@@ -39,23 +40,23 @@ namespace Springburg.Cryptography.OpenPgp
         public PgpSignature Signature => signature;
 
         private static MemoryStream GenerateCertificationData(
-            PgpPublicKey signingKey,
+            PgpKey signingKey,
             ContainedPacket? userPacket,
-            PgpPublicKey publicKey)
+            PgpKey publicKey)
         {
             var data = new MemoryStream();
 
             if (!signingKey.Fingerprint.SequenceEqual(publicKey.Fingerprint) && userPacket == null)
             {
-                byte[] signingKeyBytes = signingKey.PublicKeyPacket.GetEncodedContents();
+                byte[] signingKeyBytes = signingKey.KeyPacket.GetEncodedContents();
                 data.Write(new[] {
-                (byte)0x99,
-                (byte)(signingKeyBytes.Length >> 8),
-                (byte)(signingKeyBytes.Length) });
+                    (byte)0x99,
+                    (byte)(signingKeyBytes.Length >> 8),
+                    (byte)(signingKeyBytes.Length) });
                 data.Write(signingKeyBytes);
             }
 
-            byte[] keyBytes = publicKey.PublicKeyPacket.GetEncodedContents();
+            byte[] keyBytes = publicKey.KeyPacket.GetEncodedContents();
             data.Write(new[] {
                 (byte)0x99,
                 (byte)(keyBytes.Length >> 8),
@@ -101,7 +102,7 @@ namespace Springburg.Cryptography.OpenPgp
         /// Verify the signature as certifying by the passed in public key.
         /// </summary>
         /// <returns>True, if the signature matches, false otherwise.</returns>
-        public bool Verify(PgpPublicKey signingKey)
+        public bool Verify(PgpKey signingKey)
         {
             if (signingKey == null)
                 throw new ArgumentNullException(nameof(signingKey));
@@ -122,98 +123,118 @@ namespace Springburg.Cryptography.OpenPgp
         /// <param name="subKey">The key we are certifying.</param>
         /// <returns>The certification.</returns>
         public static PgpCertification GenerateSubkeyBinding(
-            PgpKeyPair masterKey,
-            PgpPublicKey subKey,
+            PgpKey masterKey,
+            PgpPrivateKey masterPrivateKey,
+            PgpKey subKey,
             PgpSignatureAttributes? hashedAttributes = null,
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             if (masterKey == null)
                 throw new ArgumentNullException(nameof(masterKey));
+            if (masterPrivateKey == null)
+                throw new ArgumentNullException(nameof(masterPrivateKey));
+            if (masterKey.KeyId != masterPrivateKey.KeyId)
+                throw new ArgumentException(SR.Cryptography_OpenPgp_SigningKeyIdMismatch);
             if (subKey == null)
                 throw new ArgumentNullException(nameof(subKey));
 
-            var signatureGenerator = new PgpSignatureGenerator(PgpSignatureType.SubkeyBinding, masterKey.PrivateKey, hashAlgorithm);
+            var signatureGenerator = new PgpSignatureGenerator(PgpSignatureType.SubkeyBinding, masterPrivateKey, hashAlgorithm);
             if (hashedAttributes != null)
                 signatureGenerator.HashedAttributes = hashedAttributes;
             if (unhashedAttributes != null)
                 signatureGenerator.UnhashedAttributes = unhashedAttributes;
-            var signature = signatureGenerator.Generate(GenerateCertificationData(masterKey.PublicKey, null, subKey));
+            var signature = signatureGenerator.Generate(GenerateCertificationData(masterKey, null, subKey));
             return new PgpCertification(signature, null, subKey);
         }
 
         // FIXME: This method is too advanced
         public static PgpCertification GenerateUserCertification(
             PgpSignatureType signatureType,
-            PgpKeyPair signingKey,
+            PgpKey signingKey,
+            PgpPrivateKey signingPrivateKey,
             string userId,
-            PgpPublicKey userPublicKey,
+            PgpKey userPublicKey,
             PgpSignatureAttributes? hashedAttributes = null,
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             if (signingKey == null)
                 throw new ArgumentNullException(nameof(signingKey));
+            if (signingPrivateKey == null)
+                throw new ArgumentNullException(nameof(signingPrivateKey));
+            if (signingKey.KeyId != signingPrivateKey.KeyId)
+                throw new ArgumentException(SR.Cryptography_OpenPgp_SigningKeyIdMismatch);
             if (userId == null)
                 throw new ArgumentNullException(nameof(userId));
             if (userPublicKey == null)
                 throw new ArgumentNullException(nameof(userPublicKey));
 
             var userPacket = new UserIdPacket(userId);
-            var signatureGenerator = new PgpSignatureGenerator(signatureType, signingKey.PrivateKey, hashAlgorithm);
+            var signatureGenerator = new PgpSignatureGenerator(signatureType, signingPrivateKey, hashAlgorithm);
             if (hashedAttributes != null)
                 signatureGenerator.HashedAttributes = hashedAttributes;
             if (unhashedAttributes != null)
                 signatureGenerator.UnhashedAttributes = unhashedAttributes;
-            var signature = signatureGenerator.Generate(GenerateCertificationData(signingKey.PublicKey, userPacket, userPublicKey));
+            var signature = signatureGenerator.Generate(GenerateCertificationData(signingKey, userPacket, userPublicKey));
             return new PgpCertification(signature, userPacket, userPublicKey);
         }
 
         // FIXME: This method is too advanced
         public static PgpCertification GenerateUserCertification(
             PgpSignatureType signatureType,
-            PgpKeyPair signingKey,
+            PgpKey signingKey,
+            PgpPrivateKey signingPrivateKey,
             PgpUserAttributes userAttributes,
-            PgpPublicKey userPublicKey,
+            PgpKey userPublicKey,
             PgpSignatureAttributes? hashedAttributes = null,
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             if (signingKey == null)
                 throw new ArgumentNullException(nameof(signingKey));
+            if (signingPrivateKey == null)
+                throw new ArgumentNullException(nameof(signingPrivateKey));
+            if (signingKey.KeyId != signingPrivateKey.KeyId)
+                throw new ArgumentException(SR.Cryptography_OpenPgp_SigningKeyIdMismatch);
             if (userAttributes == null)
                 throw new ArgumentNullException(nameof(userAttributes));
             if (userPublicKey == null)
                 throw new ArgumentNullException(nameof(userPublicKey));
 
             var userPacket = new UserAttributePacket(userAttributes.ToSubpacketArray());
-            var signatureGenerator = new PgpSignatureGenerator(signatureType, signingKey.PrivateKey, hashAlgorithm);
+            var signatureGenerator = new PgpSignatureGenerator(signatureType, signingPrivateKey, hashAlgorithm);
             if (hashedAttributes != null)
                 signatureGenerator.HashedAttributes = hashedAttributes;
             if (unhashedAttributes != null)
                 signatureGenerator.UnhashedAttributes = unhashedAttributes;
-            var signature = signatureGenerator.Generate(GenerateCertificationData(signingKey.PublicKey, userPacket, userPublicKey));
+            var signature = signatureGenerator.Generate(GenerateCertificationData(signingKey, userPacket, userPublicKey));
             return new PgpCertification(signature, userPacket, userPublicKey);
         }
 
         public static PgpCertification GenerateKeyRevocation(
-            PgpKeyPair signingKey,
-            PgpPublicKey revokedKey,
+            PgpKey signingKey,
+            PgpPrivateKey signingPrivateKey,
+            PgpKey revokedKey,
             PgpSignatureAttributes? hashedAttributes = null,
             PgpSignatureAttributes? unhashedAttributes = null,
             PgpHashAlgorithm hashAlgorithm = PgpHashAlgorithm.Sha1)
         {
             if (signingKey == null)
                 throw new ArgumentNullException(nameof(signingKey));
+            if (signingPrivateKey == null)
+                throw new ArgumentNullException(nameof(signingPrivateKey));
+            if (signingKey.KeyId != signingPrivateKey.KeyId)
+                throw new ArgumentException(SR.Cryptography_OpenPgp_SigningKeyIdMismatch);
             if (revokedKey == null)
                 throw new ArgumentNullException(nameof(revokedKey));
 
-            var signatureGenerator = new PgpSignatureGenerator(revokedKey.IsMasterKey ? PgpSignatureType.KeyRevocation : PgpSignatureType.SubkeyRevocation, signingKey.PrivateKey, hashAlgorithm);
+            var signatureGenerator = new PgpSignatureGenerator(revokedKey.IsMasterKey ? PgpSignatureType.KeyRevocation : PgpSignatureType.SubkeyRevocation, signingPrivateKey, hashAlgorithm);
             if (hashedAttributes != null)
                 signatureGenerator.HashedAttributes = hashedAttributes;
             if (unhashedAttributes != null)
                 signatureGenerator.UnhashedAttributes = unhashedAttributes;
-            var signature = signatureGenerator.Generate(GenerateCertificationData(signingKey.PublicKey, null, revokedKey));
+            var signature = signatureGenerator.Generate(GenerateCertificationData(signingKey, null, revokedKey));
             return new PgpCertification(signature, null, revokedKey);
         }
     }
