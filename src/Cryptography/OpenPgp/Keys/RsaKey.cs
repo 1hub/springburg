@@ -65,7 +65,7 @@ namespace Springburg.Cryptography.OpenPgp.Keys
                 var P = new BigInteger(p, isBigEndian: true, isUnsigned: true);
                 var Q = new BigInteger(q, isBigEndian: true, isUnsigned: true);
                 var DP = BigInteger.Remainder(D, P - BigInteger.One);
-                var DQ = BigInteger.Remainder(Q, Q - BigInteger.One);
+                var DQ = BigInteger.Remainder(D, Q - BigInteger.One);
                 // Lot of the public keys in the test suite have this wrong (switched P/Q)
                 var InverseQ = BigInteger.ModPow(Q, P - BigInteger.One - BigInteger.One, P);
 
