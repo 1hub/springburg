@@ -20,5 +20,6 @@
         public static string Cryptography_OpenPgp_UnsupportedECPoint = "Unsupported EC point format.";
         public static string Cryptography_OpenPgp_HashMustBeSHA256OrStronger = "Hash algorithm must be SHA-256 or stronger.";
         public static string Cryptography_OpenPgp_SymmetricKeyAlgorithmMustBeAES256OrStronger = "Symmetric key algorithm must be AES-128 or stronger.";
+        public static string Cryptography_OpenPgp_UnsupportedCurveOid = "Unsupported curve: {0}.";
     }
 }

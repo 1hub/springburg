@@ -11,7 +11,7 @@ namespace Springburg.Cryptography.OpenPgp.Keys
     {
         private ECDsa ecdsa;
 
-        public PgpPublicKeyAlgorithm Algorithm => PgpPublicKeyAlgorithm.ECDsa;
+        public virtual PgpPublicKeyAlgorithm Algorithm => PgpPublicKeyAlgorithm.ECDsa;
 
         public bool CanSign => true;
 
@@ -27,7 +27,7 @@ namespace Springburg.Cryptography.OpenPgp.Keys
              out int publicKeySize)
         {
             var ecParameters = ReadOpenPgpECParameters(source, out publicKeySize);
-            return new ECDsaKey(ecParameters.Curve.Oid.Value == "1.3.6.1.4.1.11591.15.1" ? new Ed25519(ecParameters) : ECDsa.Create(ecParameters));
+            return new ECDsaKey(CreateECDsa(ecParameters));
         }
 
 
@@ -44,12 +44,28 @@ namespace Springburg.Cryptography.OpenPgp.Keys
                 S2kBasedEncryption.DecryptSecretKey(password, source.Slice(publicKeySize), paramsArray, out int bytesWritten);
                 Debug.Assert(bytesWritten != 0);
                 ecParameters.D = MPInteger.ReadInteger(paramsArray, out int dConsumed).ToArray();
-                return new ECDsaKey(ecParameters.Curve.Oid.Value == "1.3.6.1.4.1.11591.15.1" ? new Ed25519(ecParameters) : ECDsa.Create(ecParameters));
+                return new ECDsaKey(CreateECDsa(ecParameters));
             }
             finally
             {
                 CryptographicOperations.ZeroMemory(paramsArray);
                 CryptographicOperations.ZeroMemory(ecParameters.D);
+            }
+        }
+
+        private static ECDsa CreateECDsa(ECParameters ecParameters)
+        {
+            switch (ecParameters.Curve.Oid.Value)
+            {
+                case "1.2.840.10045.3.1.7": // NIST P-256
+                case "1.3.132.0.34": // NIST P-384
+                case "1.3.132.0.35": // NIST P-521
+                case "1.3.36.3.3.2.8.1.1.7": // brainpoolP256r1
+                case "1.3.36.3.3.2.8.1.1.11": // brainpoolP384r1 (not in RFC 4880bis!)
+                case "1.3.36.3.3.2.8.1.1.13": // brainpoolP512r1
+                    return ECDsa.Create(ecParameters);
+                default:
+                    throw new CryptographicException(SR.Cryptography_OpenPgp_UnsupportedCurveOid, ecParameters.Curve.Oid.Value);
             }
         }
 

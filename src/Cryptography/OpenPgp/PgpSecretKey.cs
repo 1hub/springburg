@@ -278,7 +278,7 @@ namespace Springburg.Cryptography.OpenPgp
                         return new PgpPrivateKey(KeyId, ecdsa);
 
                     case PgpPublicKeyAlgorithm.EdDsa:
-                        var eddsa = ECDsaKey.CreatePrivate(rawPassPhrase, secret.KeyBytes, out var _);
+                        var eddsa = EdDsaKey.CreatePrivate(rawPassPhrase, secret.KeyBytes, out var _);
                         return new PgpPrivateKey(KeyId, eddsa);
 
                     case PgpPublicKeyAlgorithm.ElGamalEncrypt:
@@ -728,7 +728,6 @@ namespace Springburg.Cryptography.OpenPgp
             }
 
             byte[] data;
-            byte[] key;
 
             switch (protection)
             {
@@ -749,7 +748,6 @@ namespace Springburg.Cryptography.OpenPgp
                         data = decryptor.TransformFinalBlock(secKeyData, 0, secKeyData.Length);
                         // TODO: check SHA-1 hash.
                     }
-                    //data = RecoverKeyData(symmAlg, CipherMode.CBC, key, iv, secKeyData, 0, secKeyData.Length);
                     break;
 
                 case "openpgp-s2k3-ocb-aes":

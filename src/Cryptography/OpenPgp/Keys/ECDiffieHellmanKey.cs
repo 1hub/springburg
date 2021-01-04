@@ -56,7 +56,7 @@ namespace Springburg.Cryptography.OpenPgp.Keys
             // TODO: Validation
             byte kdfSize = source[publicKeySize];
             var kdfParameters = source.Slice(publicKeySize + 1, kdfSize).ToArray();
-            return new ECDiffieHellmanKey(GetECDiffieHellman(ecParameters), kdfParameters, fingerprint);
+            return new ECDiffieHellmanKey(CreateECDiffieHellman(ecParameters), kdfParameters, fingerprint);
         }
 
         public static ECDiffieHellmanKey CreatePrivate(
@@ -76,7 +76,7 @@ namespace Springburg.Cryptography.OpenPgp.Keys
                 S2kBasedEncryption.DecryptSecretKey(password, source.Slice(publicKeySize + kdfSize + 1), paramsArray, out int bytesWritten);
                 Debug.Assert(bytesWritten != 0);
                 ecParameters.D = MPInteger.ReadInteger(paramsArray, out int dConsumed).ToArray();
-                return new ECDiffieHellmanKey(GetECDiffieHellman(ecParameters), kdfParameters, fingerprint.ToArray());
+                return new ECDiffieHellmanKey(CreateECDiffieHellman(ecParameters), kdfParameters, fingerprint.ToArray());
             }
             finally
             {
@@ -141,6 +141,33 @@ namespace Springburg.Cryptography.OpenPgp.Keys
             }
         }
 
+        private static ECDiffieHellman CreateECDiffieHellman(ECParameters ecParameters)
+        {
+            switch (ecParameters.Curve.Oid.Value)
+            {
+                case "1.2.840.10045.3.1.7": // NIST P-256
+                case "1.3.132.0.34": // NIST P-384
+                case "1.3.132.0.35": // NIST P-521
+                case "1.3.36.3.3.2.8.1.1.7": // brainpoolP256r1
+                case "1.3.36.3.3.2.8.1.1.11": // brainpoolP384r1 (not in RFC 4880bis!)
+                case "1.3.36.3.3.2.8.1.1.13": // brainpoolP512r1
+                    return ECDiffieHellman.Create(ecParameters);
+                case "1.3.6.1.4.1.3029.1.5.1": // Curve25519 / X25519
+                    if (ecParameters.D != null)
+                        Array.Reverse(ecParameters.D);
+                    return new X25519(ecParameters);
+                default:
+                    throw new CryptographicException(SR.Cryptography_OpenPgp_UnsupportedCurveOid, ecParameters.Curve.Oid.Value);
+            }
+        }
+
+        private static ECDiffieHellman CreateECDiffieHellman(ECCurve curve)
+        {
+            if (curve.Oid.Value == "1.3.6.1.4.1.3029.1.5.1")
+                return new X25519();
+            return ECDiffieHellman.Create(curve);
+        }
+
         public bool VerifySignature(
             ReadOnlySpan<byte> rgbHash,
             ReadOnlySpan<byte> rgbSignature,
@@ -164,7 +191,7 @@ namespace Springburg.Cryptography.OpenPgp.Keys
             var publicParams = ecdh.PublicKey.ExportParameters();
 
             var publicPoint = DecodePoint(pEnc);
-            var otherEcdh = GetECDiffieHellman(new ECParameters { Curve = publicParams.Curve, Q = publicPoint });
+            var otherEcdh = CreateECDiffieHellman(new ECParameters { Curve = publicParams.Curve, Q = publicPoint });
             var derivedKey = ecdh.DeriveKeyFromHash(
                 otherEcdh.PublicKey,
                 PgpUtilities.GetHashAlgorithmName(this.hashAlgorithm),
@@ -190,7 +217,7 @@ namespace Springburg.Cryptography.OpenPgp.Keys
             var publicKeyParams = ecdh.PublicKey.ExportParameters();
 
             // Generate the ephemeral key pair
-            var ephemeralEcDh = GetECDiffieHellman(publicKeyParams.Curve);
+            var ephemeralEcDh = CreateECDiffieHellman(publicKeyParams.Curve);
             var derivedKey = ephemeralEcDh.DeriveKeyFromHash(
                 ecdh.PublicKey,
                 PgpUtilities.GetHashAlgorithmName(this.hashAlgorithm),

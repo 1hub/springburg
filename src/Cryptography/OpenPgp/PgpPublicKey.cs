@@ -23,7 +23,6 @@ namespace Springburg.Cryptography.OpenPgp
 
         private byte[] CalculateFingerprint()
         {
-            //BcpgKey key = Key;
             HashAlgorithm digest;
 
             if (Version <= 3)
@@ -53,8 +52,7 @@ namespace Springburg.Cryptography.OpenPgp
             if (publicPk.Version <= 3)
             {
                 var rsaParameters = RsaKey.ReadOpenPgpPublicKey(publicPk.KeyBytes, out var _);
-                //RsaPublicBcpgKey rK = (RsaPublicBcpgKey)publicPk.Key;
-                var modulus = rsaParameters.Modulus;
+                var modulus = rsaParameters.Modulus!;
 
                 this.keyId = (long)(((ulong)modulus[modulus.Length - 8] << 56)
                     | ((ulong)modulus[modulus.Length - 7] << 48)
@@ -64,7 +62,6 @@ namespace Springburg.Cryptography.OpenPgp
                     | ((ulong)modulus[modulus.Length - 3] << 16)
                     | ((ulong)modulus[modulus.Length - 2] << 8)
                     | (ulong)modulus[modulus.Length - 1]);
-                //this.keyId = (long)(ulong)(rK.Modulus & 0xffff_ffff_ffff_ffff);
             }
             else
             {
@@ -105,6 +102,8 @@ namespace Springburg.Cryptography.OpenPgp
                 this.key = new ElGamalKey(elGamal);
             else if (pubKey is ECDiffieHellman ecdh)
                 this.key = new ECDiffieHellmanKey(ecdh, new byte[] { 0, (byte)PgpHashAlgorithm.Sha256, (byte)PgpSymmetricKeyAlgorithm.Aes128 }, ecdhFingerprint = new byte[20]);
+            else if (pubKey is Ed25519 eddsa)
+                this.key = new EdDsaKey(eddsa);
             else if (pubKey is ECDsa ecdsa)
                 this.key = new ECDsaKey(ecdsa);
             else
@@ -343,7 +342,7 @@ namespace Springburg.Cryptography.OpenPgp
                 case PgpPublicKeyAlgorithm.ECDH:
                     return key = ECDiffieHellmanKey.CreatePublic(fingerprint, publicPk.KeyBytes, out var _);
                 case PgpPublicKeyAlgorithm.EdDsa:
-                    return key = ECDsaKey.CreatePublic(publicPk.KeyBytes, out var _);
+                    return key = EdDsaKey.CreatePublic(publicPk.KeyBytes, out var _);
                 default:
                     throw new PgpException("unknown public key algorithm encountered");
             }

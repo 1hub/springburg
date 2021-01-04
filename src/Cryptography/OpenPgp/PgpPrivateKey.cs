@@ -1,9 +1,7 @@
 using Springburg.Cryptography.Algorithms;
-using Springburg.Cryptography.OpenPgp.Packet;
-using Internal.Cryptography;
+using Springburg.Cryptography.OpenPgp.Keys;
 using System;
 using System.Security.Cryptography;
-using Springburg.Cryptography.OpenPgp.Keys;
 
 namespace Springburg.Cryptography.OpenPgp
 {
@@ -24,11 +22,7 @@ namespace Springburg.Cryptography.OpenPgp
             AsymmetricAlgorithm privateKey,
             ReadOnlySpan<byte> fingerprint)
         {
-            //if (!privateKey.IsPrivate)
-            //    throw new ArgumentException("Expected a private key", "privateKey");
-
             this.keyId = keyId;
-            //this.privateKey = privateKey;
 
             if (privateKey is RSA rsa)
                 this.privateKey = new RsaKey(rsa);
@@ -36,9 +30,10 @@ namespace Springburg.Cryptography.OpenPgp
                 this.privateKey = new DsaKey(dsa);
             else if (privateKey is ElGamal elGamal)
                 this.privateKey = new ElGamalKey(elGamal);
-            // FIXME: KDF from public key packet, fingerprint
             else if (privateKey is ECDiffieHellman ecdh)
                 this.privateKey = new ECDiffieHellmanKey(ecdh, new byte[] { 0, (byte)PgpHashAlgorithm.Sha256, (byte)PgpSymmetricKeyAlgorithm.Aes128 }, fingerprint.ToArray());
+            else if (privateKey is Ed25519 eddsa)
+                this.privateKey = new EdDsaKey(eddsa);
             else if (privateKey is ECDsa ecdsa)
                 this.privateKey = new ECDsaKey(ecdsa);
             else
