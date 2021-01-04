@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 
 namespace Springburg.Cryptography.OpenPgp
 {
-    public abstract class PgpKey : PgpEncodable
+    public abstract class PgpKey
     {
         private protected KeyPacket keyPacket;
         private protected TrustPacket? trustPacket;
@@ -155,7 +155,7 @@ namespace Springburg.Cryptography.OpenPgp
         }
 
 
-        public override void Encode(IPacketWriter outStr)
+        protected internal void Encode(IPacketWriter outStr)
         {
             outStr.WritePacket(keyPacket);
             if (trustPacket != null)

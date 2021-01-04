@@ -32,7 +32,7 @@ namespace Springburg.Cryptography.OpenPgp
         public PgpKeyRingGenerator(
             AsymmetricAlgorithm masterKey,
             string id,
-            string passPhrase,
+            string passPhrase, // FIXME: Should be ReadOnlySpan<char>
             DateTime creationTime = default(DateTime),
             PgpSignatureType certificationLevel = PgpSignatureType.DefaultCertification,
             PgpSignatureAttributes? hashedAttributes = null,
@@ -69,13 +69,14 @@ namespace Springburg.Cryptography.OpenPgp
             // Certify the ID/public key
             var selfCertification = PgpCertification.GenerateUserCertification(
                 certificationLevel,
-                this.masterKey,
+                this.masterKey.PublicKey,
+                this.masterKey.PrivateKey,
                 id,
                 this.masterKey.PublicKey,
                 hashedAttributes,
                 unhashedAttributes,
                 PgpHashAlgorithm.Sha1);
-            var certifiedPublicKey = (PgpPublicKey)PgpPublicKey.AddCertification(this.masterKey.PublicKey, id, selfCertification);
+            var certifiedPublicKey = PgpPublicKey.AddCertification(this.masterKey.PublicKey, id, selfCertification);
 
             keys.Add(new PgpSecretKey(certifiedPublicKey, this.masterKey.PrivateKey, this.rawPassPhrase));
         }
@@ -98,13 +99,14 @@ namespace Springburg.Cryptography.OpenPgp
                 isMasterKey: false);
 
             var subkeyBinding = PgpCertification.GenerateSubkeyBinding(
-                masterKey,
+                this.masterKey.PublicKey,
+                this.masterKey.PrivateKey,
                 subKey.PublicKey,
                 hashedAttributes,
                 unhashedAttributes,
                 PgpHashAlgorithm.Sha1);
 
-            var certifiedSubKey = (PgpPublicKey)PgpPublicKey.AddCertification(subKey.PublicKey, subkeyBinding);
+            var certifiedSubKey = PgpPublicKey.AddCertification(subKey.PublicKey, subkeyBinding);
 
             keys.Add(new PgpSecretKey(certifiedSubKey, subKey.PrivateKey, rawPassPhrase));
         }

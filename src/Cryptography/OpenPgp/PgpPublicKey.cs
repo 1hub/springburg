@@ -1,4 +1,5 @@
 using Springburg.Cryptography.OpenPgp.Packet;
+using System.IO;
 
 namespace Springburg.Cryptography.OpenPgp
 {
@@ -29,5 +30,17 @@ namespace Springburg.Cryptography.OpenPgp
         }
 
         protected override PgpKey CreateMutableCopy() => new PgpPublicKey(this);
+
+        public byte[] GetEncoded()
+        {
+            using MemoryStream bOut = new MemoryStream();
+            Encode(new PacketWriter(bOut));
+            return bOut.ToArray();
+        }
+
+        public void Encode(Stream s)
+        {
+            Encode(new PacketWriter(s));
+        }
     }
 }

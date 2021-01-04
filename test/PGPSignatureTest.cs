@@ -392,7 +392,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             // certifications
             //
-            var revocation = PgpCertification.GenerateKeyRevocation(new PgpKeyPair(secretKey, pgpPrivKey), secretKey);
+            var revocation = PgpCertification.GenerateKeyRevocation(secretKey, pgpPrivKey, secretKey);
 
             Assert.IsTrue(revocation.Verify(secretKey));
             Assert.IsTrue(revocation.Verify());
@@ -409,7 +409,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             hashedAttributes.SetPreferredSymmetricAlgorithms(false, PREFERRED_SYMMETRIC_ALGORITHMS);
 
             var subkeyBinding = PgpCertification.GenerateSubkeyBinding(
-                new PgpKeyPair(secretDSAKey, pgpPrivDSAKey),
+                secretDSAKey,
+                pgpPrivDSAKey,
                 secretKey,
                 hashedAttributes);
 
@@ -443,7 +444,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
 
             subkeyBinding = PgpCertification.GenerateSubkeyBinding(
-                new PgpKeyPair(secretDSAKey, pgpPrivDSAKey),
+                secretDSAKey,
+                pgpPrivDSAKey,
                 secretKey);
 
             Assert.IsTrue(subkeyBinding.Verify(secretDSAKey));
@@ -474,7 +476,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             hashedAttributes.SetSignatureCreationTime(false, creationTime);
 
             subkeyBinding = PgpCertification.GenerateSubkeyBinding(
-                new PgpKeyPair(secretDSAKey, pgpPrivDSAKey),
+                secretDSAKey,
+                pgpPrivDSAKey,
                 secretKey,
                 hashedAttributes);
 

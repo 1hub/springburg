@@ -56,19 +56,10 @@ namespace Springburg.Cryptography.OpenPgp
             this.PrivateKey = new PgpPrivateKey(this.PublicKey.KeyId, privateKey);
         }
 
-        /// <summary>Create a key pair from a PgpPrivateKey and a PgpPublicKey.</summary>
-        /// <param name="publicOrSecretKey">The public key.</param>
-        /// <param name="privateKey">The private key.</param>
-        public PgpKeyPair(PgpKey publicKey, PgpPrivateKey privateKey)
-        {
-            this.PublicKey = publicKey;
-            this.PrivateKey = privateKey;
-        }
-
         /// <summary>The keyId associated with this key pair.</summary>
         public long KeyId => PublicKey.KeyId;
 
-        public PgpKey PublicKey { get; private set; }
+        public PgpPublicKey PublicKey { get; private set; }
 
         public PgpPrivateKey PrivateKey { get; private set; }
     }

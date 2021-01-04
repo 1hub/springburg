@@ -3,6 +3,7 @@ using Springburg.Cryptography.OpenPgp.Keys;
 using Springburg.Cryptography.OpenPgp.Packet;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -138,6 +139,18 @@ namespace Springburg.Cryptography.OpenPgp
             }
 
             throw new PgpException("unknown public key version encountered");
+        }
+
+        public byte[] GetEncoded()
+        {
+            using MemoryStream bOut = new MemoryStream();
+            Encode(new PacketWriter(bOut));
+            return bOut.ToArray();
+        }
+
+        public void Encode(Stream s)
+        {
+            Encode(new PacketWriter(s));
         }
 
         /// <summary>

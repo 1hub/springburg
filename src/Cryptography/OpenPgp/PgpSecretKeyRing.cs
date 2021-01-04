@@ -16,19 +16,19 @@ namespace Springburg.Cryptography.OpenPgp
     public class PgpSecretKeyRing : PgpKeyRing
     {
         private readonly IList<PgpSecretKey> keys;
-        private readonly IList<PgpKey> extraPubKeys;
+        private readonly IList<PgpPublicKey> extraPubKeys;
 
         public PgpSecretKeyRing(IList<PgpSecretKey> keys)
-            : this(keys, Array.Empty<PgpKey>())
+            : this(keys, Array.Empty<PgpPublicKey>())
         {
         }
 
         public PgpSecretKeyRing(
             IList<PgpSecretKey> keys,
-            IList<PgpKey> extraPubKeys)
+            IList<PgpPublicKey> extraPubKeys)
         {
             this.keys = new List<PgpSecretKey>(keys);
-            this.extraPubKeys = new List<PgpKey>(extraPubKeys);
+            this.extraPubKeys = new List<PgpPublicKey>(extraPubKeys);
         }
 
         public PgpSecretKeyRing(byte[] encoding)
@@ -44,7 +44,7 @@ namespace Springburg.Cryptography.OpenPgp
         public PgpSecretKeyRing(IPacketReader packetReader)
         {
             this.keys = new List<PgpSecretKey>();
-            this.extraPubKeys = new List<PgpKey>();
+            this.extraPubKeys = new List<PgpPublicKey>();
 
             PacketTag initialTag = packetReader.NextPacketTag();
             if (initialTag != PacketTag.SecretKey && initialTag != PacketTag.SecretSubkey)
@@ -72,7 +72,7 @@ namespace Springburg.Cryptography.OpenPgp
         }
 
         /// <summary>Return the public key for the master key.</summary>
-        public PgpKey GetPublicKey() => keys[0];
+        public PgpPublicKey GetPublicKey() => keys[0].GetPublicKey();
 
         /// <summary>Return the master private key.</summary>
         public PgpSecretKey GetSecretKey() => keys[0];
@@ -89,7 +89,7 @@ namespace Springburg.Cryptography.OpenPgp
         /// appears in this fashion.
         /// </summary>
         /// <returns>An <c>IEnumerable</c> of unattached, or extra, public keys.</returns>
-        public IEnumerable<PgpKey> GetExtraPublicKeys() => extraPubKeys;
+        public IEnumerable<PgpPublicKey> GetExtraPublicKeys() => extraPubKeys;
 
         public override void Encode(IPacketWriter outputStream)
         {

@@ -408,7 +408,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
 
             var certification = PgpCertification.GenerateUserCertification(
                 PgpSignatureType.PositiveCertification,
-                new PgpKeyPair(pubKey, pgpSec.GetSecretKey().ExtractPrivateKey(pass)),
+                pubKey,
+                pgpSec.GetSecretKey().ExtractPrivateKey(pass),
                 vGen,
                 pubKey);
 
@@ -628,7 +629,8 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             keyEnc = key.GetEncoded();
 
             var revocation = PgpCertification.GenerateKeyRevocation(
-                new PgpKeyPair(new PgpPublicKey(secretKey), secretKey.ExtractPrivateKey(passPhrase)),
+                secretKey,
+                secretKey.ExtractPrivateKey(passPhrase),
                 key);
 
             key = PgpPublicKey.AddCertification(key, revocation);
@@ -648,7 +650,7 @@ namespace Org.BouncyCastle.Bcpg.OpenPgp.Tests
             //
             PgpKeyPair pgpKp = new PgpKeyPair(rsa, DateTime.UtcNow);
 
-            PgpKey k1 = pgpKp.PublicKey;
+            PgpPublicKey k1 = pgpKp.PublicKey;
             PgpPrivateKey k2 = pgpKp.PrivateKey;
 
             k1.GetEncoded();
