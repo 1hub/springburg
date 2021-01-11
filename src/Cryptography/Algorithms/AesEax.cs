@@ -35,7 +35,6 @@ namespace Springburg.Cryptography.Algorithms
         private static void CheckParameters(
             ReadOnlySpan<byte> plaintext,
             ReadOnlySpan<byte> ciphertext,
-            ReadOnlySpan<byte> nonce,
             ReadOnlySpan<byte> tag)
         {
             if (plaintext.Length != ciphertext.Length)
@@ -60,7 +59,7 @@ namespace Springburg.Cryptography.Algorithms
 
         public void Encrypt(ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> plaintext, Span<byte> ciphertext, Span<byte> tag, ReadOnlySpan<byte> associatedData = default)
         {
-            CheckParameters(plaintext, ciphertext, nonce, tag);
+            CheckParameters(plaintext, ciphertext, tag);
             Process(nonce, plaintext, ciphertext, tag, associatedData, outputIsCiphertext: true);
         }
 
@@ -85,7 +84,7 @@ namespace Springburg.Cryptography.Algorithms
             Span<byte> plaintext,
             ReadOnlySpan<byte> associatedData = default)
         {
-            CheckParameters(plaintext, ciphertext, nonce, tag);
+            CheckParameters(plaintext, ciphertext, tag);
 
             var computedTag = CryptoPool.Rent(tag.Length);
             try
@@ -105,8 +104,6 @@ namespace Springburg.Cryptography.Algorithms
 
         private void Process(ReadOnlySpan<byte> nonce, ReadOnlySpan<byte> input, Span<byte> output, Span<byte> tag, ReadOnlySpan<byte> associatedData, bool outputIsCiphertext)
         {
-            CheckParameters(input, output, nonce, tag);
-
             using var encryptor = aes.CreateEncryptor();
             var tmp = CryptoPool.Rent(16);
             var counter = CryptoPool.Rent(16);
