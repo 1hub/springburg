@@ -187,16 +187,20 @@ namespace Springburg.Cryptography.OpenPgp
                 do
                 {
                     ch = ReadByte();
+                    while (char.IsWhiteSpace((char)ch))
+                        ch = ReadByte();
                     if (ch == '#')
                         break;
                     int digit0 = HexToNumber(ch);
                     if (digit0 < 0)
                         throw new IOException("invalid hex encoding");
                     ch = ReadByte();
+                    while (char.IsWhiteSpace((char)ch))
+                        ch = ReadByte();
                     int digit1 = HexToNumber(ch);
                     if (digit1 < 0)
                         throw new IOException("invalid hex encoding");
-                    bytes.WriteByte((byte)((digit0 << 8) + digit1));
+                    bytes.WriteByte((byte)((digit0 << 4) + digit1));
                 }
                 while (ch != '#' && ch >= 0);
                 return bytes.ToArray();

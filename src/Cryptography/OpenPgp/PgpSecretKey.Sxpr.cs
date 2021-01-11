@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Internal.Cryptography;
 using System.Formats.Asn1;
+using Springburg.Cryptography.Algorithms;
 
 namespace Springburg.Cryptography.OpenPgp
 {
@@ -150,8 +151,6 @@ namespace Springburg.Cryptography.OpenPgp
 
         private static void WriteSExprPublicKey(SXprWriter writer, KeyPacket pubPacket, string curveName, string? protectedAt)
         {
-            throw new NotImplementedException();
-            /*
             writer.StartList();
             switch (pubPacket.Algorithm)
             {
@@ -171,11 +170,13 @@ namespace Springburg.Cryptography.OpenPgp
                     }
                     writer.StartList();
                     writer.WriteString("q");
-                    writer.WriteBytes(((ECDsaPublicBcpgKey)pubPacket.Key).EncodedPoint.Value);
+                    var keyBytes = pubPacket.KeyBytes.AsSpan(0, pubPacket.PublicKeyLength);
+                    keyBytes = keyBytes.Slice(keyBytes[0] + 1 + 2); // Skip OID and encoded point length
+                    writer.WriteBytes(keyBytes.ToArray());
                     writer.EndList();
                     break;
 
-                case PgpPublicKeyAlgorithm.RsaEncrypt:
+                /*case PgpPublicKeyAlgorithm.RsaEncrypt:
                 case PgpPublicKeyAlgorithm.RsaSign:
                 case PgpPublicKeyAlgorithm.RsaGeneral:
                     RsaPublicBcpgKey rsaK = (RsaPublicBcpgKey)pubPacket.Key;
@@ -188,7 +189,7 @@ namespace Springburg.Cryptography.OpenPgp
                     writer.WriteString("e");
                     writer.WriteBytes(rsaK.PublicExponent.Value);
                     writer.EndList();
-                    break;
+                    break;*/
 
                 // TODO: DSA, etc.
                 default:
@@ -202,7 +203,7 @@ namespace Springburg.Cryptography.OpenPgp
                 writer.WriteString(protectedAt);
                 writer.EndList();
             }
-            writer.EndList();*/
+            writer.EndList();
         }
 
         private static byte[] GetDValue(SXprReader reader, KeyPacket publicKey, byte[] rawPassPhrase, string curveName)
@@ -269,15 +270,16 @@ namespace Springburg.Cryptography.OpenPgp
                     break;
 
                 case "openpgp-s2k3-ocb-aes":
-                    MemoryStream aad = new MemoryStream();
-                    WriteSExprPublicKey(new SXprWriter(aad), publicKey, curveName, protectedAt);
-                    //key = PgpUtilities.DoMakeKeyFromPassPhrase(PgpSymmetricKeyAlgorithm.Aes128, s2k, rawPassPhrase);
-                    /*IBufferedCipher c = CipherUtilities.GetCipher("AES/OCB");
-                    c.Init(false, new AeadParameters(key, 128, iv, aad.ToArray()));
-                    data = c.DoFinal(secKeyData, 0, secKeyData.Length);*/
-                    // TODO: AES/OCB support
-                    throw new NotImplementedException();
-                //break;
+                    {
+                        MemoryStream aad = new MemoryStream();
+                        WriteSExprPublicKey(new SXprWriter(aad), publicKey, curveName, protectedAt);
+                        var keyBytes = new byte[16];
+                        S2kBasedEncryption.MakeKey(rawPassPhrase, PgpHashAlgorithm.Sha1, s2k.GetIV(), s2k.IterationCount, keyBytes);
+                        using var aesOcb = new AesOcb(keyBytes);
+                        data = new byte[secKeyData.Length - 16];
+                        aesOcb.Decrypt(iv, secKeyData.AsSpan(0, secKeyData.Length - 16), secKeyData.AsSpan(secKeyData.Length - 16), data, aad.ToArray());
+                    }
+                    break;
 
                 case "openpgp-native":
                 default:
