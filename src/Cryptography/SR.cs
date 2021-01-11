@@ -13,8 +13,15 @@
         public static string Cryptography_CSP_NoPrivateKey = "Object contains only the public half of a key pair.A private key must also be provided.";
         public static string Cryptography_HashAlgorithmNameNullOrEmpty = "The hash algorithm name cannot be null or empty.";
         public static string Cryptography_TlsRequires64ByteSeed = "The TLS key derivation function requires a seed value of exactly 64 bytes.";
+        public static string Cryptography_PlaintextCiphertextLengthMismatch = "Plaintext and ciphertext must have the same length.";
+        public static string Cryptography_InvalidNonceLength = "The specified nonce is not a valid size for this algorithm.";
+        public static string Cryptography_InvalidTagLength = "The specified tag is not a valid size for this algorithm.";
+        public static string Cryptography_AuthTagMismatch = "The computed authentication tag did not match the input authentication tag.";
+
 
         public static string Argument_DestinationTooShort = "Destination is too short.";
+
+        public static string Cryptography_CMAC_UnsupportedBlockSize = "Block size must be 64 bit or 128 bit.";
 
         public static string Cryptography_OpenPgp_InvalidMPInteger = "Invalid encoding of MP integer in signature or key.";
         public static string Cryptography_OpenPgp_UnsupportedECPoint = "Unsupported EC point format.";
