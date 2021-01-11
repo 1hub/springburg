@@ -288,18 +288,6 @@ namespace Springburg.Cryptography.Algorithms
             }
         }
 
-        internal static string ByteArrayToHex(ReadOnlySpan<byte> bytes)
-        {
-            StringBuilder builder = new StringBuilder(bytes.Length * 2);
-
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                builder.Append(bytes[i].ToString("X2"));
-            }
-
-            return builder.ToString();
-        }
-
         private void Calc_L_i(int i, Span<byte> L_i)
         {
             Double(l_dollar, L_i);
