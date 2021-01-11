@@ -1,5 +1,6 @@
 using Springburg.Cryptography.Algorithms;
 using NUnit.Framework;
+using System;
 
 namespace Springburg.Test.Algorithms
 {
@@ -18,31 +19,31 @@ namespace Springburg.Test.Algorithms
             string cipherText,
             string tag)
         {
-            var aesOcb = new AesOcb(HexHelper.HexToByteArray("000102030405060708090A0B0C0D0E0F"));
-            byte[] plainTextBytes = HexHelper.HexToByteArray(plainText);
+            var aesOcb = new AesOcb(Convert.FromHexString("000102030405060708090A0B0C0D0E0F"));
+            byte[] plainTextBytes = Convert.FromHexString(plainText);
             byte[] cipherTextBytes = new byte[plainTextBytes.Length];
             byte[] tagBytes = new byte[16];
 
             aesOcb.Encrypt(
-                HexHelper.HexToByteArray(nonce),
+                Convert.FromHexString(nonce),
                 plainTextBytes,
                 cipherTextBytes,
                 tagBytes,
-                HexHelper.HexToByteArray(associatedData));
+                Convert.FromHexString(associatedData));
 
-            Assert.AreEqual(cipherText, HexHelper.ByteArrayToHex(cipherTextBytes));
-            Assert.AreEqual(tag, HexHelper.ByteArrayToHex(tagBytes));
+            Assert.AreEqual(cipherText, Convert.ToHexString(cipherTextBytes));
+            Assert.AreEqual(tag, Convert.ToHexString(tagBytes));
 
-            cipherTextBytes = HexHelper.HexToByteArray(cipherText);
+            cipherTextBytes = Convert.FromHexString(cipherText);
             plainTextBytes = new byte[cipherTextBytes.Length];
             aesOcb.Decrypt(
-                HexHelper.HexToByteArray(nonce),
+                Convert.FromHexString(nonce),
                 cipherTextBytes,
-                HexHelper.HexToByteArray(tag),
+                Convert.FromHexString(tag),
                 plainTextBytes,
-                HexHelper.HexToByteArray(associatedData));
+                Convert.FromHexString(associatedData));
 
-            Assert.AreEqual(plainText, HexHelper.ByteArrayToHex(plainTextBytes));
+            Assert.AreEqual(plainText, Convert.ToHexString(plainTextBytes));
         }
     }
 }
